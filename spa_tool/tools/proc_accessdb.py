@@ -1,9 +1,8 @@
 ##################################################################
-### Script for processing extracting raw data from ms access db
-### Author: Nicholas Fournier nick.fournier@rsginc.com, Oct, 2022
+# Script for processing extracting raw data from ms access db
+# Author: Nicholas Fournier nick.fournier@rsginc.com, Oct, 2022
 ##################################################################
 import pandas as pd
-from pandas.api.types import is_numeric_dtype
 import pyodbc
 import os
 
@@ -19,10 +18,10 @@ class GetDBData:
         '_Person groups': 'coded_person_group'
     }
 
-    def __init__(self, db_path, configs_dir, output_dir):
+    def __init__(self, database_path, configs_dir, output_dir):
         self.codebook = pd.read_csv(os.path.join(configs_dir, 'codebook.csv'))
         self.codevalues = pd.read_csv(os.path.join(configs_dir, 'codevalues.csv'))
-        self.data = self.get_tables(db_path)
+        self.data = self.get_tables(database_path)
         self.save_tables(output_dir)
 
     def get_tables(self, db_path):
@@ -32,10 +31,10 @@ class GetDBData:
         with pyodbc.connect(conn_string) as conn:
             cursor = conn.cursor()
             table_names = [x.table_name for x in cursor.tables() if 'MSys' not in x.table_name]
-            data = {tb: pd.read_sql(f'select * from "{tb}"', conn) for tb in table_names}
+            data = {tb: pd.read_sql(f'SELECT * FROM "{tb}"', conn) for tb in table_names}
 
         names = self.names_map
-        codegroup = self.codebook.groupby('Form')
+        codegroup = self.codebook.groupby('Table')
         
         self.coded_activities = data['_Activities']
         self.coded_person_groups = data['_Person groups']
@@ -90,10 +89,9 @@ class GetDBData:
 
         return df
 
-
-    def save_tables(self, output_dir):
+    def save_tables(self, out_dir):
         for k, df in self.data.items():
-            df.to_csv(f'{output_dir}/{k}.csv', index=True)
+            df.to_csv(f'{out_dir}/{k}.csv', index=True)
 
 
 if __name__ == '__main__':
@@ -101,18 +99,13 @@ if __name__ == '__main__':
 
     # Raw Survey data location on RSG cloud
     data_dir = os.path.join('C:\\Users\\{}'.format(os.getlogin()),
-                'Resource Systems Group, Inc',
-                'Model Development - Dubai RTA ABM Development Project',
-                'data\\fromIBI/2014 Survey Data'
-    )
+                            'Resource Systems Group, Inc',
+                            'Model Development - Dubai RTA ABM Development Project',
+                            'data\\fromIBI/2014 Survey Data'
+                            )
     db_path = os.path.join(data_dir, '2014-12-20_SP_RP_Data_Aur//RP_2014_141218.accdb')
     codebook_dir = '../../configs'
     output_dir = '../../output/processed_inputs'
 
     # Fetch data from the database
     DBData = GetDBData(db_path, codebook_dir, output_dir)
-
-
-
-
-

@@ -1,0 +1,244 @@
+Table,Form,Question,Description,Unit type,Values,Labels
+household,H,H-K,Home address - Emirate,Code Value,1,Dubai
+household,H,H-K,Home address - Emirate,Code Value,2,Sharjah
+household,H,H-K,Home address - Emirate,Code Value,3,Abu Dhabi
+household,H,H-K,Home address - Emirate,Code Value,4,Ajman
+household,H,H-K,Home address - Emirate,Code Value,5,Fujairah
+household,H,H-K,Home address - Emirate,Code Value,6,Ras Al Khaimah
+household,H,H-K,Home address - Emirate,Code Value,7,Umm Al Quwain
+household,H,HQ3,Dwelling unit tenure,Code Value,1,Owned
+household,H,HQ3,Dwelling unit tenure,Code Value,2,Rented
+household,H,HQ3,Dwelling unit tenure,Code Value,3,Provided
+household,H,HQ3,Dwelling unit tenure,Code Value,4,Other
+vehicle,H6,HQ6-1,Type of vehicle,Code Value,1,Car
+vehicle,H6,HQ6-1,Type of vehicle,Code Value,2,Light goods vehicle
+vehicle,H6,HQ6-1,Type of vehicle,Code Value,3,Heavy goods vehicle
+vehicle,H6,HQ6-1,Type of vehicle,Code Value,4,Motorcycle
+vehicle,H6,HQ6-1,Type of vehicle,Code Value,5,Other
+vehicle,H6,HQ6-2,Owner of vehicle,Code Value,1,Household
+vehicle,H6,HQ6-2,Owner of vehicle,Code Value,2,Employer
+vehicle,H6,HQ6-2,Owner of vehicle,Code Value,3,Rented
+vehicle,H6,HQ6-2,Owner of vehicle,Code Value,4,Other
+household,H,HQ7,Distance to nearest PT stop,Code Value,1,1-3 min walking (up to 250 m)
+household,H,HQ7,Distance to nearest PT stop,Code Value,2,4-6 min walking (250-500 m)
+household,H,HQ7,Distance to nearest PT stop,Code Value,3,7-10 min walking (500-800 m)
+household,H,HQ7,Distance to nearest PT stop,Code Value,4,More than 10 min walking (>800 m)
+household,H,HQ7,Distance to nearest PT stop,Code Value,9,Don't know
+household,H,HQ8,"Monthly household income (salary, pension, other income) in AED",Code Value,1,Up to 4999
+household,H,HQ8,"Monthly household income (salary, pension, other income) in AED",Code Value,2,5000-9999
+household,H,HQ8,"Monthly household income (salary, pension, other income) in AED",Code Value,3,10000-14999
+household,H,HQ8,"Monthly household income (salary, pension, other income) in AED",Code Value,4,15000-19999
+household,H,HQ8,"Monthly household income (salary, pension, other income) in AED",Code Value,5,20000-29999
+household,H,HQ8,"Monthly household income (salary, pension, other income) in AED",Code Value,6,30000-39999
+household,H,HQ8,"Monthly household income (salary, pension, other income) in AED",Code Value,7,40000-49999
+household,H,HQ8,"Monthly household income (salary, pension, other income) in AED",Code Value,8,50000-59999
+household,H,HQ8,"Monthly household income (salary, pension, other income) in AED",Code Value,9,60000 and above
+household,H,HQ8,"Monthly household income (salary, pension, other income) in AED",Code Value,1, Don't know / refused
+household,H,HQ9,Type of property you reside in,Code Value,1,Villa
+household,H,HQ9,Type of property you reside in,Code Value,2,"Traditional house, townhouse"
+household,H,HQ9,Type of property you reside in,Code Value,3,Apartment
+household,H,HQ9,Type of property you reside in,Code Value,4,Compound villa/apartment
+household,H,HQ9,Type of property you reside in,Code Value,5,Communal accomodation provided by worker or employer
+household,H,HQ9,Type of property you reside in,Code Value,6,Other
+person,P,PQ2,Household status,Code Value,1,Head
+person,P,PQ2,Household status,Code Value,2,Wife
+person,P,PQ2,Household status,Code Value,3,Husband
+person,P,PQ2,Household status,Code Value,4,"Son, daughter"
+person,P,PQ2,Household status,Code Value,5,Parent
+person,P,PQ2,Household status,Code Value,6,Sibling
+person,P,PQ2,Household status,Code Value,7,Other relative
+person,P,PQ2,Household status,Code Value,8,"Servant, driver"
+person,P,PQ2,Household status,Code Value,9,Fellow worker
+person,P,PQ2,Household status,Code Value,10,Other
+person,P,PQ3,Nationality,Code Value,1,UAE national
+person,P,PQ3,Nationality,Code Value,2,Other GCC
+person,P,PQ3,Nationality,Code Value,3,Non-GCC Arab
+person,P,PQ3,Nationality,Code Value,4,Western expatriate
+person,P,PQ3,Nationality,Code Value,5,Asian expatriate
+person,P,PQ3,Nationality,Code Value,6,Other
+person,P,PQ4,Gender,Code Value,1,Male
+person,P,PQ4,Gender,Code Value,2,Female
+person,P,PQ61,Main occupation,Code Value,1,Full time work
+person,P,PQ61,Main occupation,Code Value,2,Part time work (<5 h/d)
+person,P,PQ61,Main occupation,Code Value,3,Full time student
+person,P,PQ61,Main occupation,Code Value,4,Part time student
+person,P,PQ61,Main occupation,Code Value,5,School child
+person,P,PQ61,Main occupation,Code Value,6,Retired
+person,P,PQ61,Main occupation,Code Value,7,House person
+person,P,PQ61,Main occupation,Code Value,8,Unemployed
+person,P,PQ61,Main occupation,Code Value,9,Other
+person,P,PQ62,Occupation sector,Code Value,1,Government
+person,P,PQ62,Occupation sector,Code Value,2,Medical
+person,P,PQ62,Occupation sector,Code Value,3,Education
+person,P,PQ62,Occupation sector,Code Value,4,"Transport, communication"
+person,P,PQ62,Occupation sector,Code Value,5,Commerce
+person,P,PQ62,Occupation sector,Code Value,6,"Ports, harbours"
+person,P,PQ62,Occupation sector,Code Value,7,Other
+person,P,PQ63,Occupation level,Code Value,1,Management
+person,P,PQ63,Occupation level,Code Value,2,Educated professional
+person,P,PQ63,Occupation level,Code Value,3,Skilled labour
+person,P,PQ63,Occupation level,Code Value,4,Elementary
+person,P,PQ63,Occupation level,Code Value,5,Others / Don't know
+person,P,PQ7,NOL card,Code Value,1,Silver
+person,P,PQ7,NOL card,Code Value,2,Gold
+person,P,PQ7,NOL card,Code Value,3,Blue
+person,P,PQ7,NOL card,Code Value,4,Red
+person,P,PQ8,Driving license,Code Value,1,Yes
+person,P,PQ8,Driving license,Code Value,2,No
+person,P,PQ9,Car availability,Code Value,1,Yes own use (as driver)
+person,P,PQ9,Car availability,Code Value,2,Yes shared use (as driver)
+person,P,PQ9,Car availability,Code Value,3,Yes shared use (as passenger)
+person,P,PQ9,Car availability,Code Value,4,No
+day,T1,T1-C,Report day type,Code Value,1,Sunday
+day,T1,T1-C,Report day type,Code Value,2,Monday
+day,T1,T1-C,Report day type,Code Value,3,Tuesday
+day,T1,T1-C,Report day type,Code Value,4,Wednesday
+day,T1,T1-C,Report day type,Code Value,5,Thursday
+day,T1,T1Q1,Left home on the report day,Code Value,1,Yes
+day,T1,T1Q1,Left home on the report day,Code Value,2,No
+day,T1,T1Q2,Reason for staying at home,Code Value,1,"Illness, disability"
+day,T1,T1Q2,Reason for staying at home,Code Value,2,Home work
+day,T1,T1Q2,Reason for staying at home,Code Value,3,No reason to leave
+day,T1,T1Q2,Reason for staying at home,Code Value,4,Other
+day,T1,T1Q3,First trip started at home,Code Value,1,Yes
+day,T1,T1Q3,First trip started at home,Code Value,2,No
+day,T1,T1Q46,Start address - Emirate,Code Value,1,Dubai
+day,T1,T1Q46,Start address - Emirate,Code Value,2,Sharjah
+day,T1,T1Q46,Start address - Emirate,Code Value,3,Abu Dhabi
+day,T1,T1Q46,Start address - Emirate,Code Value,4,Ajman
+day,T1,T1Q46,Start address - Emirate,Code Value,5,Fujairah
+day,T1,T1Q46,Start address - Emirate,Code Value,6,Ras Al Khaimah
+day,T1,T1Q46,Start address - Emirate,Code Value,7,Umm Al Quwain
+trip,T2,TQ2-5,Code Destination - Emirate,Code Value,2,Sharjah
+trip,T2,TQ2-5,Code Destination - Emirate Value,Code Value,3,Abu Dhabi
+trip,T2,TQ2-5,Code Destination - Emirate Value,Code Value,4,Ajman
+trip,T2,TQ2-5,Code Destination - Emirate Value,Code Value,5,Fujairah
+trip,T2,TQ2-5,Code Destination - Emirate Value,Code Value,6,Ras Al Khaimah
+trip,T2,TQ2-5,Code Destination - Emirate Value,Code Value,7,Umm Al Quwain
+trip,T2,TQ3,Purpose,Code Value,1,Work
+trip,T2,TQ3,Purpose,Code Value,2,Employer's business
+trip,T2,TQ3,Purpose,Code Value,3,"Education, school"
+trip,T2,TQ3,Purpose,Code Value,4,Personal business
+trip,T2,TQ3,Purpose,Code Value,51," Mall, shopping centre"
+trip,T2,TQ3,Purpose,Code Value,52, Supermarket
+trip,T2,TQ3,Purpose,Code Value,53, Grocery store
+trip,T2,TQ3,Purpose,Code Value,54, Retail
+trip,T2,TQ3,Purpose,Code Value,55, Other shopping
+trip,T2,TQ3,Purpose,Code Value,61, Window shopping without purchase
+trip,T2,TQ3,Purpose,Code Value,62, Visiting relative
+trip,T2,TQ3,Purpose,Code Value,63, Visiting friends etc
+trip,T2,TQ3,Purpose,Code Value,64, Eating outside
+trip,T2,TQ3,Purpose,Code Value,65," Cinema, public entertainment"
+trip,T2,TQ3,Purpose,Code Value,66," Promenade, picnic"
+trip,T2,TQ3,Purpose,Code Value,67, Sports
+trip,T2,TQ3,Purpose,Code Value,68," Beach, recreation"
+trip,T2,TQ3,Purpose,Code Value,69, Other leisure
+trip,T2,TQ3,Purpose,Code Value,7,"Mosque, prayer"
+trip,T2,TQ3,Purpose,Code Value,8,Return home
+trip,T2,TQ3,Purpose,Code Value,9,Other
+trip,T2,TQ5-1,Modes of transport,Code Value,1,Walk
+trip,T2,TQ5-1,Modes of transport,Code Value,2,Car (as driver)
+trip,T2,TQ5-1,Modes of transport,Code Value,3,Car (as passenger)
+trip,T2,TQ5-1,Modes of transport,Code Value,4,Metro
+trip,T2,TQ5-1,Modes of transport,Code Value,5,Public bus
+trip,T2,TQ5-1,Modes of transport,Code Value,6,Company bus
+trip,T2,TQ5-1,Modes of transport,Code Value,7,School bus
+trip,T2,TQ5-1,Modes of transport,Code Value,8,"Minibus, shared taxi"
+trip,T2,TQ5-1,Modes of transport,Code Value,9,Taxi
+trip,T2,TQ5-1,Modes of transport,Code Value,10, Water transport
+trip,T2,TQ5-1,Modes of transport,Code Value,11," Light goods vehicle, van"
+trip,T2,TQ5-1,Modes of transport,Code Value,12," Heavy goods vehicle, truck"
+trip,T2,TQ5-1,Modes of transport,Code Value,13, Motorcycle
+trip,T2,TQ5-1,Modes of transport,Code Value,14, Bicycle
+trip,T2,TQ5-1,Modes of transport,Code Value,15, Other
+trip,T2,TQ5-2,Modes of transport,Code Value,1,Walk
+trip,T2,TQ5-2,Modes of transport,Code Value,2,Car (as driver)
+trip,T2,TQ5-2,Modes of transport,Code Value,3,Car (as passenger)
+trip,T2,TQ5-2,Modes of transport,Code Value,4,Metro
+trip,T2,TQ5-2,Modes of transport,Code Value,5,Public bus
+trip,T2,TQ5-2,Modes of transport,Code Value,6,Company bus
+trip,T2,TQ5-2,Modes of transport,Code Value,7,School bus
+trip,T2,TQ5-2,Modes of transport,Code Value,8,"Minibus, shared taxi"
+trip,T2,TQ5-2,Modes of transport,Code Value,9,Taxi
+trip,T2,TQ5-2,Modes of transport,Code Value,10, Water transport
+trip,T2,TQ5-2,Modes of transport,Code Value,11," Light goods vehicle, van"
+trip,T2,TQ5-2,Modes of transport,Code Value,12," Heavy goods vehicle, truck"
+trip,T2,TQ5-2,Modes of transport,Code Value,13, Motorcycle
+trip,T2,TQ5-2,Modes of transport,Code Value,14, Bicycle
+trip,T2,TQ5-2,Modes of transport,Code Value,15, Other
+trip,T2,TQ5-3,Modes of transport,Code Value,1,Walk
+trip,T2,TQ5-3,Modes of transport,Code Value,2,Car (as driver)
+trip,T2,TQ5-3,Modes of transport,Code Value,3,Car (as passenger)
+trip,T2,TQ5-3,Modes of transport,Code Value,4,Metro
+trip,T2,TQ5-3,Modes of transport,Code Value,5,Public bus
+trip,T2,TQ5-3,Modes of transport,Code Value,6,Company bus
+trip,T2,TQ5-3,Modes of transport,Code Value,7,School bus
+trip,T2,TQ5-3,Modes of transport,Code Value,8,"Minibus, shared taxi"
+trip,T2,TQ5-3,Modes of transport,Code Value,9,Taxi
+trip,T2,TQ5-3,Modes of transport,Code Value,10, Water transport
+trip,T2,TQ5-3,Modes of transport,Code Value,11," Light goods vehicle, van"
+trip,T2,TQ5-3,Modes of transport,Code Value,12," Heavy goods vehicle, truck"
+trip,T2,TQ5-3,Modes of transport,Code Value,13, Motorcycle
+trip,T2,TQ5-3,Modes of transport,Code Value,14, Bicycle
+trip,T2,TQ5-3,Modes of transport,Code Value,15, Other
+trip,T2,TQ5-4,Modes of transport,Code Value,1,Walk
+trip,T2,TQ5-4,Modes of transport,Code Value,2,Car (as driver)
+trip,T2,TQ5-4,Modes of transport,Code Value,3,Car (as passenger)
+trip,T2,TQ5-4,Modes of transport,Code Value,4,Metro
+trip,T2,TQ5-4,Modes of transport,Code Value,5,Public bus
+trip,T2,TQ5-4,Modes of transport,Code Value,6,Company bus
+trip,T2,TQ5-4,Modes of transport,Code Value,7,School bus
+trip,T2,TQ5-4,Modes of transport,Code Value,8,"Minibus, shared taxi"
+trip,T2,TQ5-4,Modes of transport,Code Value,9,Taxi
+trip,T2,TQ5-4,Modes of transport,Code Value,10, Water transport
+trip,T2,TQ5-4,Modes of transport,Code Value,11," Light goods vehicle, van"
+trip,T2,TQ5-4,Modes of transport,Code Value,12," Heavy goods vehicle, truck"
+trip,T2,TQ5-4,Modes of transport,Code Value,13, Motorcycle
+trip,T2,TQ5-4,Modes of transport,Code Value,14, Bicycle
+trip,T2,TQ5-4,Modes of transport,Code Value,15, Other
+trip,T2,TQ5-5,Modes of transport,Code Value,1,Walk
+trip,T2,TQ5-5,Modes of transport,Code Value,2,Car (as driver)
+trip,T2,TQ5-5,Modes of transport,Code Value,3,Car (as passenger)
+trip,T2,TQ5-5,Modes of transport,Code Value,4,Metro
+trip,T2,TQ5-5,Modes of transport,Code Value,5,Public bus
+trip,T2,TQ5-5,Modes of transport,Code Value,6,Company bus
+trip,T2,TQ5-5,Modes of transport,Code Value,7,School bus
+trip,T2,TQ5-5,Modes of transport,Code Value,8,"Minibus, shared taxi"
+trip,T2,TQ5-5,Modes of transport,Code Value,9,Taxi
+trip,T2,TQ5-5,Modes of transport,Code Value,10, Water transport
+trip,T2,TQ5-5,Modes of transport,Code Value,11," Light goods vehicle, van"
+trip,T2,TQ5-5,Modes of transport,Code Value,12," Heavy goods vehicle, truck"
+trip,T2,TQ5-5,Modes of transport,Code Value,13, Motorcycle
+trip,T2,TQ5-5,Modes of transport,Code Value,14, Bicycle
+trip,T2,TQ5-5,Modes of transport,Code Value,15, Other
+trip,T2,TQ5-6,Modes of transport,Code Value,1,Walk
+trip,T2,TQ5-6,Modes of transport,Code Value,2,Car (as driver)
+trip,T2,TQ5-6,Modes of transport,Code Value,3,Car (as passenger)
+trip,T2,TQ5-6,Modes of transport,Code Value,4,Metro
+trip,T2,TQ5-6,Modes of transport,Code Value,5,Public bus
+trip,T2,TQ5-6,Modes of transport,Code Value,6,Company bus
+trip,T2,TQ5-6,Modes of transport,Code Value,7,School bus
+trip,T2,TQ5-6,Modes of transport,Code Value,8,"Minibus, shared taxi"
+trip,T2,TQ5-6,Modes of transport,Code Value,9,Taxi
+trip,T2,TQ5-6,Modes of transport,Code Value,10, Water transport
+trip,T2,TQ5-6,Modes of transport,Code Value,11," Light goods vehicle, van"
+trip,T2,TQ5-6,Modes of transport,Code Value,12," Heavy goods vehicle, truck"
+trip,T2,TQ5-6,Modes of transport,Code Value,13, Motorcycle
+trip,T2,TQ5-6,Modes of transport,Code Value,14, Bicycle
+trip,T2,TQ5-6,Modes of transport,Code Value,15, Other
+trip,T2,TQ9,PT - Ticket,Code Value,1,Silver
+trip,T2,TQ9,PT - Ticket,Code Value,2,Gold
+trip,T2,TQ9,PT - Ticket,Code Value,3,Blue
+trip,T2,TQ9,PT - Ticket,Code Value,4,Red
+trip,T2,TQ12,Car - Salik gates crossed,Code Value,1,Airport tunnel
+trip,T2,TQ12,Car - Salik gates crossed,Code Value,2,Al Barsha
+trip,T2,TQ12,Car - Salik gates crossed,Code Value,3,Al Garhoud bridge
+trip,T2,TQ12,Car - Salik gates crossed,Code Value,4,Al Maktoum bridge
+trip,T2,TQ12,Car - Salik gates crossed,Code Value,5,Al Mamzar
+trip,T2,TQ12,Car - Salik gates crossed,Code Value,6,Al Safa
+trip,T2,TQ13,Car - Parking type,Code Value,1,Roadside free
+trip,T2,TQ13,Car - Parking type,Code Value,2,Roadside charged
+trip,T2,TQ13,Car - Parking type,Code Value,3,On site free
+trip,T2,TQ13,Car - Parking type,Code Value,4,On site charged
+trip,T2,TQ13,Car - Parking type,Code Value,5,"Off-road, off-site, on vacant space"
+trip,T2,TQ13,Car - Parking type,Code Value,6,Other

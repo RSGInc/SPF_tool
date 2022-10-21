@@ -1,0 +1,146 @@
+Table,Form,Question,Description,Shortname,Unit type
+household,H,Labourer,Household has labourer,has_labourer,bool
+household,H,HHNr,Household number,household_id,int
+household,H,H-A,Number of floors in the building,hh_floors,int
+household,H,H-B,Number of dwellings in the building,hh_units,int
+household,H,H-C,Name of the head of the household,hoh_name,str
+household,H,H-D,Telephone number,ph,str
+household,H,H-E,E-Mail address,email,str
+household,H,H-F,Home address - Geocode,geocode,str
+household,H,H-G,Home address - Community,community,str
+household,H,H-H,Home address - Road,road,str
+household,H,H-I,Home address - Building,building,str
+household,H,H-J,Home address - POI,poi,str
+household,H,H-K,Home address - Emirate,emirate,cat
+household,H,HQ1-1,Number of persons living in HH under 6y,hh_under6yr,int
+household,H,HQ1-2,Number of persons living in HH from 6y,hh_over6yr,int
+household,H,H-Maids,Number of maids living in HH,hh_maids,int
+household,H,HQ2-1,Number of persons under 6y present in HH during first visit,hh_under6yr_present,int
+household,H,HQ2-2,Number of persons from 6y present in HH during first visit,hh_over6yr_present,int
+household,H,HQ3,Dwelling unit tenure,hh_tenure,cat
+household,H,HQ4,Number of motor vehicles available to the household for personal use,hh_veh,int
+household,H,HQ5,Number of bicycles available to the household for personal use,hh_bikes,int
+household,H,HQ7,Distance to nearest PT stop,ptdist,cat
+household,H,HQ8,"Monthly household income (salary, pension, other income) in AED",hhincome,cat
+household,H,HQ9,Type of property you reside in,hhproptype,cat
+household,H,HQ9a,Type of property - other,hhproptype_other,str
+household,H,Interviewer,Interviewer id,interviewer_id,str
+household,H,Company,Interviewer company,interviewer_company,str
+household,H,Com_Name,Interviewer company name,interviewer_company_name,str
+household,H,Com_Nr,Interviewer company number,interviewer_company_num,int
+household,H,I_Date,Interview date,interview_date,date
+household,H,I_Time,Interview time,interview_time,time
+household,H,h_zone,Home zone,home_zone_id,int
+vehicle,H6,Labourer,Household has labourer,has_labourer,bool
+vehicle,H6,VehNr,Vehicle number,vehicle_num,int
+vehicle,H6,hhnr,Household number,household_id,int
+vehicle,H6,HQ6-1,Type of vehicle,vehtype,cat
+vehicle,H6,HQ6-1a,Type of vehicle - Other,vehtype_other,str
+vehicle,H6,HQ6-2,Owner of vehicle,veh_ownership,cat
+vehicle,H6,HQ6-2a,Owner of vehicle - Other,veh_ownership_other,str
+vehicle,H6,Interviewer,Interviewer id,interviewer_id,str
+vehicle,H6,Company,Interviewer company,interviewer_company,str
+vehicle,H6,I_Date,Interview date,interview_date,date
+vehicle,H6,I_Time,Interview time,interview_time,time
+person,P,Labourer,Person is a labourer,is_labourer,bool
+person,P,HHNr,Household number,household_id,int
+person,P,PNr,Person number,person_num,int
+person,P,PQ1,Person name,person_name,str
+person,P,PQ2,Household status,relationship,cat
+person,P,PQ2a,Household status - Other,relationship_other,str
+person,P,PQ3,Nationality,nationality,cat
+person,P,PQ3a,Nationality - Other,nationality_other,str
+person,P,PQ4,Gender,gender,cat
+person,P,PQ5,Age,age,int
+person,P,PQ61,Main occupation,occ,cat
+person,P,PQ61a,Main occupation - Other,occ_other,str
+person,P,PQ62,Occupation sector,occ_sector,cat
+person,P,PQ62a,Occupation sector - Other,occ_sector_other,str
+person,P,PQ63,Occupation level,occ_level,cat
+person,P,PQ63a,Occupation level - Other,occ_level_other,str
+person,P,PQ7,NOL card,nol,cat
+person,P,PQ8,Driving license,license,cat
+person,P,PQ9,Car availability,auto_availability,cat
+person,P,Interviewer,Interviewer id,interviewer_id,str
+person,P,Company,Interviewer company,interviewer_company,str
+person,P,I_Date,Interview date,interview_date,date
+person,P,I_Time,Interview time,interview_time,time
+day,T1,Labourer,Person is a labourer,is_labourer,bool
+day,T1,PNr,Person number,person_num,int
+day,T1,hhnr,Household number,household_id,int
+day,T1,T1-A,Person name,person_name,str
+day,T1,T1-B,Report day,day_date,date
+day,T1,T1-C,Report day type,day_type,cat
+day,T1,T-C1,Left home on the report day,day_traveled,cat
+day,T1,T-C2,Reason for staying at home,reason_not_traveled,cat
+day,T1,T1Q1,Left home on the report day,day_traveled,cat
+day,T1,T1Q2,Reason for staying at home,reason_not_traveled,cat
+day,T1,T1Q2a,Reason for staying at home - Other,reason_not_traveled_other,str
+day,T1,T1Q3,First trip started at home,home_based,cat
+day,T1,T1Q41,Start address - Geocode,start_geocode,str
+day,T1,T1Q42,Start address - Community,start_community,str
+day,T1,T1Q43,Start address - Road,start_road,str
+day,T1,T1Q44,Start address - Building,start_building,str
+day,T1,T1Q45,Start address - POI,start_poi,str
+day,T1,T1Q46,Start address - Emirate,start_emirate,cat
+day,T1,Interviewer,Interviewer id,interviewer_id,str
+day,T1,Company,Interviewer company,interviewer_company,str
+day,T1,I_Date,Interview date,interview_date,date
+day,T1,I_Time,Interview time,interview_time,time
+day,T1,com_nr,Interviewer company number,interviewer_company_num,int
+day,T1,p_group,Person group (population segment),person_group,cat
+day,T1,p_weight16,Person weight,person_weight,float
+trip,T2,Labourer,Person is a labourer,is_labourer,bool
+trip,T2,PNr,Person number,person_num,int
+trip,T2,hhnr,Household number,household_id,int
+trip,T2,TNr,Trip number,trip_id,int
+trip,T2,T-C1,Left home on the report day,day_traveled,cat
+trip,T2,T-C2,Reason for staying at home,reason_not_traveled,cat
+trip,T2,TQ1-1,Start time (h),start_h,int
+trip,T2,TQ1-2,Start time (min),start_min,int
+trip,T2,TQ2-1,Destination - Community,dest_community,str
+trip,T2,TQ2-2,Destination - Road,dest_road,str
+trip,T2,TQ2-3,Destination - Building,dest_building,str
+trip,T2,TQ2-4,Destination - POI,dest_poi,str
+trip,T2,TQ2-5,Destination - Emirate,dest_emirate,cat
+trip,T2,TQ2-6,Destination - Geocode,dest_geocode,str
+trip,T2,TQ3,Purpose,trip_purp,cat
+trip,T2,TQ3a,Purpose - Other,trip_purp_other,str
+trip,T2,TQ4-1,Arrival time (h),arrival_h,int
+trip,T2,TQ4-2,Arrival time (min),arrival_min,int
+trip,T2,t_mmode,Main mode of transport,mode_mainline,cat
+trip,T2,TQ5-1,Modes of transport,mode_1,cat
+trip,T2,TQ5-2,Modes of transport,mode_2,cat
+trip,T2,TQ5-3,Modes of transport,mode_3,cat
+trip,T2,TQ5-4,Modes of transport,mode_4,cat
+trip,T2,TQ5-5,Modes of transport,mode_5,cat
+trip,T2,TQ5-6,Modes of transport,mode_6,cat
+trip,T2,TQ5a,Mode - Other,mode_other,str
+trip,T2,TQ6,Walk time (min),walk_time,int
+trip,T2,TQ7-1,PT - Bus routes,bus_route_1,str
+trip,T2,TQ7-2,PT - Bus routes,bus_route_2,str
+trip,T2,TQ7-3,PT - Bus routes,bus_route_3,str
+trip,T2,TQ8-1,PT - Metro line - Green,metro_greenline,bool
+trip,T2,TQ8-2,PT - Metro line - Red,metro_redline,bool
+trip,T2,TQ9,PT - Ticket,pt_ticket,cat
+trip,T2,TQ10,PT - Cost (Dhs),pt_cost,float
+trip,T2,TQ11,Taxi - Cost (Dhs),taxi_cost,float
+trip,T2,TQ12,Car - Salik gates crossed,car_salikgates,list
+trip,T2,TQ13,Car - Parking type,parking_type,cat
+trip,T2,TQ13a,Car - Parking type - Other,parking_other,str
+trip,T2,TQ14,Car - Parking search time (min),parking_searchtime,int
+trip,T2,TQ15,Car - Parking cost (Dhs),parking_cost,str
+trip,T2,TQ16-1,Distance estimate (km),trip_dist_km,float
+trip,T2,TQ16-2,Distance estimate (m),trip_dist_m,float
+trip,T2,TQ17-1,Trip companions from household [person number list],trip_hhcompanions_pnum,list
+trip,T2,TQ17-2,Number of other trip companions,trip_companions,int
+trip,T2,T-WP1,Waypoints - Coordinate,trip_waypoints_1,str
+trip,T2,T-WP2,Waypoints - Coordinate,trip_waypoints_2,str
+trip,T2,T-WP3,Waypoints - Coordinate,trip_waypoints_3,str
+trip,T2,Company,Interviewer company,interviewer_company,str
+trip,T2,I_Date,Interview date,interview_date,date
+trip,T2,I_Time,Interview time,interview_time,time
+trip,T2,t_activity,Trip activity,trip_activity,str
+trip,T2,p_group,Person group (population segment),person_group,cat
+trip,T2,p_weight16,Person weight,person_weight,float
+trip,T2,t_dZone,Trip destination zone,dest_zone_id,cat

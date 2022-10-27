@@ -1,5 +1,5 @@
 ##################################################################
-# Script for processing extracting raw data from ms access db
+# Script for extracting raw data from ms access db
 # Author: Nicholas Fournier nick.fournier@rsginc.com, Oct, 2022
 ##################################################################
 import pandas as pd
@@ -18,15 +18,15 @@ class GetDBData:
         '_Person groups': 'coded_person_group'
     }
 
-    def __init__(self, database_path, configs_dir, output_dir):
-        self.codebook = pd.read_csv(os.path.join(configs_dir, 'codebook.csv'))
-        self.codevalues = pd.read_csv(os.path.join(configs_dir, 'codevalues.csv'))
-        self.data = self.get_tables(database_path)
-        self.save_tables(output_dir)
+    def __init__(self, database_path, configs_dir):
+        self.codebook = pd.read_csv(os.path.join(configs_dir, 'codebook_dictionary.csv'))
+        self.codevalues = pd.read_csv(os.path.join(configs_dir, 'codebook_categories.csv'))
+        self.data = None
+        self.database_path = database_path
 
-    def get_tables(self, db_path):
+    def get_tables(self):
         driver = '{Microsoft Access Driver (*.mdb, *.accdb)}'
-        conn_string = f'DRIVER={driver};DBQ={db_path}'
+        conn_string = f'DRIVER={driver};DBQ={self.database_path}'
 
         with pyodbc.connect(conn_string) as conn:
             cursor = conn.cursor()
@@ -34,7 +34,7 @@ class GetDBData:
             data = {tb: pd.read_sql(f'SELECT * FROM "{tb}"', conn) for tb in table_names}
 
         names = self.names_map
-        codegroup = self.codebook.groupby('Table')
+        codegroup = self.codebook.groupby('Form')
         
         self.coded_activities = data['_Activities']
         self.coded_person_groups = data['_Person groups']
@@ -43,11 +43,11 @@ class GetDBData:
             names[f]: data[f].rename(columns=dict(zip(codes.Question, codes.Shortname))) for f, codes in codegroup
             }
         
-        formatted['household'].set_index('household_id')
+        formatted['household'].set_index('household_id', inplace=True)
         formatted = {k: self.clean_dtypes(k, df) for k, df in formatted.items()}
-        formatted = {**formatted, **self.many2many_df(formatted)}
+        self.data = {**formatted, **self.many2many_df(formatted)}
 
-        return formatted
+        return
 
     def many2many_df(self, df_dict):
         exploded_dict = {}
@@ -57,7 +57,7 @@ class GetDBData:
 
             exploded = df[varitem.Shortname].str.split(',').explode().astype(int).to_frame()
             exploded['household_id'] = df.loc[exploded.index]['household_id']
-            exploded_dict[varitem.Shortname] = exploded.reset_index()
+            exploded_dict[varitem.Shortname] = exploded.reset_index().rename_axis(varitem.Shortname + '_id')
 
         return exploded_dict
 
@@ -90,8 +90,14 @@ class GetDBData:
         return df
 
     def save_tables(self, out_dir):
-        for k, df in self.data.items():
-            df.to_csv(f'{out_dir}/{k}.csv', index=True)
+        if self.data is None:
+            print('Data not loaded yet, run .get_tables() on GetDBData class')
+            return
+        else:
+            for k, df in self.data.items():
+                df.to_csv(f'{out_dir}/{k}.csv', index=True)
+
+        return
 
 
 if __name__ == '__main__':
@@ -105,7 +111,9 @@ if __name__ == '__main__':
                             )
     db_path = os.path.join(data_dir, '2014-12-20_SP_RP_Data_Aur//RP_2014_141218.accdb')
     codebook_dir = '../../configs'
-    output_dir = '../../output/processed_inputs'
+    output_dir = '../../processed_inputs'
 
     # Fetch data from the database
-    DBData = GetDBData(db_path, codebook_dir, output_dir)
+    DBData = GetDBData(db_path, codebook_dir)
+    DBData.get_tables()
+    DBData.save_tables(output_dir)

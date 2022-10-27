@@ -1,10 +1,10 @@
 import pandas as pd
 
-hh = pd.read_csv('../output/processed_inputs/households.csv', index_col='household_id')
-per = pd.read_csv('../output/processed_inputs/persons.csv', index_col='per_id')
-day = pd.read_csv('../output/processed_inputs/day.csv', index_col='day_id')
-trip = pd.read_csv('../output/processed_inputs/trips.csv', index_col='trip_id')
-veh = pd.read_csv('../output/processed_inputs/vehicles.csv', index_col='veh_id')
+hh = pd.read_csv('../processed_inputs/households.csv', index_col='household_id')
+per = pd.read_csv('../processed_inputs/persons.csv', index_col='per_id')
+day = pd.read_csv('../processed_inputs/day.csv', index_col='day_id')
+trip = pd.read_csv('../processed_inputs/trips.csv', index_col='trip_id')
+veh = pd.read_csv('../processed_inputs/vehicles.csv', index_col='veh_id')
 
 
 per.is_labourer.fillna(0, inplace=True)

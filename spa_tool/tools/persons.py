@@ -1,3 +1,5 @@
+from spa_tool.tools.functions import *
+
 class Person:
     """ Person class """
     def __init__(self, hh, per_id, df):

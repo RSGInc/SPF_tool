@@ -1,30 +1,40 @@
 from collections import defaultdict
-
-################## Constants ##########################################
-COMPUTE_TRIP_DIST = True     #true if trip distance is to be computed from route file
-NEGLIGIBLE_DELTA_TIME = 10   #time stamps within this margin of difference can be considered as identical 
-MAX_VOLUNTEER_MINUTES = 120  #work duration le this value is considered volunteer work 
-MAX_XFERS = 3                #number of place holders for transit transfers in the output trip file
-START_OF_DAY_MIN = 180      #3:00am
-TIME_WINDOW_BIN_MIN = 30    #bin width in minutes
-WORK_LOCATION_BUFFER = 0.25 # distance buffer to check if activity location is primary work location
-
-IN_DIR =  'E:/Projects/Clients/sandag/TO21_Recalibration/SANDAG_Data_Proc/processed/new/'
-OUT_DIR_PATH = 'E:/Projects/Clients/sandag/TO21_Recalibration/SANDAG_Data_Proc/processed/output/'
-
-SurveyChangeModeCode = 7
-SurveyHomeCode = [1,2]
-
-SURVEY_DO_PURP_CODE = 8
-SURVEY_PU_PURP_CODE = 9
-SurveySchoolPurp = [5,6]
-SurveyWorkPurp = [3,4]
-SurveyWorkRelatedPurp = 11
+import yaml
 
 
-# FIXME.NF This is pretty clunky, Put in YAML files to make flexible?
+# FIXME Need to make it so an argument can get passed here
+with open('../../configs/settings.yaml', 'r') as file:
+    const = yaml.safe_load(file)
+
+""" Constants
+This section is somewhat of a relic of original coding.
+it is too tedious to refactor the project, so just creating a pass through for now.
+"""
+
+COMPUTE_TRIP_DIST = const.get('COMPUTE_TRIP_DIST')     #true if trip distance is to be computed from route file
+NEGLIGIBLE_DELTA_TIME = const.get('NEGLIGIBLE_DELTA_TIME')   #time stamps within this margin of difference can be considered as identical
+MAX_VOLUNTEER_MINUTES = const.get('MAX_VOLUNTEER_MINUTES')  #work duration le this value is considered volunteer work
+MAX_XFERS = const.get('MAX_XFERS')                #number of place holders for transit transfers in the output trip file
+START_OF_DAY_MIN = const.get('START_OF_DAY_MIN')      #3:00am
+TIME_WINDOW_BIN_MIN = const.get('TIME_WINDOW_BIN_MIN')    #bin width in minutes
+WORK_LOCATION_BUFFER = const.get('WORK_LOCATION_BUFFER') # distance buffer to check if activity location is primary work location
+INDEX_JTRIP_BY_DEPTIME = const.get('WORK_LOCATION_BUFFER')  #1 if index by trip departure time at origin, 0 if by trip arrival time at destination
+
+IN_DIR = const.get('IN_DIR')
+OUT_DIR_PATH = const.get('OUT_DIR_PATH')
+
+SurveyChangeModeCode = const.get('SurveyChangeModeCode')
+SurveyHomeCode = const.get('SurveyHomeCode')
+
+SURVEY_DO_PURP_CODE = const.get('SURVEY_DO_PURP_CODE')
+SURVEY_PU_PURP_CODE = const.get('SURVEY_PU_PURP_CODE')
+SurveySchoolPurp = const.get('SurveySchoolPurp')
+SurveyWorkPurp = const.get('SurveyWorkPurp')
+SurveyWorkRelatedPurp = const.get('SurveyWorkRelatedPurp')
+
+
+
 ################## Dictionaries ##########################################
-
 # BMP - updated to represent trip purposes in SANDAG survey
 SurveyTpurp2Purp = {  #map TPURP from OHAS to the corresponding PURP code
     1: 0,
@@ -99,8 +109,6 @@ SurveyTbus2TransitType = defaultdict(lambda: 'BUS', {1: 'BUS', 2: 'LRT', 3: 'BRT
 
 
 ################## Dictionaries Defining Coding of Variables ##########################################
-INDEX_JTRIP_BY_DEPTIME = 0  #1 if index by trip departure time at origin, 0 if by trip arrival time at destination
-
 # BMP [09/06/17] - updated to represent agg modes in SANDAG survey
 NewTripMode = {
     'SOV-FREE': 1,

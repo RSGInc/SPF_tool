@@ -17,18 +17,18 @@ person,SCHOL,INT,categorical,Level of School,1,Daycare,"person.occ.isin([3,4,5])
 person,SCHOL,INT,categorical,Level of School,2,Pre-school,"person.occ.isin([3,4,5]) & (person.age >= 3) & (person.age < 5)"
 person,SCHOL,INT,categorical,Level of School,3,K to 8,"person.occ.isin([3,4,5]) & (person.age >= 5) & (person.age < 14)"
 person,SCHOL,INT,categorical,Level of School,4,9 to 12,"person.occ.isin([3,4,5]) & (person.age >= 14) & (person.age < 19)"
-person,SCHOL,INT,categorical,Level of School,5,Vocational / Tech School,"person.occ.isin([999])"
-person,SCHOL,INT,categorical,Level of School,6,Community College,"person.occ.isin([999])"
+person,SCHOL,INT,categorical,Level of School,5,Vocational / Tech School,person.occ.isin([999])
+person,SCHOL,INT,categorical,Level of School,6,Community College,person.occ.isin([999])
 person,SCHOL,INT,categorical,Level of School,7,4-year College or University,"person.occ.isin([3,4,5]) & (person.age >= 19) & (person.age < 23)"
 person,SCHOL,INT,categorical,Level of School,8,Graduate / Professional School,"person.occ.isin([3,4,5]) & (person.age >= 23)"
 person,SCHOL,INT,categorical,Level of School,0,Not a student,"~person.occ.isin([3,4,5, None])"
-person,EMPLY,INT,categorical,Employment Category,1,Full-time,"person.occ.isin([1])"
-person,EMPLY,INT,categorical,Employment Category,2,Part-time,"person.occ.isin([2])"
-person,EMPLY,INT,categorical,Employment Category,3,Unemployed,"person.occ.isin([8])"
+person,EMPLY,INT,categorical,Employment Category,1,Full-time,person.occ.isin([1])
+person,EMPLY,INT,categorical,Employment Category,2,Part-time,person.occ.isin([2])
+person,EMPLY,INT,categorical,Employment Category,3,Unemployed,person.occ.isin([8])
 person,EMPLY,INT,categorical,Employment Category,4,Non-worker,"~person.occ.isin([1,2,8])"
-person,AGE,INT,continuous,Age of person,,,"person.age"
-person,PER_GENDER,INT,categorical,Gender of person,1,Male,"person.gender.isin([1])"
-person,PER_GENDER,INT,categorical,Gender of person,2,Female,"person.gender.isin([2])"
+person,AGE,INT,continuous,Age of person,,,person.age
+person,PER_GENDER,INT,categorical,Gender of person,1,Male,person.gender.isin([1])
+person,PER_GENDER,INT,categorical,Gender of person,2,Female,person.gender.isin([2])
 person,EMPLY_LOC_TYPE,INT,categorical,Employment location type ,1,fixed,"person.occ.isin([1,2,8]) & person.reset_index().merge((trip[trip.trip_purp.isin([1])].groupby(['household_id','person_num']).dest_zone_id.size()==1).reset_index(), how='left').set_index('person_id').fillna(False).dest_zone_id"
 person,EMPLY_LOC_TYPE,INT,categorical,Employment location type ,2,works from home,"person.occ.isin([1,2,8]) & person.reset_index().merge(trip[trip.trip_purp.isin([1])].groupby(['household_id','person_num']).dest_zone_id.size().reset_index(), how='left').set_index('person_id').isnull().dest_zone_id"
 person,EMPLY_LOC_TYPE,INT,categorical,Employment location type ,3,varies,"person.occ.isin([1,2,8]) & person.reset_index().merge((trip[trip.trip_purp.isin([1])].groupby(['household_id','person_num']).dest_zone_id.size()>1).reset_index(), how='left').set_index('person_id').fillna(False).dest_zone_id"
@@ -38,45 +38,45 @@ trip,PERNO,INT,continuous,Person ID,,,trip.person_num
 trip,PLANO,INT,continuous,Place Number per person,,,trip.trip_num
 trip,TRIP_WEIGHT,REAL,continuous,Weight to expand data at trip level,,,trip.person_weight
 trip,TAZ,INT,continuous,Destination TAZ,,,trip.dest_zone_id
-trip,TPURP,INT,categorical,Trip Purpose,0,Home,"trip.trip_purp.isin([8])"
+trip,TPURP,INT,categorical,Trip Purpose,0,Home,trip.trip_purp.isin([8])
 trip,TPURP,INT,categorical,Trip Purpose,1,Work,"trip.trip_purp.isin([1,2])"
 trip,TPURP,INT,categorical,Trip Purpose,2,University,"(trip.reset_index().merge(person[['household_id','person_num','age']], how='left').set_index('trip_id').age>18) & trip.trip_purp.isin([3])"
 trip,TPURP,INT,categorical,Trip Purpose,3,School,"(trip.reset_index().merge(person[['household_id','person_num','age']], how='left').set_index('trip_id').age<=18) & trip.trip_purp.isin([3])"
-trip,TPURP,INT,categorical,Trip Purpose,4,Escorting,"trip.trip_purp.isin([999])"
+trip,TPURP,INT,categorical,Trip Purpose,4,Escorting,trip.trip_purp.isin([999])
 trip,TPURP,INT,categorical,Trip Purpose,5,Shopping,"trip.trip_purp.isin([51,52,53,54,55,61])"
 trip,TPURP,INT,categorical,Trip Purpose,6,Maintenance,"trip.trip_purp.isin([4,7])"
-trip,TPURP,INT,categorical,Trip Purpose,7,Eat Out,"trip.trip_purp.isin([64])"
+trip,TPURP,INT,categorical,Trip Purpose,7,Eat Out,trip.trip_purp.isin([64])
 trip,TPURP,INT,categorical,Trip Purpose,8,Social / Visit,"trip.trip_purp.isin([62,63])"
 trip,TPURP,INT,categorical,Trip Purpose,9,Discretionary,"trip.trip_purp.isin([65,66,67,68,69])"
-#trip,TPURP,INT,categorical,Trip Purpose,10,Work Related,"trip.trip_purp.isin([999])"
+#trip,TPURP,INT,categorical,Trip Purpose,10,Work Related,trip.trip_purp.isin([999])
 #trip,TPURP,INT,categorical,Trip Purpose,11,Loop (Home -> Home),"trip[trip.trip_num==1].reset_index().merge(household['home_zone_id'].reset_index()).set_index('trip_id').apply(lambda x: x['home_zone_id']==x['dest_zone_id'],axis=1)"
 #trip,TPURP,INT,categorical,Trip Purpose,12,Change Mode,trip.trip_purp.isin([999])
 trip,TPURP,INT,categorical,Trip Purpose,10,Other,trip.trip_purp.isin([9])
 trip,MODE,INT,categorical,Surveyed Trip Mode,1,SOV,"(trip.mode_mainline.isin([2,11,12,13]) & (pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)==0))"
 trip,MODE,INT,categorical,Surveyed Trip Mode,2,HOV2,"(trip.mode_mainline.isin([2,3,11,12,13]) & (pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)==1)) | (trip.mode_mainline.isin([3]) & (pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)==0))"
 trip,MODE,INT,categorical,Surveyed Trip Mode,3,HOV3+,"(trip.mode_mainline.isin([2,3,11,12,13]) & (pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)>1))"
-trip,MODE,INT,categorical,Surveyed Trip Mode,4,Walk,"trip.mode_mainline.isin([1])"
-trip,MODE,INT,categorical,Surveyed Trip Mode,5,Bike,"trip.mode_mainline.isin([14])"
+trip,MODE,INT,categorical,Surveyed Trip Mode,4,Walk,trip.mode_mainline.isin([1])
+trip,MODE,INT,categorical,Surveyed Trip Mode,5,Bike,trip.mode_mainline.isin([14])
 trip,MODE,INT,categorical,Surveyed Trip Mode,6,TNC / Taxi,"trip.mode_mainline.isin([8,9])"
-trip,MODE,INT,categorical,Surveyed Trip Mode,7,Transit-Bus,"trip.mode_mainline.isin([5])"
-trip,MODE,INT,categorical,Surveyed Trip Mode,8,Transit-Metro,"trip.mode_mainline.isin([4])"
-trip,MODE,INT,categorical,Surveyed Trip Mode,9,Company-Bus,"trip.mode_mainline.isin([6])"
-trip,MODE,INT,categorical,Surveyed Trip Mode,10,Schoolbus,"trip.mode_mainline.isin([7])"
+trip,MODE,INT,categorical,Surveyed Trip Mode,7,Transit-Bus,trip.mode_mainline.isin([5])
+trip,MODE,INT,categorical,Surveyed Trip Mode,8,Transit-Metro,trip.mode_mainline.isin([4])
+trip,MODE,INT,categorical,Surveyed Trip Mode,9,Company-Bus,trip.mode_mainline.isin([6])
+trip,MODE,INT,categorical,Surveyed Trip Mode,10,Schoolbus,trip.mode_mainline.isin([7])
 trip,MODE,INT,categorical,Surveyed Trip Mode,11,Other,"trip.mode_mainline.isin([10,15])"
 trip,DEP_HR,INT,continuous,Trip Departure Hour (0- 23),,,trip.start_h
 trip,DEP_MIN,INT,continuous,Trip Departure Minute of Hour (0-59),,,trip.start_min
 trip,ARR_HR,INT,continuous,Trip Arrival Hour (0-23),,,trip.arrival_h
 trip,ARR_MIN,INT,continuous,Trip Arrival Minute of Hour (0-59),,,trip.arrival_min
-trip,DRIVER,INT,categorical,Flag to indicate whether the person was driving,1,Driver,"trip.mode_mainline.isin([2])"
-trip,DRIVER,INT,categorical,Flag to indicate whether the person was driving,2,Passenger / NA,"~trip.mode_mainline.isin([2])"
-trip,TOLL_NO,INT,categorical,Toll Payed on Trip,1,Yes,"~trip.car_salikgates.isnull()"
-trip,TOLL_NO,INT,categorical,Toll Payed on Trip,2,No,"trip.car_salikgates.isnull()"
+trip,DRIVER,INT,categorical,Flag to indicate whether the person was driving,1,Driver,trip.mode_mainline.isin([2])
+trip,DRIVER,INT,categorical,Flag to indicate whether the person was driving,2,Passenger / NA,~trip.mode_mainline.isin([2])
+trip,TOLL_NO,INT,categorical,Toll Payed on Trip,1,Yes,~trip.car_salikgates.isnull()
+trip,TOLL_NO,INT,categorical,Toll Payed on Trip,2,No,trip.car_salikgates.isnull()
 trip,TOTTR,INT,continuous,Total Travellers on Trip,,,"pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)"
 trip,TOTTR_NEXT,INT,continuous,Total Travellers on subsequent trip (0 if last trip),,,"pd.concat([trip[['trip_companions','household_id','person_num']], trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).reset_index().set_index(['trip_id','household_id','person_num']).sum(axis=1).groupby(['household_id','person_num']).shift(1).fillna(0).astype(int).droplevel([1,2])"
 trip,HHMEM,INT,continuous,Number of household members on the trip,,,"trip.trip_hhcompanions_pnum.str.split(',').explode().groupby('trip_id').size()-1"
-trip,PER1,INT,continuous,Person ID of first additional household member on trip,,,"trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(0).astype(str).reindex(trip.index)"
-trip,PER2,INT,continuous,Person ID of second additional household member on trip,,,"trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(1).astype(str).reindex(trip.index)"
-trip,PER3,INT,continuous,Person ID of third additional household member on trip,,,"trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(2).astype(str).reindex(trip.index)"
-trip,PER4,INT,continuous,Person ID of fourth additional household member on trip,,,"trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(3).astype(str).reindex(trip.index)"
-trip,PER5,INT,continuous,Person ID of fifth additional household member on trip,,,"trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(4).astype(str).reindex(trip.index)"
-trip,PER6,INT,continuous,Person ID of sixth additional household member on trip,,,"trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(5).astype(str).reindex(trip.index)"
+trip,PER1,INT,continuous,Person ID of first additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(0).astype(str).reindex(trip.index)
+trip,PER2,INT,continuous,Person ID of second additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(1).astype(str).reindex(trip.index)
+trip,PER3,INT,continuous,Person ID of third additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(2).astype(str).reindex(trip.index)
+trip,PER4,INT,continuous,Person ID of fourth additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(3).astype(str).reindex(trip.index)
+trip,PER5,INT,continuous,Person ID of fifth additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(4).astype(str).reindex(trip.index)
+trip,PER6,INT,continuous,Person ID of sixth additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(5).astype(str).reindex(trip.index)

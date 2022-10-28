@@ -19,8 +19,8 @@ class GetDBData:
     }
 
     def __init__(self, database_path, configs_dir):
-        self.codebook = pd.read_csv(os.path.join(configs_dir, 'codebook_dictionary.csv'))
-        self.codevalues = pd.read_csv(os.path.join(configs_dir, 'codebook_categories.csv'))
+        self.codebook = pd.read_csv(os.path.join(configs_dir, 'preprocess_codebook_dictionary.csv'))
+        self.codevalues = pd.read_csv(os.path.join(configs_dir, 'preprocess_codebook_categories.csv'))
         self.data = None
         self.database_path = database_path
 

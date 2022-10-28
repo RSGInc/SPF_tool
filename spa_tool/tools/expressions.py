@@ -10,7 +10,7 @@ class ExpressionPreProcess:
     def __init__(self, config_dir, input_tables):
         self.data = []
         self.config_dir = config_dir
-        self.expressions = pd.read_csv('../../configs/field_mapping.csv', dtype=str)
+        self.expressions = pd.read_csv('../../configs/preprocess_mapping.csv', dtype=str)
         self.load_tables(input_tables)
         self.run_expressions()
 
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     configs_dir = '../../configs'
 
     # Fetch data from the database
-    from proc_accessdb import GetDBData
+    from accessdb import GetDBData
     # DBData = GetDBData(db_path, configs_dir)
     # DBData.get_tables()
     # DBData.data

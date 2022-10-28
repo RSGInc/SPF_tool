@@ -1,17 +1,24 @@
 ################## Function Definitions ##########################################
+import math
+import pandas as pd
+from spa_tool.tools.trips import *
+from spa_tool.tools.tours import *
+from spa_tool.tools.joint_tours import *
+from spa_tool.tools.joint_ultrips import *
+from spa_tool.tools.configs import *
 
 def add_place_distance(route_file, place_file, out_file):
-    # read in ROUTE records into a data frame object      
-    df_route = pd.read_csv(IN_DIR+route_file, quotechar='"', encoding='ISO-8859-1')
+    # read in ROUTE records into a data frame object
+    df_route = pd.read_csv(const.get('IN_DIR') + route_file, quotechar='"', encoding='ISO-8859-1')
     # read in PLACE records into a data frame object, df_place       
-    df_place = pd.read_csv(IN_DIR+place_file, quotechar='"', encoding='ISO-8859-1')
+    df_place = pd.read_csv(const.get('IN_DIR') + place_file, quotechar='"', encoding='ISO-8859-1')
           
     df_route = df_route.rename(columns={'DPLANO': 'PLANO'})      
     route_grouped = df_route.groupby(['SAMPN','PERNO','OPLANO','PLANO']).sum().reset_index()
     df_place = pd.merge(df_place, route_grouped[['SAMPN','PERNO','PLANO','Distance']], how='left', on=['SAMPN','PERNO','PLANO'])
     
     #write out to a new place file
-    df_place.to_csv(IN_DIR+out_file)
+    df_place.to_csv(const.get('IN_DIR') + out_file)
 
 
 def distance_on_unit_sphere(lat1, long1, lat2, long2):
@@ -60,11 +67,11 @@ def convert2minutes(hours,minutes):
 
 def convert2bin(hour,minute):
     """ given a time specified as hour:minute, return the equivalent in time window bins"""
-    min_from_start_of_day = convert2minutes(hour,minute) - START_OF_DAY_MIN
+    min_from_start_of_day = convert2minutes(hour, minute) - const.get('START_OF_DAY_MIN')
     if min_from_start_of_day<0:
         min_from_start_of_day = min_from_start_of_day + 60*24   #add another day
         
-    bin_number = 1+ math.floor(min_from_start_of_day / TIME_WINDOW_BIN_MIN)    #minutes from 'start of the say' divided by width of a bin gives the bin number
+    bin_number = 1+ math.floor(min_from_start_of_day / const.get('TIME_WINDOW_BIN_MIN'))    #minutes from 'start of the say' divided by width of a bin gives the bin number
     return bin_number
     
 def add_quote_char(string):

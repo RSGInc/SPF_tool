@@ -1,3 +1,7 @@
+from spa_tool.tools.configs import *
+from spa_tool.tools.functions import *
+import numpy as np
+
 class Trip:
     """ Trip class """
     def __init__(self, hh_obj, per_obj, tour_obj, trip_id):

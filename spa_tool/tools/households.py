@@ -1,3 +1,5 @@
+from spa_tool.tools.functions import *
+
 class Household:
     """ Household class """
     def __init__(self, hh_id, area):

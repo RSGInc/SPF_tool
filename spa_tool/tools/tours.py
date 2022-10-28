@@ -1,3 +1,4 @@
+from spa_tool.tools.functions import *
 class Tour:
     """ Tour class """
     def __init__(self, hh_obj, per_obj, tour_id, is_subtour=0, trips=None):

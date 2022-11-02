@@ -1,5 +1,4 @@
-from spa_tool.tools.configs import *
-from spa_tool.tools.functions import *
+from core.functions import *
 import numpy as np
 
 class Trip:

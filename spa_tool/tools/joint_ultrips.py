@@ -1,5 +1,3 @@
-from spa_tool.tools.functions import *
-
 class Joint_ultrip:
     """ Joint episode class """
     def __init__(self, trip, num_tot_travelers, num_hh_mem, dep_time, arr_time, hh_travelers):

@@ -6,7 +6,7 @@ household,H,H-B,Number of dwellings in the building,hh_units,int
 household,H,H-C,Name of the head of the household,hoh_name,str
 household,H,H-D,Telephone number,ph,str
 household,H,H-E,E-Mail address,email,str
-household,H,H-F,Home address - Geocode,geocode,str
+household,H,H-F,Home address - Geocode,latlon,str
 household,H,H-G,Home address - Community,community,str
 household,H,H-H,Home address - Road,road,str
 household,H,H-I,Home address - Building,building,str
@@ -65,6 +65,7 @@ person,P,Interviewer,Interviewer id,interviewer_id,str
 person,P,Company,Interviewer company,interviewer_company,str
 person,P,I_Date,Interview date,interview_date,date
 person,P,I_Time,Interview time,interview_time,time
+person,P,code_hp,person id,person_id,int
 day,T1,Labourer,Person is a labourer,is_labourer,bool
 day,T1,PNr,Person number,person_num,int
 day,T1,hhnr,Household number,household_id,int
@@ -77,7 +78,7 @@ day,T1,T1Q1,Left home on the report day,day_traveled,cat
 day,T1,T1Q2,Reason for staying at home,reason_not_traveled,cat
 day,T1,T1Q2a,Reason for staying at home - Other,reason_not_traveled_other,str
 day,T1,T1Q3,First trip started at home,home_based,cat
-day,T1,T1Q41,Start address - Geocode,start_geocode,str
+day,T1,T1Q41,Start address - Geocode,start_latlon,str
 day,T1,T1Q42,Start address - Community,start_community,str
 day,T1,T1Q43,Start address - Road,start_road,str
 day,T1,T1Q44,Start address - Building,start_building,str
@@ -88,6 +89,7 @@ day,T1,Company,Interviewer company,interviewer_company,str
 day,T1,I_Date,Interview date,interview_date,date
 day,T1,I_Time,Interview time,interview_time,time
 day,T1,com_nr,Interviewer company number,interviewer_company_num,int
+day,T1,code_hp,person id,person_id,int
 day,T1,p_group,Person group (population segment),person_group,cat
 day,T1,p_weight16,Person weight,person_weight,float
 trip,T2,Labourer,Person is a labourer,is_labourer,bool
@@ -103,7 +105,7 @@ trip,T2,TQ2-2,Destination - Road,dest_road,str
 trip,T2,TQ2-3,Destination - Building,dest_building,str
 trip,T2,TQ2-4,Destination - POI,dest_poi,str
 trip,T2,TQ2-5,Destination - Emirate,dest_emirate,cat
-trip,T2,TQ2-6,Destination - Geocode,dest_geocode,str
+trip,T2,TQ2-6,Destination - Geocode,dest_latlon,str
 trip,T2,TQ3,Purpose,trip_purp,cat
 trip,T2,TQ3a,Purpose - Other,trip_purp_other,str
 trip,T2,TQ4-1,Arrival time (h),arrival_h,int
@@ -141,6 +143,7 @@ trip,T2,Company,Interviewer company,interviewer_company,str
 trip,T2,I_Date,Interview date,interview_date,date
 trip,T2,I_Time,Interview time,interview_time,time
 trip,T2,t_activity,Trip activity,trip_activity,str
+trip,T2,code_hp,person id,person_id,int
 trip,T2,p_group,Person group (population segment),person_group,cat
 trip,T2,p_weight16,Person weight,person_weight,float
 trip,T2,t_dZone,Trip destination zone,dest_zone_id,cat

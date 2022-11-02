@@ -1,4 +1,4 @@
-from spa_tool.tools.functions import *
+from core.functions import *
 
 class Household:
     """ Household class """
@@ -14,7 +14,7 @@ class Household:
         self.recode_tags = []
         self.area = area
         
-    def print_header(fp):
+    def print_header(self, fp):
         _header=["HH_ID", "NUM_PERS", "AREA"]
         fp.write(','.join(['%s' %field for field in _header])+'\n') 
         

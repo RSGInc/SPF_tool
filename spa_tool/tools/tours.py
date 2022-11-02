@@ -1,4 +1,5 @@
-from spa_tool.tools.functions import *
+from core.functions import *
+
 class Tour:
     """ Tour class """
     def __init__(self, hh_obj, per_obj, tour_id, is_subtour=0, trips=None):
@@ -385,7 +386,7 @@ class Tour:
                 self._set_inbound_stops(_prim_i+1, _last_i)  #inbound stops are dest of trips[_prim_i+1] to trips[_last_i-1]
 
         #calculate tour distance
-        if COMPUTE_TRIP_DIST:        
+        if COMPUTE_TRIP_DIST:
             _dist = 0
             _missing_dist = False
             for _trip in self.trips:

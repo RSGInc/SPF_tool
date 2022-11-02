@@ -6,13 +6,31 @@
 import pandas as pd
 import os
 
+from core.configs import read_config
+
 class ExpressionPreProcess:
-    def __init__(self, config_dir, input_tables):
-        self.data = []
-        self.config_dir = config_dir
-        self.expressions = pd.read_csv('../../configs/preprocess_mapping.csv', dtype=str)
-        self.load_tables(input_tables)
+    def __init__(self, namespace, **kwargs):
+
+        if not kwargs.get('mapping_file'):
+            settings_file = os.path.join(args.config, 'settings.yaml')
+            kwargs = {**kwargs, **read_config(settings_file).get('PROCESSING_STEPS').get('ExpressionPreProcess')}
+
+        assert kwargs.get('mapping_file')
+        if not os.path.isabs(kwargs.get('mapping_file')):
+            kwargs['mapping_file'] = os.path.join(namespace.config, kwargs.get('mapping_file'))
+
+        assert kwargs.get('input_tables') or kwargs.get('results')
+
+        if 'input_tables' not in kwargs.keys() and 'results' in kwargs.keys():
+            assert kwargs.get('results').get('raw_data')
+            kwargs['input_tables'] = kwargs.get('results').get('raw_data')
+
+        self.expressions = pd.read_csv(kwargs['mapping_file'], dtype=str)
+        self.input_tables = self.load_tables(kwargs.get('input_tables'))
+
+    def run(self):
         self.run_expressions()
+        return self.output_tables
 
     def set_global_tables(self):
         # This function can be used to create local variables as table names for debugging and script testing
@@ -21,14 +39,16 @@ class ExpressionPreProcess:
             globals()[k] = df
 
     def load_tables(self, input_tables):
-        assert isinstance(input_tables, dict) or (os.path.exists(input_tables) and len(os.listdir(input_tables)) > 0)
-        if not isinstance(input_tables, dict) :
-            csv_dict = {os.path.splitext(k)[0]: k for k in os.listdir(input_tables)}
+
+        assert isinstance(input_tables, dict) or (os.path.exists(input_tables) and len(files) > 0)
+        if not isinstance(input_tables, dict):
+            files = [f for f in os.listdir(input_tables) if os.path.isfile(os.path.join(input_tables, f))]
+            csv_dict = {os.path.splitext(k)[0]: k for k in files}
             df_dict = {k: pd.read_csv(os.path.join(input_tables, csv), index_col=f'{k}_id')
                        for k, csv in csv_dict.items()}
-            self.input_tables = df_dict
+            return df_dict
         else:
-            self.input_tables = input_tables
+            return input_tables
 
     def run_expressions(self):
         self.output_tables = {}
@@ -57,12 +77,12 @@ class ExpressionPreProcess:
 
                         if any(concat.sum(axis=1) > 1):
                             print(f'Some records have multiple values assigned in field {field} for {table_name}, check the field_mapping!')
-                            print(f'Multiple value records are for rows:\n {globals()[table_name].loc[concat.sum(axis=1) > 1].head()}')
+                            print(f'Multiple value records are for rows:\n {locals()[table_name].loc[concat.sum(axis=1) > 1].head()}')
                             print(concat[concat.sum(axis=1) != 1].head())
 
                         if any(concat.sum(axis=1) < 1):
                             print(f'Some records have no values assigned in field {field} for {table_name}, check the field_mapping!')
-                            print(f'Missing records are for rows:\n {globals()[table_name].loc[concat.sum(axis=1) < 1].head()}')
+                            print(f'Missing records are for rows:\n {locals()[table_name].loc[concat.sum(axis=1) < 1].head()}')
                             print(concat[concat.sum(axis=1) != 1].head())
 
                         assert not any(concat.sum(axis=1) != 1)
@@ -98,15 +118,16 @@ class ExpressionPreProcess:
         return
 
 if __name__ == '__main__':
+    import argparse
+    from core.main import add_run_args
+
     # Test scripts
-    # Raw Survey data location on RSG cloud
-    data_dir = os.path.join('C:\\Users\\{}'.format(os.getlogin()),
-                            'Resource Systems Group, Inc',
-                            'Model Development - Dubai RTA ABM Development Project',
-                            'data\\fromIBI/2014 Survey Data'
-                            )
-    db_path = os.path.join(data_dir, '2014-12-20_SP_RP_Data_Aur//RP_2014_141218.accdb')
-    configs_dir = '../../configs'
+    parser = argparse.ArgumentParser()
+    add_run_args(parser)
+    args = parser.parse_args()
+
+    # manually inject args
+    args.config='C:\gitclones\Dubai_survey_processing\configs'
 
     # Fetch data from the database
     from accessdb import GetDBData
@@ -114,7 +135,13 @@ if __name__ == '__main__':
     # DBData.get_tables()
     # DBData.data
 
-    PP = ExpressionPreProcess(config_dir=configs_dir, input_tables='../../intermediate/raw_tables')
+    PP = ExpressionPreProcess(args, input_tables='../../intermediate/raw_tables')
+    PP.run_expressions()
+
+    for table_name, table in PP.output_tables.items():
+        # Need to filter out for categorical
+        table.describe().to_csv(os.path.join('../../intermediate/processed/stats', table_name+'.csv'))
+
     PP.save_tables(out_dir='../../intermediate/processed')
 
 

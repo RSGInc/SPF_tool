@@ -1,4 +1,4 @@
-from spa_tool.tools.functions import *
+from core.functions import *
 
 class Person:
     """ Person class """

@@ -1,4 +1,3 @@
-from spa_tool.tools.functions import *
 class Joint_tour:
     """ Joint tour class """
     #upon creation of a joint tour, determine the joint tour purpose and pass it on to the constituting person tours 

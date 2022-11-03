@@ -10,23 +10,10 @@ from core.configs import read_config
 
 class ExpressionPreProcess:
     def __init__(self, namespace, **kwargs):
-
-        if not kwargs.get('mapping_file'):
-            settings_file = os.path.join(args.config, 'settings.yaml')
-            kwargs = {**kwargs, **read_config(settings_file).get('PROCESSING_STEPS').get('ExpressionPreProcess')}
-
-        assert kwargs.get('mapping_file')
-        if not os.path.isabs(kwargs.get('mapping_file')):
-            kwargs['mapping_file'] = os.path.join(namespace.config, kwargs.get('mapping_file'))
-
-        assert kwargs.get('input_tables') or kwargs.get('results')
-
-        if 'input_tables' not in kwargs.keys() and 'results' in kwargs.keys():
-            assert kwargs.get('results').get('raw_data')
-            kwargs['input_tables'] = kwargs.get('results').get('raw_data')
-
-        self.expressions = pd.read_csv(kwargs['mapping_file'], dtype=str)
-        self.input_tables = self.load_tables(kwargs.get('input_tables'))
+        self.namespace = namespace
+        self.kwargs = self.update_kwargs(**kwargs)
+        self.expressions = pd.read_csv(self.kwargs['mapping_file'], dtype=str)
+        self.input_tables = self.load_tables()
 
     def run(self):
         self.run_expressions()
@@ -38,17 +25,57 @@ class ExpressionPreProcess:
         for k, df in self.input_tables.items():
             globals()[k] = df
 
-    def load_tables(self, input_tables):
+    def update_kwargs(self, **kwargs):
+        if not kwargs.get('module'):
+            settings_file = os.path.join(self.namespace.config, 'settings.yaml')
+            kwargs = {**kwargs, **read_config(settings_file).get('PROCESSING_STEPS').get('ExpressionPreProcess')}
 
-        assert isinstance(input_tables, dict) or (os.path.exists(input_tables) and len(files) > 0)
-        if not isinstance(input_tables, dict):
-            files = [f for f in os.listdir(input_tables) if os.path.isfile(os.path.join(input_tables, f))]
-            csv_dict = {os.path.splitext(k)[0]: k for k in files}
-            df_dict = {k: pd.read_csv(os.path.join(input_tables, csv), index_col=f'{k}_id')
-                       for k, csv in csv_dict.items()}
-            return df_dict
+        if not os.path.isabs(kwargs.get('mapping_file')):
+            kwargs['mapping_file'] = os.path.join(self.namespace.config, kwargs.get('mapping_file'))
+
+        assert kwargs.get('mapping_file') and kwargs.get('data_directory')
+
+        return kwargs
+
+    def load_tables(self):
+        if self.kwargs.get('from_pipeline'):
+            assert self.kwargs.get('pipeline').get(self.kwargs.get('data_directory'))
+            input_tables = self.kwargs.get('pipeline').get(self.kwargs.get('data_directory'))
         else:
-            return input_tables
+            dir = self.kwargs.get('data_directory')
+            tables = self.kwargs.get('tables')
+
+            file_list = self.get_appended_data_list(dir, tables)
+
+            csv_dict = {os.path.splitext(os.path.split(k)[-1])[0]: k for k in file_list}
+            input_tables = {k: pd.read_csv(path, index_col=f'{k}_id') for k, path in csv_dict.items()}
+
+        return input_tables
+
+    def get_appended_data_list(self, folder, tables):
+        if not os.path.isabs(folder):
+            sources = [self.namespace.data] if not isinstance(self.namespace.data, list) else self.namespace.data
+            full_path = [os.path.join(dir, folder) for dir in sources if
+                         os.path.isdir(os.path.join(dir, folder))]
+        else:
+            full_path = folder
+
+        if len(full_path) != 1:
+            print(f'{len(full_path)} files found for "{folder}" input! Expecting only 1.')
+        assert len(full_path) == 1
+        full_path = full_path[0]
+
+        if tables:
+            files = [os.path.join(full_path, x + '.csv') for x in tables]
+        else:
+            files = [os.path.join(full_path, x) for x in os.listdir(full_path) if not os.path.isdir(x) and '.csv' in x]
+
+        if len(files) == 0:
+            print('No input files found in this directory!')
+
+        assert len(files) > 0
+
+        return files
 
     def run_expressions(self):
         self.output_tables = {}
@@ -135,13 +162,13 @@ if __name__ == '__main__':
     # DBData.get_tables()
     # DBData.data
 
-    PP = ExpressionPreProcess(args, input_tables='../../intermediate/raw_tables')
+    PP = ExpressionPreProcess(args, input_tables='../../data/raw_tables')
     PP.run_expressions()
 
     for table_name, table in PP.output_tables.items():
         # Need to filter out for categorical
-        table.describe().to_csv(os.path.join('../../intermediate/processed/stats', table_name+'.csv'))
+        table.describe().to_csv(os.path.join('../../data/preprocessed/stats', table_name + '.csv'))
 
-    PP.save_tables(out_dir='../../intermediate/processed')
+    PP.save_tables(out_dir='../../data/preprocessed')
 
 

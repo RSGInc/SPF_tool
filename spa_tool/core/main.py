@@ -22,7 +22,11 @@ def add_run_args(parser):
         help="path to config dir",
     )
     parser.add_argument(
-        "-o", "--output", type=str, metavar="PATH", help="path to output dir"
+        "-o",
+        "--output",
+        type=str,
+        metavar="PATH",
+        help="path to output dir"
     )
     parser.add_argument(
         "-d",
@@ -51,8 +55,8 @@ class SPATool:
             module_name = '.'.join(['tools', params.get('module')]).replace('.py', '')
             class_args = {
                 **params,
-                **self.settings,
-                **{'results': results}
+                # **self.settings,
+                **{'pipeline': results}
             }
 
             module_obj = __import__(module_name, fromlist=['tools'])
@@ -69,7 +73,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # manually inject args
-    args.config='C:\gitclones\Dubai_survey_processing\configs'
+    args.config = 'C:\gitclones\Dubai_survey_processing\configs'
+    args.data = [
+        'C:\gitclones\Dubai_survey_processing\data',
+        'C:\\Users\\nick.fournier\\Resource Systems Group, Inc\\Model Development - Dubai RTA ABM Development Project\\data\\fromIBI\\2014 Survey Data\\2014-12-20_SP_RP_Data_Aur'
+    ]
 
     # Run
     sys.exit(SPATool(args))

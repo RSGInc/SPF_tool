@@ -4,14 +4,21 @@ PROCESSING_STEPS:
         module: accessdb
         dictionary_file: preprocess_codebook_dictionary.csv
         categories_file: preprocess_codebook_categories.csv
-        database_file: 'C:\\Users\\nick.fournier\\Resource Systems Group, Inc\\Model Development - Dubai RTA ABM Development Project\\data\\fromIBI/2014 Survey Data\\2014-12-20_SP_RP_Data_Aur\\RP_2014_141218.accdb'
+        database_file: 'RP_2014_141218.accdb'
         output_name: raw_data
     ExpressionPreProcess:
         module: expressions
         mapping_file: preprocess_mapping.csv
+        data_directory: 'raw'
+        # tables:   # can specify this, or else all files will be loaded from folder
+         # - person
+         # - household
+        from_pipeline: False # Read directly from pipeline, or pull from directory
         output_name: preprocessed_data
     LegacySPA:
         module: legacy_spa
+        data_directory: preprocessed_data
+        from_pipeline: True
         output_name: final_data
         # LegacySPA Constants
         IN_DIR: "E:/Projects/Clients/sandag/TO21_Recalibration/SANDAG_Data_Proc/processed/new/"

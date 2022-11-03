@@ -12,21 +12,7 @@ def read_config(file_path):
     with open(file_path, 'r') as file:
         config = yaml.safe_load(file)
 
-    defaults = {'COMPUTE_TRIP_DIST': True,
-                'NEGLIGIBLE_DELTA_TIME': 10,  # time stamps within this margin of difference can be considered as identical
-                'MAX_VOLUNTEER_MINUTES': 120,  # work duration le this value is considered volunteer work
-                'MAX_XFERS': 3,  # number of place holders for transit transfers in the output trip file
-                'START_OF_DAY_MIN': 180,  # 3:00am
-                'TIME_WINDOW_BIN_MIN': 30,  # bin width in minutes
-                'WORK_LOCATION_BUFFER': 0.25,  # distance buffer to check if activity location is primary work location
-                'INDEX_JTRIP_BY_DEPTIME': 0,
-                'SurveyChangeModeCode': 7,
-                'SurveyHomeCode': [1, 2],
-                'SURVEY_DO_PURP_CODE': 8,
-                'SURVEY_PU_PURP_CODE': 9,
-                'SurveySchoolPurp': [5, 6],
-                'SurveyWorkPurp': [3, 4],
-                'SurveyWorkRelatedPurp': 11,
+    defaults = {
                 'PROCESSING_STEPS': None
                 }
     # Setup default values for any missing

@@ -6,25 +6,56 @@ from tools.persons import *
 
 class LegacySPA():
     def __init__(self, namespace, **kwargs):
-        self.kwargs = kwargs
+        self.namespace = namespace
+        self.kwargs = self.update_kwargs(**kwargs)
+        self.input_tables = self.load_tables()
 
-        if 'input_tables' not in kwargs.keys() and 'results' in kwargs.keys():
-            assert kwargs.get('results').get('GetDBData')
-            kwargs['input_tables'] = kwargs.get('results').get('preprocessed_data')
+    def update_kwargs(self, **kwargs):
+        if not kwargs.get('module'):
+            settings_file = os.path.join(self.namespace.config, 'settings.yaml')
+            kwargs = {**kwargs, **read_config(settings_file).get('PROCESSING_STEPS').get('LegacySPA')}
 
-        self.input_tables = self.load_tables(kwargs.get('input_tables'))
+        return kwargs
 
-
-    def load_tables(self, input_tables):
-        files = [f for f in os.listdir(input_tables) if os.path.isfile(os.path.join(input_tables, f))]
-        assert isinstance(input_tables, dict) or (os.path.exists(input_tables) and len(files) > 0)
-        if not isinstance(input_tables, dict) :
-            csv_dict = {os.path.splitext(k)[0]: k for k in files}
-            df_dict = {k: pd.read_csv(os.path.join(input_tables, csv), index_col=f'{k}_id')
-                       for k, csv in csv_dict.items()}
-            return df_dict
+    def load_tables(self):
+        if self.kwargs.get('from_pipeline'):
+            assert self.kwargs.get('pipeline').get(self.kwargs.get('data_directory'))
+            input_tables = self.kwargs.get('pipeline').get(self.kwargs.get('data_directory'))
         else:
-            return input_tables
+            dir = self.kwargs.get('data_directory')
+            tables = self.kwargs.get('tables')
+
+            file_list = self.get_appended_data_list(dir, tables)
+
+            csv_dict = {os.path.splitext(os.path.split(k)[-1])[0]: k for k in file_list}
+            input_tables = {k: pd.read_csv(path, index_col=f'{k}_id') for k, path in csv_dict.items()}
+
+        return input_tables
+
+    def get_appended_data_list(self, folder, tables):
+        if not os.path.isabs(folder):
+            sources = [self.namespace.data] if not isinstance(self.namespace.data, list) else self.namespace.data
+            full_path = [os.path.join(dir, folder) for dir in sources if
+                         os.path.isdir(os.path.join(dir, folder))]
+        else:
+            full_path = folder
+
+        if len(full_path) != 1:
+            print(f'{len(full_path)} files found for "{folder}" input! Expecting only 1.')
+        assert len(full_path) == 1
+        full_path = full_path[0]
+
+        if tables:
+            files = [os.path.join(full_path, x + '.csv') for x in tables]
+        else:
+            files = [os.path.join(full_path, x) for x in os.listdir(full_path) if not os.path.isdir(x) and '.csv' in x]
+
+        if len(files) == 0:
+            print('No input files found in this directory!')
+
+        assert len(files) > 0
+
+        return files
 
 
     def run(self):
@@ -40,7 +71,7 @@ class LegacySPA():
 
         # add_place_distance('route.csv', 'place.csv', 'placeWithDist.csv' )
         # BMP[09/08/17] - survey data processed separately for each survey day
-        assert self.kwargs.get('results')
+        assert self.kwargs.get('pipeline').get('preprocessed')
         for k in ['place', 'person', 'household']:
             assert self.kwargs.get('results').get(k)
 

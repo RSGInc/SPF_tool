@@ -1,31 +1,40 @@
+import numpy as np
 from core.functions import *
+from spa_tool.tools.legacy_tools.tours import Tour
+
 
 class Person:
     """ Person class """
-    def __init__(self, hh, per_id, df):
+    def __init__(self, hh, per_id, df, constants):
+        self.constants = constants
         self.hh_obj = hh
-        self.hh_obj.add_person(self)     #can start logging errors/warning 
+        self.hh_obj.add_person(self)     # can start logging errors/warning
         self.per_id = per_id
         self.fields = {'HH_ID': hh.get_id(), 'PER_ID': per_id}
         self.set_per_type(self._calc_per_type(df)) #errors are logged to the hh obj
         self.tours = []
         self.error_flag = False
 
-    def print_header(fp):
-        _header=["HH_ID", "PER_ID", "PERSONTYPE", "AGE_CAT", "EMPLY", "HOURS_CAT", "EMP_CAT", "STUDE", "SCHOL", "STU_CAT", "PERSONTYPE0", "EMP_CAT0", "STU_CAT0", "ERROR" ]
-        fp.write(','.join(['%s' %field for field in _header])+'\n') 
+    def print_header(self, fp):
+        _header = ["HH_ID", "PER_ID", "PERSONTYPE", "AGE_CAT", "EMPLY", "HOURS_CAT", "EMP_CAT", "STUDE", "SCHOL",
+                   "STU_CAT", "PERSONTYPE0", "EMP_CAT0", "STU_CAT0", "ERROR"]
+        fp.write(','.join(['%s' % field for field in _header])+'\n')
         
     def print_vals(self, fp):
         _fields = defaultdict(lambda: '', self.fields)
         _vals = [_fields['HH_ID'], _fields['PER_ID'], _fields['PERSONTYPE'],
-                 _fields['AGE_CAT'], _fields['EMPLY'], _fields['HOURS_CAT'], 
+                 _fields['AGE_CAT'], _fields['EMPLY'], _fields['HOURS_CAT'],
                  _fields['EMP_CAT'], _fields['STUDE'], _fields['SCHOL'], _fields['STU_CAT'],
-                 _fields["PERSONTYPE0"], _fields["EMP_CAT0"], _fields["STU_CAT0"], add_quote_char(_fields["ERROR"]) ]
-        fp.write(','.join(['%s' %v for v in _vals])+'\n') 
+                 _fields["PERSONTYPE0"], _fields["EMP_CAT0"], _fields["STU_CAT0"], add_quote_char(_fields["ERROR"])]
+        fp.write(','.join(['%s' % v for v in _vals])+'\n')
 
     def _calc_emp_cat(self, age, emply, hours):
-        _emp = np.NAN     #BMP [08/29/17] - updated to work with SANDAG HTS coding of age and employment status
-        if (age>=3) & (emply==1):
+        NewEmpCategory = self.constants.get('NewEmpCategory')
+        age = int(age)
+        emply = int(emply)
+
+        _emp = np.NAN     # BMP [08/29/17] - updated to work with SANDAG HTS coding of age and employment status
+        if (age >=3) & (emply==1):
             _emp = NewEmpCategory['FULLTIME']
         elif (age>=3) & (emply==2):
             _emp = NewEmpCategory['PARTTIME']
@@ -42,6 +51,10 @@ class Person:
         return _emp
 
     def _calc_emp_cat_no_recode(self, age, emply, hours):
+        NewEmpCategory = self.constants.get('NewEmpCategory')
+        age = int(age)
+        emply = int(emply)
+
         _emp = np.NAN     #BMP [08/29/17] - updated to work with SANDAG HTS coding of age and employment status
         if (age>=3) & (emply==1):
             _emp = NewEmpCategory['FULLTIME']
@@ -62,6 +75,12 @@ class Person:
         return _emp
             
     def _calc_stu_cat(self, age, stude, schol, emp_cat):
+        NewStuCategory = self.constants.get('NewStuCategory')
+        age = int(age)
+        stude = int(stude)
+        schol = int(schol)
+        emp_cat = int(emp_cat)
+
         _stu = np.NAN     #BMP [08/29/17] - updated to work with SANDAG HTS coding of age and schooling status
         if (age<=3) & (stude in [2,3]) & (schol<=9) & (emp_cat in [2,3,4]):
             _stu = NewStuCategory['SCHOOL']
@@ -97,6 +116,8 @@ class Person:
         return _stu
             
     def _calc_stu_cat_no_recode(self, age, stude, schol, emp_cat):
+        NewStuCategory = self.constants.get('NewStuCategory')
+
         _stu = np.NAN        #BMP [08/29/17] - updated to work with SANDAG HTS coding of age and schooling status
         if (age<=3) & (stude in [2,3]) & (schol<=9) & (emp_cat in [2,3,4]):
             _stu = NewStuCategory['SCHOOL']
@@ -120,6 +141,10 @@ class Person:
         return _stu
         
     def _calc_per_type(self, df_per):
+        NewStuCategory = self.constants.get('NewStuCategory')
+        NewEmpCategory = self.constants.get('NewEmpCategory')
+        NewPerType = self.constants.get('NewPerType')
+
         # BMP[08/30/17] - updated to work SNADAG HTS coding of variables
         _type = np.NAN 
         
@@ -187,6 +212,10 @@ class Person:
         return _type
 
     def _calc_per_type_no_recode(self, df_per):
+        NewStuCategory = self.constants.get('NewStuCategory')
+        NewEmpCategory = self.constants.get('NewEmpCategory')
+        NewPerType = self.constants.get('NewPerType')
+
         # BMP[08/30/17] - updated to work SNADAG HTS coding of variables
         _type = np.NAN 
         
@@ -259,11 +288,17 @@ class Person:
     def get_id(self):
         return self.per_id
     
-    def get_is_adult(self): 
+    def get_is_adult(self):
+        NewPerType = self.constants.get('NewPerType')
+
         ptype = self.get_per_type()
-        return ptype in [NewPerType['FW'], NewPerType['PW'], 
-                                 NewPerType['US'], NewPerType['NW'], 
-                                 NewPerType['RE'] ]
+        return ptype in [
+            NewPerType['FW'],
+            NewPerType['PW'],
+            NewPerType['US'],
+            NewPerType['NW'],
+            NewPerType['RE']
+        ]
     
     def set_per_type(self, ptype):
         self.fields['PERSONTYPE'] = ptype
@@ -326,13 +361,15 @@ class Person:
         _new_tour_id = 1 + self.tours[-1].get_id()
         #create tour object
         #_new_tour = Tour(self.hh_obj.get_id(), self.per_id, _new_tour_id, 1)
-        _new_tour = Tour(self.hh_obj, self, _new_tour_id, 1, trips)
+        _new_tour = Tour(self.hh_obj, self, _new_tour_id, 1, trips, self.constants)
         #add new tour to its list
         self.tours.append(_new_tour)
         
         return _new_tour
     
     def lastTripEndAtHome(self):
+        NewPurp = self.constants.get('NewPurp')
+
         _returned_home = True
         _last_trip = self.tours[-1].trips[-1]
         if _last_trip.fields['DEST_PURP'] != NewPurp['HOME']:

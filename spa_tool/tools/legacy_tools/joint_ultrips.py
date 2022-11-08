@@ -1,6 +1,10 @@
+import numpy as np
+import math
+from spa_tool.core import functions
+
 class Joint_ultrip:
     """ Joint episode class """
-    def __init__(self, trip, num_tot_travelers, num_hh_mem, dep_time, arr_time, hh_travelers):
+    def __init__(self, trip, num_tot_travelers, num_hh_mem, dep_time, arr_time, hh_travelers, constants):
         self.parent_trip = trip
         self.depart_time = dep_time
         self.arrival_time = arr_time
@@ -16,6 +20,7 @@ class Joint_ultrip:
         self.driver_trip = np.NAN
         self.error_flag = False     #initialize error flag to false
         self.error_msg = ""
+        self.constants = constants
         #print("adding joint trip person={}, depart={}, number_hh={}, party={}".format(self.parent_trip.get_per_id(), self.parent_trip.get_depart_time(), self.number_hh, self.travel_party))
         #size of travel party consistent with number_hh?
         #if len(self.travel_party)!=self.number_hh:
@@ -57,6 +62,8 @@ class Joint_ultrip:
         return self.parent_trip.get_dest_escort_pudo()
     
     def get_orig_escort_pudo(self):
+        NewEscort = self.constants.get('NewEscort')
+
         _cur_trip_id = self.parent_trip.get_id()
         _pudo = NewEscort['NEITHER']
         if _cur_trip_id>1:
@@ -115,7 +122,7 @@ class Joint_ultrip:
             self.error_msg = self.error_msg + "E: " + err_msg        
             self.parent_trip.log_error(err_msg)
         
-    def print_header(fp):
+    def print_header(self, fp):
         _header=["HH_ID", "PER_ID", "TOUR_ID", "TRIP_ID", "LEG_DEST_PLACENO", "JTRIP_ID", 
                  "NUMBER_HH", "CHAUFFUER_ID", 
                  "ORIG_DEP_HR", "ORIG_DEP_MIN", "DEST_ARR_HR", "DEST_ARR_MIN", 
@@ -140,9 +147,9 @@ class Joint_ultrip:
                pt.fields["DEST_PURP"]]
         fp.write(','.join(['%s' %value for value in _vals]))
         fp.write(','+'_'.join(['%s' %int(pid) for pid in sorted(self.travel_party)]))   #print travel party
-        fp.write(','+add_quote_char(self.error_msg)+'\n')                                               #print error message
+        fp.write(','+ functions.add_quote_char(self.error_msg)+'\n')                                               #print error message
 
-    def print_header_unique(fp):
+    def print_header_unique(self, fp):
         _header=["HH_ID", "JTRIP_ID", "NUMBER_HH"]
         #PERSON_1 to PERSON_9
         for _i in range(1, 10):

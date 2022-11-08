@@ -5,15 +5,37 @@
 
 import pandas as pd
 import os
+import sys
+import importlib.util
+from core import functions
 
-from core.configs import read_config
-
-class ExpressionPreProcess:
+class ExpressionPreProcess():
     def __init__(self, namespace, **kwargs):
         self.namespace = namespace
         self.kwargs = self.update_kwargs(**kwargs)
         self.expressions = pd.read_csv(self.kwargs['mapping_file'], dtype=str)
-        self.input_tables = self.load_tables()
+        self.input_tables = functions.load_pipeline_tables(self.namespace, self.kwargs)
+
+        # Inherit long expressions if exist
+        if self.kwargs.get('long_expressions'):
+            module_file = self.kwargs.get('long_expressions')
+            module_name = os.path.splitext(module_file)[0]
+
+            if not os.path.isabs(module_file):
+                module_file = os.path.join(namespace.config, module_file)
+
+            assert os.path.exists(module_file), "Can't find long expression module"
+
+            spec = importlib.util.spec_from_file_location(module_name, module_file)
+            LongExpressions = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = LongExpressions
+            spec.loader.exec_module(LongExpressions)
+
+            method_list = [attr for attr in dir(LongExpressions)
+                           if callable(getattr(LongExpressions, attr)) and attr.startswith('__') is False]
+
+            for func in method_list:
+                self.__setattr__(func, LongExpressions.__getattribute__(func))
 
     def run(self):
         self.run_expressions()
@@ -28,7 +50,7 @@ class ExpressionPreProcess:
     def update_kwargs(self, **kwargs):
         if not kwargs.get('module'):
             settings_file = os.path.join(self.namespace.config, 'settings.yaml')
-            kwargs = {**kwargs, **read_config(settings_file).get('PROCESSING_STEPS').get('ExpressionPreProcess')}
+            kwargs = {**kwargs, **functions.read_config(settings_file).get('PROCESSING_STEPS').get('ExpressionPreProcess')}
 
         if not os.path.isabs(kwargs.get('mapping_file')):
             kwargs['mapping_file'] = os.path.join(self.namespace.config, kwargs.get('mapping_file'))
@@ -37,50 +59,9 @@ class ExpressionPreProcess:
 
         return kwargs
 
-    def load_tables(self):
-        if self.kwargs.get('from_pipeline'):
-            assert self.kwargs.get('pipeline').get(self.kwargs.get('data_directory'))
-            input_tables = self.kwargs.get('pipeline').get(self.kwargs.get('data_directory'))
-        else:
-            dir = self.kwargs.get('data_directory')
-            tables = self.kwargs.get('tables')
-
-            file_list = self.get_appended_data_list(dir, tables)
-
-            csv_dict = {os.path.splitext(os.path.split(k)[-1])[0]: k for k in file_list}
-            input_tables = {k: pd.read_csv(path, index_col=f'{k}_id') for k, path in csv_dict.items()}
-
-        return input_tables
-
-    def get_appended_data_list(self, folder, tables):
-        if not os.path.isabs(folder):
-            sources = [self.namespace.data] if not isinstance(self.namespace.data, list) else self.namespace.data
-            full_path = [os.path.join(dir, folder) for dir in sources if
-                         os.path.isdir(os.path.join(dir, folder))]
-        else:
-            full_path = folder
-
-        if len(full_path) != 1:
-            print(f'{len(full_path)} files found for "{folder}" input! Expecting only 1.')
-        assert len(full_path) == 1
-        full_path = full_path[0]
-
-        if tables:
-            files = [os.path.join(full_path, x + '.csv') for x in tables]
-        else:
-            files = [os.path.join(full_path, x) for x in os.listdir(full_path) if not os.path.isdir(x) and '.csv' in x]
-
-        if len(files) == 0:
-            print('No input files found in this directory!')
-
-        assert len(files) > 0
-
-        return files
-
     def run_expressions(self):
         self.output_tables = {}
 
-        # self.set_global_tables()
         for k, df in self.input_tables.items():
             locals()[k] = df
 
@@ -96,7 +77,12 @@ class ExpressionPreProcess:
                 field_vals = {}
                 for val, expr_ in expr_df.set_index('Values').iterrows():
                     if not expr_.isnull().Expression and expr_.Expression != '':
-                        field_vals[val] = eval(expr_.Expression)
+                        try:
+                            field_vals[val] = eval(expr_.Expression)
+                        except:
+                            print(f'Expression failed: {expr_.Expression} for field {field} in table {table_name}')
+                            field_vals[val] = eval(expr_.Expression)
+
 
                 if len(field_vals) > 0:
                     if expr_.Type.lower() == 'categorical':
@@ -129,10 +115,9 @@ class ExpressionPreProcess:
             assert all(first_ind.equals(x.sort_index().index) for x in table_cols.values())
 
             if len(table_cols) > 0:
-                tables[table_name] = pd.concat(table_cols, axis=1).reindex(table_expressions.Field, axis=1)
+                tables[table_name] = pd.concat(table_cols, axis=1).reindex(table_expressions.Field.unique(), axis=1)
 
         self.output_tables = tables
-
 
     def save_tables(self, out_dir):
         if self.output_tables is None:
@@ -140,7 +125,7 @@ class ExpressionPreProcess:
             return
         else:
             for k, df in self.output_tables.items():
-                df.to_csv(f'{out_dir}/{k}.csv', index=True)
+                df.to_csv(f'{out_dir}/{k}.csv', index=False)
 
         return
 
@@ -155,6 +140,7 @@ if __name__ == '__main__':
 
     # manually inject args
     args.config='C:\gitclones\Dubai_survey_processing\configs'
+    args.data = 'C:\gitclones\Dubai_survey_processing\data'
 
     # Fetch data from the database
     from accessdb import GetDBData
@@ -162,7 +148,7 @@ if __name__ == '__main__':
     # DBData.get_tables()
     # DBData.data
 
-    PP = ExpressionPreProcess(args, input_tables='../../data/raw_tables')
+    PP = ExpressionPreProcess(args, input_tables='../../data/raw')
     PP.run_expressions()
 
     for table_name, table in PP.output_tables.items():

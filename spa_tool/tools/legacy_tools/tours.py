@@ -1,8 +1,10 @@
+import numpy as np
 from core.functions import *
+
 
 class Tour:
     """ Tour class """
-    def __init__(self, hh_obj, per_obj, tour_id, is_subtour=0, trips=None):
+    def __init__(self, hh_obj, per_obj, constants, tour_id, is_subtour=0, trips=None):
         self.hh_obj = hh_obj
         self.per_obj = per_obj
         self.tour_id = int(tour_id)
@@ -20,8 +22,10 @@ class Tour:
             self.renumber_trips()
 
         self.fields = {'HH_ID': hh_obj.get_id(), 'PER_ID': per_obj.get_id(), 'TOUR_ID': self.tour_id, 'IS_SUBTOUR':self.is_AW_subtour, 'FULLY_JOINT':0}
-        self.set_partial(NewPartialTour['NOT_PARTIAL'])     #set as default value
         self.error_flag = False
+        self.constants = constants
+
+        self.set_partial(constants.get('NewPartialTour')['NOT_PARTIAL'])  # set as default value
         
     def add_trip(self, trip):
         self.trips.append(trip)
@@ -51,6 +55,7 @@ class Tour:
             return self.fields['TOURPURP']
         
     def contains_joint_trip(self, jtrip_id):
+        val = False
         for _trip in self.trips:
             if _trip.get_jtripID() == jtrip_id:
                 val = True
@@ -68,6 +73,8 @@ class Tour:
         return escorting
     
     def get_partial_status(self):
+        NewPartialTour = self.constants.get('NewPartialTour')
+
         if 'PARTIAL_TOUR' in self.fields:   #make sure the key exists
             return self.fields['PARTIAL_TOUR']
         else:
@@ -111,6 +118,9 @@ class Tour:
             self.fields['ERROR'] = self.fields['ERROR']+err_msg
     
     def _calc_tour_mode(self):
+        NewTripMode = self.constants.get('NewTripMode')
+        NewTourMode = self.constants.get('NewTourMode')
+
         _mode = -1
         #put the modes used on all trips in one list 
         _modes_used = set()
@@ -234,9 +244,11 @@ class Tour:
         #    self.log_error("found {} inbound stops".format(_num_ib_stops))
         
     def populate_attributes(self):
-        """ determine tour attributes based on its constituting trips """        
-        
-        if self.get_partial_status()==NewPartialTour['PARTIAL_START']:
+        """ determine tour attributes based on its constituting trips """
+        NewPartialTour = self.constants.get('NewPartialTour')
+        NewPurp = self.constants.get('NewPurp')
+
+        if self.get_partial_status() == NewPartialTour['PARTIAL_START']:
             #assume primary destination is the origin of first trip of the day    
             _prim_purp = self.trips[0].get_orig_purpose()    
             self.fields['TOURPURP'] = _prim_purp  
@@ -274,7 +286,7 @@ class Tour:
             #inbound stops
             self._set_inbound_stops(0, _last_i)  #inbound stops are dest of trips[0] to trips[_last_i-1]
              
-        elif self.get_partial_status()==NewPartialTour['PARTIAL_END']:
+        elif self.get_partial_status() == NewPartialTour['PARTIAL_END']:
             _prim_purp = self.trips[-1].get_dest_purpose()   #set to purpose at destination of last trip of the day
             self.fields['TOURPURP'] = _prim_purp  
       
@@ -323,7 +335,7 @@ class Tour:
       
             #extract at-work subtours from the current tour if the current tour is a WORK tour
             #this needs to be done before processing any outbound and inbound stops 
-            if _prim_purp==NewPurp['WORK']:
+            if _prim_purp == NewPurp['WORK']:
                 self._set_AW_subtours(_prim_i)
                 #TODO: trip id may have been changed when subtours are created
                 #quick-fix: re-calculate primary destination
@@ -386,7 +398,7 @@ class Tour:
                 self._set_inbound_stops(_prim_i+1, _last_i)  #inbound stops are dest of trips[_prim_i+1] to trips[_last_i-1]
 
         #calculate tour distance
-        if COMPUTE_TRIP_DIST:
+        if self.constants.get('COMPUTE_TRIP_DIST'):
             _dist = 0
             _missing_dist = False
             for _trip in self.trips:
@@ -421,7 +433,9 @@ class Tour:
         self.fields['JOINT_TOUR_PURP'] = purp
         
     def set_joint_status(self): 
-        
+        NewJointTourStatus = self.constants.get('NewJointTourStatus')
+        NewJointCategory = self.constants.get('NewJointCategory')
+
         #classify a tour as one of the following:
         # (1) independent tours:        no trips are joint
         # (2) fully-joint tours:        tour.get_is_fully_joint()==True (all trips are joint and made by the same group of people)
@@ -444,16 +458,20 @@ class Tour:
         self.fields['JOINT_STATUS'] = status
     
     def get_num_grouped_joint_trips(self):
+        NewJointCategory = self.constants.get('NewJointCategory')
+
         count = 0
         for trip in self.trips:
-            if trip.get_joint_status()==NewJointCategory['JOINT-GROUPED']:
+            if trip.get_joint_status() == NewJointCategory['JOINT-GROUPED']:
                 count = count+1
         return count
 
     def get_num_prob_joint_trips(self):
+        NewJointCategory = self.constants.get('NewJointCategory')
+
         count = 0
         for trip in self.trips:
-            if trip.get_joint_status()==NewJointCategory['JOINT']:
+            if trip.get_joint_status() == NewJointCategory['JOINT']:
                 count = count+1
         return count
     
@@ -467,6 +485,9 @@ class Tour:
             
     
     def set_escorted_fields(self):
+        NewEscort = self.constants.get('NewEscort')
+        NewEscortType = self.constants.get('NewEscortType')
+
         _escorted = False
         _chauffuer_set = set()
         _out_escort_type = np.NAN
@@ -550,6 +571,8 @@ class Tour:
                    
         
     def set_escorting_fields(self):
+        NewEscort = self.constants.get('NewEscort')
+        NewEscortType = self.constants.get('NewEscortType')
         
         #initialize set of escorted hh members to empty set
         _escort_pers_set = set()
@@ -613,6 +636,9 @@ class Tour:
         
         
     def _set_AW_subtours(self, prim_i):
+        NewPurp = self.constants.get('NewPurp')
+        NewPartialTour = self.constants.get('NewPartialTour')
+
         """ scan through trips in the tour to identify and extract any at-work subtours """
         """ prim_i: trips list index of the primary destination                         """
         _to_work = []           #list indices of the trips arriving at work
@@ -621,10 +647,10 @@ class Tour:
 
         for _i, _trip in enumerate(self.trips):   
             #_trip = self.trips[_i]
-            if _trip.fields['ORIG_PURP']==NewPurp["WORK"]:
+            if _trip.fields['ORIG_PURP'] == NewPurp["WORK"]:
                 #found a trip leaving work
                 _from_work.append(_i)
-            if _trip.fields['DEST_PURP']==NewPurp["WORK"]:
+            if _trip.fields['DEST_PURP'] == NewPurp["WORK"]:
                 #found a trip going to work
                 _to_work.append(_i)
         
@@ -657,7 +683,7 @@ class Tour:
                     self.trips.remove(_trip)
                 #renumber the trips
                 self.renumber_trips() 
-        elif self.fields['PARTIAL_TOUR']==NewPartialTour['NOT_PARTIAL']:
+        elif self.fields['PARTIAL_TOUR'] == NewPartialTour['NOT_PARTIAL']:
             self.log_error("to- and from-work trips not matching up")
             
         #TODO: provide warning msg when there are not enough place holders for child tour id (currently table allows for 3)
@@ -667,9 +693,11 @@ class Tour:
         return _num_subtours
          
     def _find_prim_stop(self):
+        NewPartialTour = self.constants.get('NewPartialTour')
+
         if len(self.trips)==1:      #single trip in the tour ->loop?
             _prim_trip = 0
-        elif self.get_partial_status()==NewPartialTour['NOT_PARTIAL']:
+        elif self.get_partial_status() == NewPartialTour['NOT_PARTIAL']:
             _prim_trip = self._find_prim_by_score()
         else:
             _prim_trip = None
@@ -677,6 +705,8 @@ class Tour:
         return _prim_trip        
         
     def _find_prim_by_score(self):
+        NewPurp = self.constants.get('NewPurp')
+
         d = [0,60,120,180,240,300,360,420,480]
         score = {   NewPurp['WORK']:         [8,4,2,1.5,1.4,1.3,1.2,1.1,1],
                     NewPurp['UNIVERSITY']:   [8,4,2,1.5,1.4,1.3,1.2,1.1,1],
@@ -738,14 +768,19 @@ class Tour:
         return _prim_i               
     """
                 
-    def print_header(fp):
-        #fp.write(','.join(['%s' %field for field in self.fields.keys()])+'\n') 
+    def print_header(self, fp):
+        #fp.write(','.join(['%s' %field for field in self.fields.keys()])+'\n')
+        TourCol2Name = self.constants.get('TourCol2Name')
+
         _header=[]
-        for _col_num, _col_name in sorted(TourCol2Name.items()):    #TODO: save a sorted copy of the dict to avoid repeated sorting 
+        # TODO: save a sorted copy of the dict to avoid repeated sorting
+        for _col_num, _col_name in sorted(TourCol2Name.items()):
             _header.append(_col_name)            
         fp.write(','.join(['%s' %name for name in _header])+'\n')
         
     def print_vals(self, fp):
+        TourCol2Name = self.constants.get('TourCol2Name')
+
         #fp.write(','.join(['%s' %value for value in self.fields.values()])+'\n')
         if 'ERROR' in self.fields:
             self.fields['ERROR'] = add_quote_char(self.fields['ERROR'])

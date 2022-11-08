@@ -2,39 +2,32 @@
 PROCESSING_STEPS:
     GetDBData:
         module: accessdb
-        dictionary_file: preprocess_codebook_dictionary.csv
-        categories_file: preprocess_codebook_categories.csv
+        dictionary_file: preprocess_specs/codebook_dictionary.csv
+        categories_file: preprocess_specs/codebook_categories.csv
         database_file: 'RP_2014_141218.accdb'
-        output_name: raw_data
+        output_name: raw
+        skip: True
     ExpressionPreProcess:
         module: expressions
-        mapping_file: preprocess_mapping.csv
+        mapping_file: preprocess_specs/preprocess_mapping.csv
+        long_expressions: preprocess_specs/long_expressions.py # Can define more complex functions to run in a python file.
         data_directory: 'raw'
         # tables:   # can specify this, or else all files will be loaded from folder
          # - person
          # - household
         from_pipeline: False # Read directly from pipeline, or pull from directory
-        output_name: preprocessed_data
+        output_name: preprocessed
+        skip: True
     LegacySPA:
         module: legacy_spa
-        data_directory: preprocessed_data
-        from_pipeline: True
+        data_directory: preprocessed
+        from_pipeline: False
         output_name: final_data
         # LegacySPA Constants
-        IN_DIR: "E:/Projects/Clients/sandag/TO21_Recalibration/SANDAG_Data_Proc/processed/new/"
-        OUT_DIR_PATH: "E:/Projects/Clients/sandag/TO21_Recalibration/SANDAG_Data_Proc/processed/output/"
-        COMPUTE_TRIP_DIST: True     #true if trip distance is to be computed from route file
-        NEGLIGIBLE_DELTA_TIME: 10   #time stamps within this margin of difference can be considered as identical 
-        MAX_VOLUNTEER_MINUTES: 120  #work duration le this value is considered volunteer work 
-        MAX_XFERS: 3                #number of place holders for transit transfers in the output trip file
-        START_OF_DAY_MIN: 180       #3:00am
-        TIME_WINDOW_BIN_MIN: 30     #bin width in minutes
-        WORK_LOCATION_BUFFER: 0.25  # distance buffer to check if activity location is primary work location
-        INDEX_JTRIP_BY_DEPTIME: 0   #1 if index by trip departure time at origin, 0 if by trip arrival time at destination
-        SurveyChangeModeCode: 7
-        SurveyHomeCode: [1,2]
-        SURVEY_DO_PURP_CODE: 8
-        SURVEY_PU_PURP_CODE: 9
-        SurveySchoolPurp: [5,6]
-        SurveyWorkPurp: [3,4]
-        SurveyWorkRelatedPurp: 11
+        specs:
+            # These are variable key mappings for the variables aggregated in the SPA tool.
+            trip_columns: spa_specs/trip_columns.csv
+            tour_columns: spa_specs/tour_columns.csv
+            spa_mapping:  spa_specs/variable_mapping.yaml
+             
+            

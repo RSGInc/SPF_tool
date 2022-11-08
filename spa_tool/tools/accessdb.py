@@ -7,7 +7,7 @@ from pandas_weighting import weight
 import pyodbc
 import os
 
-from core.configs import read_config
+from core import functions
 
 class GetDBData:
     names_map = {
@@ -22,10 +22,10 @@ class GetDBData:
 
     def __init__(self, namespace, **kwargs):
         # if settings not passed, read from settings
-        inputs = ['dictionary_file', 'categories_file','database_file','output_name']
+        inputs = ['dictionary_file', 'categories_file', 'database_file', 'output_name']
         if any([True for x in inputs if x not in kwargs.keys()]):
             settings_file = os.path.join(namespace.config, 'settings.yaml')
-            settings = read_config(settings_file)
+            settings = functions.read_config(settings_file)
             assert settings.get('PROCESSING_STEPS')
             assert settings.get('PROCESSING_STEPS').get('GetDBData')
             kwargs = {**kwargs, **settings.get('PROCESSING_STEPS').get('GetDBData')}
@@ -60,12 +60,11 @@ class GetDBData:
             file = path[0]
         return file
 
-
     def run(self):
-        self.get_tables()
+        self.read_accessdb()
         return self.raw_data_formatted
 
-    def get_tables(self):
+    def read_accessdb(self):
         driver = '{Microsoft Access Driver (*.mdb, *.accdb)}'
         conn_string = f'DRIVER={driver};DBQ={self.database_path}'
 

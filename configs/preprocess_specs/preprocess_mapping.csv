@@ -1,15 +1,17 @@
 Table,Field,Data,Type,Description,Values,Labels,Expression
+household,household_id,INT,continuous,dataframe index,,,"pd.Series(household.index, index=household.index)"
 household,SAMPN,INT,continuous,sample number / household ID,,,"pd.Series(household.index, index=household.index)"
 household,HH_ZONE_ID,INT,continuous,TAZ of household,,,household.home_zone_id
 household,HH_WEIGHT,REAL,continuous,weight to expand data at household level,,,
 household,HH_SIZE,INT,continuous,Number of people in the household,,,"person.merge(household, on='household_id', how='right').groupby('household_id').size()"
 household,HH_VEH,INT ,continuous,Number of vehicles in the household,,,household.hh_veh
 household,HH_WORKERS,INT,continuous,Number of workers in the household,,,"person[person.occ.isin([1, 2])].merge(household, on='household_id', how='right').groupby('household_id').size()"
+person,person_id,INT,continuous,dataframe index,,,"pd.Series(person.index, index=person.index)"
 person,SAMPN,INT,continuous,Household ID,,,person.household_id
 person,PERNO,INT,continuous,Person ID,,,person.person_num
-person,STAZ,INT,continuous,School TAZ (-9 if not a student),,,"person.reset_index().merge(trip[trip.trip_purp.isin([3])].groupby(['household_id','person_num'])['dest_zone_id'].first().reset_index(), how='left').set_index('person_id').dest_zone_id.fillna('-9').astype(int)"
-person,WTAZ,INT,continuous,Work TAZ (-9 if not a worker),,,"person.reset_index().merge(trip[trip.trip_purp.isin([1])].groupby(['household_id','person_num'])['dest_zone_id'].first().reset_index(), how='left').set_index('person_id').dest_zone_id.fillna('-9').astype(int)"
-person,PER_WEIGHT,REAL,continuous,Weight to expand data at person level,,,"person.reset_index().merge(trip[['household_id','person_num','person_weight']].drop_duplicates(), how='left').set_index('person_id').person_weight.fillna(1)"
+person,STAZ,INT,continuous,School TAZ (-9 if not a student),,,"person.reset_index().merge(trip[trip.trip_purp.isin([3])].groupby('person_id')['dest_zone_id'].first().reset_index(), how='left').set_index('person_id').dest_zone_id.fillna('-9').astype(int)"
+person,WTAZ,INT,continuous,Work TAZ (-9 if not a worker),,,"person.reset_index().merge(trip[trip.trip_purp.isin([1])].groupby('person_id')['dest_zone_id'].first().reset_index(), how='left').set_index('person_id').dest_zone_id.fillna('-9').astype(int)"
+person,PER_WEIGHT,REAL,continuous,Weight to expand data at person level,,,"person.reset_index().merge(trip[['person_id','person_weight']].drop_duplicates(), how='left').set_index('person_id').person_weight.fillna(1)"
 person,STUDE,INT,categorical,Student Category,1,School,person.occ.isin([5])
 person,STUDE,INT,categorical,Student Category,2,University,"person.occ.isin([3,4])"
 person,STUDE,INT,categorical,Student Category,3,Non-student,"~person.occ.isin([3,4,5])"
@@ -27,12 +29,15 @@ person,EMPLY,INT,categorical,Employment Category,2,Part-time,person.occ.isin([2]
 person,EMPLY,INT,categorical,Employment Category,3,Unemployed,person.occ.isin([8])
 person,EMPLY,INT,categorical,Employment Category,4,Non-worker,"~person.occ.isin([1,2,8])"
 person,AGE,INT,continuous,Age of person,,,person.age
+person,AGE_CAT,INT,continuous,Age of person,,,"pd.cut(person.age, bins=[0,5,15,17,24,34,44,49,54,59,64,74,79,84,999], include_lowest=True, labels=False).astype(str)"
+person,HOURS_CAT,INT,continuous,Age of person,,,"pd.Series(None, index=person.index)"
 person,PER_GENDER,INT,categorical,Gender of person,1,Male,person.gender.isin([1])
 person,PER_GENDER,INT,categorical,Gender of person,2,Female,person.gender.isin([2])
-person,EMPLY_LOC_TYPE,INT,categorical,Employment location type ,1,fixed,"person.occ.isin([1,2,8]) & person.reset_index().merge((trip[trip.trip_purp.isin([1])].groupby(['household_id','person_num']).dest_zone_id.size()==1).reset_index(), how='left').set_index('person_id').fillna(False).dest_zone_id"
-person,EMPLY_LOC_TYPE,INT,categorical,Employment location type ,2,works from home,"person.occ.isin([1,2,8]) & person.reset_index().merge(trip[trip.trip_purp.isin([1])].groupby(['household_id','person_num']).dest_zone_id.size().reset_index(), how='left').set_index('person_id').isnull().dest_zone_id"
-person,EMPLY_LOC_TYPE,INT,categorical,Employment location type ,3,varies,"person.occ.isin([1,2,8]) & person.reset_index().merge((trip[trip.trip_purp.isin([1])].groupby(['household_id','person_num']).dest_zone_id.size()>1).reset_index(), how='left').set_index('person_id').fillna(False).dest_zone_id"
-person,EMPLY_LOC_TYPE,INT,categorical,Employment location type ,0,Not a worker,"~person.occ.isin([1,2,8])"
+person,EMPLY_LOC_TYPE,INT,categorical,Employment location type,1,fixed,"person.occ.isin([1,2]) & person.reset_index().merge((trip[trip.trip_purp.isin([1])].groupby('person_id').dest_latlon.size()==1).reset_index(), how='left').set_index('person_id').fillna(False).dest_latlon"
+person,EMPLY_LOC_TYPE,INT,categorical,Employment location type,2,works from home,"person.occ.isin([1,2]) & person.reset_index().merge(trip[trip.trip_purp.isin([1])].groupby('person_id').dest_latlon.size().reset_index(), how='left').set_index('person_id').isnull().dest_latlon"
+person,EMPLY_LOC_TYPE,INT,categorical,Employment location type,3,varies,"person.occ.isin([1,2]) & person.reset_index().merge((trip[trip.trip_purp.isin([1])].groupby('person_id').dest_latlon.size()>1).reset_index(), how='left').set_index('person_id').fillna(False).dest_latlon"
+person,EMPLY_LOC_TYPE,INT,categorical,Employment location type,0,Not a worker,"~person.occ.isin([1,2])"
+trip,trip_id,INT,continuous,dataframe index,,,"pd.Series(trip.index, index=trip.index)"
 trip,SAMPN,INT,continuous,Household ID,,,trip.household_id
 trip,PERNO,INT,continuous,Person ID,,,trip.person_num
 trip,PLANO,INT,continuous,Place Number per person,,,trip.trip_num
@@ -40,8 +45,8 @@ trip,TRIP_WEIGHT,REAL,continuous,Weight to expand data at trip level,,,trip.pers
 trip,TAZ,INT,continuous,Destination TAZ,,,trip.dest_zone_id
 trip,TPURP,INT,categorical,Trip Purpose,0,Home,trip.trip_purp.isin([8])
 trip,TPURP,INT,categorical,Trip Purpose,1,Work,"trip.trip_purp.isin([1,2])"
-trip,TPURP,INT,categorical,Trip Purpose,2,University,"(trip.reset_index().merge(person[['household_id','person_num','age']], how='left').set_index('trip_id').age>18) & trip.trip_purp.isin([3])"
-trip,TPURP,INT,categorical,Trip Purpose,3,School,"(trip.reset_index().merge(person[['household_id','person_num','age']], how='left').set_index('trip_id').age<=18) & trip.trip_purp.isin([3])"
+trip,TPURP,INT,categorical,Trip Purpose,2,University,"(trip.reset_index().merge(person.reset_index()[['person_id','age']], how='left').set_index('trip_id').age>18) & trip.trip_purp.isin([3])"
+trip,TPURP,INT,categorical,Trip Purpose,3,School,"(trip.reset_index().merge(person.reset_index()[['person_id','age']], how='left').set_index('trip_id').age<=18) & trip.trip_purp.isin([3])"
 trip,TPURP,INT,categorical,Trip Purpose,4,Escorting,trip.trip_purp.isin([999])
 trip,TPURP,INT,categorical,Trip Purpose,5,Shopping,"trip.trip_purp.isin([51,52,53,54,55,61])"
 trip,TPURP,INT,categorical,Trip Purpose,6,Maintenance,"trip.trip_purp.isin([4,7])"
@@ -72,7 +77,7 @@ trip,DRIVER,INT,categorical,Flag to indicate whether the person was driving,2,Pa
 trip,TOLL_NO,INT,categorical,Toll Payed on Trip,1,Yes,~trip.car_salikgates.isnull()
 trip,TOLL_NO,INT,categorical,Toll Payed on Trip,2,No,trip.car_salikgates.isnull()
 trip,TOTTR,INT,continuous,Total Travellers on Trip,,,"pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)"
-trip,TOTTR_NEXT,INT,continuous,Total Travellers on subsequent trip (0 if last trip),,,"pd.concat([trip[['trip_companions','household_id','person_num']], trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).reset_index().set_index(['trip_id','household_id','person_num']).sum(axis=1).groupby(['household_id','person_num']).shift(1).fillna(0).astype(int).droplevel([1,2])"
+trip,TOTTR_NEXT,INT,continuous,Total Travellers on subsequent trip (0 if last trip),,,"self.get_TOTTR_NEXT(trip, trip_hhcompanions_pnum)"
 trip,HHMEM,INT,continuous,Number of household members on the trip,,,"trip.trip_hhcompanions_pnum.str.split(',').explode().groupby('trip_id').size()-1"
 trip,PER1,INT,continuous,Person ID of first additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(0).astype(str).reindex(trip.index)
 trip,PER2,INT,continuous,Person ID of second additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(1).astype(str).reindex(trip.index)
@@ -80,3 +85,20 @@ trip,PER3,INT,continuous,Person ID of third additional household member on trip,
 trip,PER4,INT,continuous,Person ID of fourth additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(3).astype(str).reindex(trip.index)
 trip,PER5,INT,continuous,Person ID of fifth additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(4).astype(str).reindex(trip.index)
 trip,PER6,INT,continuous,Person ID of sixth additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(5).astype(str).reindex(trip.index)
+trip,XCORD,INT,continuous,X Coordinate (longitude),,,"trip.dest_latlon.str.split(',', expand=True)[1]"
+trip,YCORD,INT,continuous,Y Coordinate (latitude),,,"trip.dest_latlon.str.split(',', expand=True)[0]"
+trip,WXCORD,INT,continuous,Work X Coordinate (longitude),,,"self.get_WXYCORD('X', trip)"
+trip,WYCORD,INT,continuous,Work Y Coordinate (latitude),,,"self.get_WXYCORD('Y', trip)"
+trip,PLANO,INT,continuous,Place Number per person,,,trip.trip_num
+trip,DAYNO,INT,continuous,Day Number per person,,,"trip.reset_index().merge(day.set_index('person_id').sort_values('day_date').groupby(level=0).day_date.rank().astype(int), on='person_id', how='left').set_index('trip_id').day_date"
+trip,PNAME,INT,continuous,Place name,,,"trip.reset_index().merge(zone[['OLDZONE', 'NAME']], left_on='dest_zone_id', right_on='OLDZONE', how='left').set_index('trip_id').NAME"
+trip,DISTANCE,REAL,continuous,Trip distance in km,,,"trip.trip_dist_km + trip.trip_dist_m/1000"
+# place,place_id,INT,continuous,dataframe index,,,"pd.Series(trip.index, index=trip.index)"
+# place,SAMPN,INT,continuous,Household ID,,,trip.household_id
+# place,PERNO,INT,continuous,Person ID,,,trip.person_num
+# place,PLANO,INT,continuous,Place Number per person,,,trip.trip_num
+# place,DAYNO,INT,continuous,Day Number per person,,,"trip.reset_index().merge(day.set_index('person_id').sort_values('day_date').groupby(level=0).day_date.rank().astype(int), on='person_id', how='left').set_index('trip_id').day_date"
+# place,XCORD,INT,continuous,X Coordinate (longitude),,,"trip.dest_latlon.str.split(',', expand=True)[1]"
+# place,YCORD,INT,continuous,Y Coordinate (latitude),,,"trip.dest_latlon.str.split(',', expand=True)[0]"
+# place,WXCORD,INT,continuous,Work X Coordinate (longitude),,,"self.get_WXYCORD('X', trip)"
+# place,WYCORD,INT,continuous,Work Y Coordinate (latitude),,,"self.get_WXYCORD('Y', trip)"

@@ -1,26 +1,29 @@
-from core.functions import *
+from spa_tool.tools.legacy_tools.joint_tours import Joint_tour
+from collections import defaultdict
+
 
 class Household:
     """ Household class """
-    def __init__(self, hh_id, area):
+    def __init__(self, hh_id, constants):
         self.hh_id = hh_id
-        self.persons = []                           #TODO: could use OrderedDict instead for possibly improved efficiency 
-        self.joint_episodes = defaultdict(list)     #dict that allow multiple values for each key 
-                                                #trip departure time (in minutes) is mapped to a list of Joint_trip objects
-        self.unique_jt_groups = []              #each list element corresponds to trips jointly made by a travel group
-        self.unique_jtours = []                 #each list element corresponds to a Joint_tour object 
+        self.persons = []  # TODO: could use OrderedDict instead for possibly improved efficiency
+        self.joint_episodes = defaultdict(list)     # dict that allow multiple values for each key
+
+        # trip departure time (in minutes) is mapped to a list of Joint_trip objects
+        self.unique_jt_groups = []              # each list element corresponds to trips jointly made by a travel group
+        self.unique_jtours = []                 # each list element corresponds to a Joint_tour object
         self.error_flag = False
         self.tags = []
         self.recode_tags = []
-        self.area = area
+        self.constants = constants
         
     def print_header(self, fp):
-        _header=["HH_ID", "NUM_PERS", "AREA"]
-        fp.write(','.join(['%s' %field for field in _header])+'\n') 
+        _header = ["HH_ID", "NUM_PERS", "AREA"]
+        fp.write(','.join(['%s' % field for field in _header])+'\n')
         
     def print_vals(self, fp):
-        _vals = [self.hh_id, len(self.persons), self.area]
-        fp.write(','.join(['%s' %v for v in _vals])+'\n') 
+        _vals = [self.hh_id, len(self.persons)]
+        fp.write(','.join(['%s' % v for v in _vals])+'\n')
         
     def get_id(self):
         return self.hh_id
@@ -35,7 +38,7 @@ class Household:
     def get_person(self, per_id):
         """return the Person object with the given person id"""
         for _person in self.persons:
-            if _person.per_id==per_id:
+            if _person.per_id == per_id:
                 return _person
         
     def log_recode(self, msg):
@@ -74,13 +77,16 @@ class Household:
             if _stop_ix>_max_ix:
                 #there are fewer joint trip entries than expected
                 _error = True
-                break;
+                break
             _start_ix = _stop_ix
             
         return _error
 
             
     def process_joint_episodes(self):
+
+        NewCompType = self.constants.get('NewCompType')
+
         _dep_time_list = sorted(self.joint_episodes.keys())  #sorted list of joint-trip departure times as key values 
         #process each dep_time entry at a time
         #assign each consistent group of unlinked trip entries a unique joint trip id
@@ -111,7 +117,7 @@ class Household:
                 """
                 if (_d+1) < _d_max:            
                     _next_dep_time = _dep_time_list[_d+1]
-                    if (_next_dep_time-_dep_time)<=NEGLIGIBLE_DELTA_TIME:
+                    if (_next_dep_time-_dep_time) <= self.constants.get('NEGLIGIBLE_DELTA_TIME'):
                         _tmp_jt_list = _jt_list.copy()
                         _tmp_jt_list.extend(self.joint_episodes[_next_dep_time])                #try merge two lists
                         _tmp_jt_list.sort(key=lambda jt: (jt.travel_party, jt.depart_time))     #sort by reported travel party THEN by departure time
@@ -249,7 +255,7 @@ class Household:
                 #TODO: verify that a driver is indeed found for an auto joint trip                            
                                            
                 #derive travel party composition
-                _composition = NewCompType["MIXED"]        
+                _composition = NewCompType["MIXED"]
                 if _num_adults==_size:  
                     #number of adults equals number of people in the travel party
                     _composition = NewCompType["ALL_ADULTS"]
@@ -281,7 +287,8 @@ class Household:
     def process_joint_tours(self):       
         """determine partially vs fully joint tour"""
         #a tour is fully joint if all the constituting trips are joint-grouped and made by the same group of people
-        
+        NewJointCategory = self.constants.get('NewJointCategory')
+
         _jt_dict = dict()       #dictionary with jt_id as the key and ([per ids],[tour ids],[trip ids], [tour lengths]) as the value 
         _start_jtour = -1       #index into unique_jt_groups that marks the start of potentially a fully joint tour
         _end_jtour   = -1       #index into unique_jt_groups that marks the end of a fully joint tour
@@ -294,7 +301,7 @@ class Household:
             #first check if the parent trips are all joint and grouped. if not, stop processing this group of joint travel
             _all_grouped = True
             for _jt in _cur_jt_group:
-                if not (_jt.parent_trip.get_joint_status()==NewJointCategory['JOINT-GROUPED']):
+                if not (_jt.parent_trip.get_joint_status() == NewJointCategory['JOINT-GROUPED']):
                     _all_grouped = False
             if not _all_grouped:
                 continue
@@ -359,6 +366,8 @@ class Household:
         self.unique_jtours.append(Joint_tour(jtour_id, jt_groups))        
                 
     def process_escort_trips(self):
+        NewEscort = self.constants.get('NewEscort')
+
         #scan through each unique joint episode group
         for _jt_group in self.unique_jt_groups:
             #find the driver in the group, if any
@@ -377,8 +386,8 @@ class Household:
                 for _jt in _jt_group:
                     if _jt.get_per_id()==_driver_id:
                         #found driver's trip
-                        _drop_off = _jt.get_dest_escort_pudo()==NewEscort['DROP_OFF']
-                        _pick_up =  _jt.get_orig_escort_pudo()==NewEscort['PICK_UP']
+                        _drop_off = _jt.get_dest_escort_pudo() == NewEscort['DROP_OFF']
+                        _pick_up =  _jt.get_orig_escort_pudo() == NewEscort['PICK_UP']
                         _driver_jt = _jt
                         break
                     

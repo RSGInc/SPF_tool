@@ -1,10 +1,12 @@
 from core.functions import *
 import numpy as np
+from spa_tool.tools.legacy_tools.joint_ultrips import Joint_ultrip
 
 class Trip:
     """ Trip class """
-    def __init__(self, hh_obj, per_obj, tour_obj, trip_id):
+    def __init__(self, hh_obj, per_obj, tour_obj, constants, trip_id):
         """ instantiation of a Trip object """
+        self.constants = constants
         self.hh_obj = hh_obj
         self.per_obj = per_obj
         self.tour_obj = tour_obj
@@ -32,22 +34,24 @@ class Trip:
         return self.trip_id
        
     def is_orig_home(self):
-        return self.fields['ORIG_PURP'] == NewPurp['HOME']
+        return self.fields['ORIG_PURP'] == self.constants.get('NewPurp')['HOME']
     
     def is_dest_home(self):
-        return self.fields['DEST_PURP'] == NewPurp['HOME']
+        return self.fields['DEST_PURP'] == self.constants.get('NewPurp')['HOME']
     
     def get_is_escorting(self):
         if 'DEST_PURP' in self.fields:   #make sure the key exists
-            return self.fields['DEST_PURP']==NewPurp['ESCORTING']
+            return self.fields['DEST_PURP'] == self.constants.get('NewPurp')['ESCORTING']
         else:
             #TODO: better error handling?
             return False
 
     def get_is_joint(self):
+        NewJointCategory = self.constants.get('NewJointCategory')
+
         is_joint = False
         if 'JOINT' in self.fields:   #make sure the key exists
-            if self.fields['JOINT']!=NewJointCategory['NOT-JOINT']:
+            if self.fields['JOINT'] != NewJointCategory['NOT-JOINT']:
                 is_joint = True            
         return is_joint
 
@@ -62,7 +66,7 @@ class Trip:
         if 'DEST_ESCORTING' in self.fields:
             return self.fields['DEST_ESCORTING']
         else:
-            return NewEscort['NEITHER']
+            return self.constants.get('NewEscort')['NEITHER']
 
     def get_chauffuer(self):
         if 'CHAUFFUER_ID' in self.fields:
@@ -74,7 +78,7 @@ class Trip:
         if 'ESCORTED' in self.fields:
             return self.fields['ESCORTED'] 
         else:
-            return NewEscort['NEITHER']
+            return self.constants.get('NewEscort')['NEITHER']
 
     def get_depart_time(self):
         """ return the departure time at trip origin in minutes """ 
@@ -115,6 +119,8 @@ class Trip:
         self.fields['TRIP_ID'] = int(new_id)    #make sure that output field is updated too
 
     def set_jt_grouping_status(self):
+        NewJointCategory = self.constants.get('NewJointCategory')
+
         #check if all joint legs of this trip are grouped (i.e. has a JTIP_ID assigned)
         #if so, then this is a JOINT-GROUPED trip; otherwise, it is left as a JOINT trip  
         _all_grouped = True
@@ -127,10 +133,10 @@ class Trip:
         if len(self.joint_descriptors)==0:
             self.fields['JOINT'] = NewJointCategory['NOT-JOINT']
         elif _all_grouped:
-            self.fields['JOINT'] = NewJointCategory['JOINT-GROUPED'] 
+            self.fields['JOINT'] = NewJointCategory['JOINT-GROUPED']
             self.fields['JTRIP_ID'] = add_quote_char(','.join(['%s' %id for id in _jt_ids]))
         else:
-            self.fields['JOINT'] = NewJointCategory['JOINT'] 
+            self.fields['JOINT'] = NewJointCategory['JOINT']
             
     def set_per_type(self, per_type):
         self.fields['PERSONTYPE'] = per_type
@@ -214,6 +220,9 @@ class Trip:
 
     def _set_transit_attributes(self, df):
         """Process the given DataFrame object to determine the various transit-related trip attributes"""
+        SurveyMode = self.constants.get('SurveyMode')
+        MAX_XFERS = self.constants.get('MAX_XFERS')
+
         #initialize
         _transit_leg_count = 0
         _access_mode = []
@@ -223,7 +232,7 @@ class Trip:
         #First, loop through all access (non-transit) legs
         _cur_row = 1    #not 0 because the leg starts at row[0] and ends at row[1]    
         _mode = df['MODE'].iloc[_cur_row]
-        while (_mode!=SurveyMode['TRANSIT']):   
+        while (_mode!=SurveyMode['TRANSIT']):
             _access_mode.append(_mode)
             _cur_row = _cur_row+1
             _mode = df['MODE'].iloc[_cur_row]
@@ -292,6 +301,9 @@ class Trip:
     
     def _find_best_transit_mode(self, df):
         _best_transit = 'BUS'   #initialize to BUS
+        SurveyMode = self.constants.get('SurveyMode')
+        SurveyTbus2TransitType = self.constants.get('SurveyTbus2TransitType')
+
 
         #start from row#1, select the rows corresponding to transit mode use       
         df_transit = df.iloc[1:]
@@ -308,6 +320,8 @@ class Trip:
         return _best_transit
     
     def _set_parking_attributes(self, df):
+        SurveyMode = self.constants.get('SurveyMode')
+
         """ determine parking location and related attributes for auto trips ending with non-auto, access mode (most likely walk) """
         _modes_col = df['MODE'].iloc[1:]    #note: skip row#0
         #locate the auto segments of the trip 
@@ -324,6 +338,8 @@ class Trip:
     
     def _set_auto_occupancy(self, df):
         """ determine the number of people traveling together for an auto trip """
+        SurveyMode = self.constants.get('SurveyMode')
+
         _auto_occ = int(0)
         #note that mode check starts from row #1 of the DataFrame 
         #thus, need to add 1 back to narray index to get back to the row number 
@@ -349,6 +365,15 @@ class Trip:
 
     def _calc_purpose(self, old_purp_code, old_place_no, old_place_name, dur_hr, dur_min):
         """ derive the new purpose code from input data purpose code; resolve inconsistencies between activity purpose and person status """
+
+        SurveyTpurp2Purp = self.constants.get('SurveyTpurp2Purp')
+        SurveySchoolPurp = self.constants.get('SurveySchoolPurp')
+        NewStuCategory = self.constants.get('NewStuCategory')
+        NewPerType = self.constants.get('NewPerType')
+        NewPurp = self.constants.get('NewPurp')
+        NewEmpCategory = self.constants.get('NewEmpCategory')
+        MAX_VOLUNTEER_MINUTES = self.constants.get('MAX_VOLUNTEER_MINUTES')
+
         _new_purp = -1
         if old_purp_code in SurveySchoolPurp:
             #school related activity
@@ -381,7 +406,7 @@ class Trip:
                 #found work or work-related activity, check if worker
                 _pertype = self.per_obj.get_per_type()
                 if _pertype in [ NewPerType['NW'], NewPerType['RE'] ]:
-                    if convert2minutes(dur_hr,dur_min)>MAX_VOLUNTEER_MINUTES:
+                    if convert2minutes(dur_hr,dur_min) > MAX_VOLUNTEER_MINUTES:
                         #if duration of work activity is over xxx hours, recode person as a part time worker and emp category as part time
                         self.per_obj.recode_emp_category(NewEmpCategory['PARTTIME'],
                             "found work or work-related activity (PLANO={}, PNAME={}) for Pertype={}; reset EMP_CAT to PARTTIME".format(old_place_no, old_place_name, _pertype))
@@ -395,11 +420,33 @@ class Trip:
                     #self.per_obj.log_error("found work or work-related activity (PLANO={}, PNAME={}) for non-driving age child".format(old_place_no, old_place_name, _pertype))
                     #consider this as volunteer work, recode to discretionary purpose
                     _new_purp = NewPurp['DISCRETIONARY']
-        return _new_purp        
+        return _new_purp
+
+    def convert2bin(self, hour, minute):
+        # given a time specified as hour:minute, return the equivalent in time window bins
+        min_from_start_of_day = convert2minutes(hour, minute) - self.constants.get('START_OF_DAY_MIN')
+        if min_from_start_of_day < 0:
+            min_from_start_of_day = min_from_start_of_day + 60 * 24  # add another day
+
+        # minutes from 'start of the say' divided by width of a bin gives the bin number
+        bin_number = 1 + math.floor(min_from_start_of_day / self.constants.get('TIME_WINDOW_BIN_MIN'))
+        return bin_number
 
     def populate_attributes(self, df):
         """ determine trip attributes based on PLACE records in a DataFrame object"""
-        
+
+        SurveyMode = self.constants.get('SurveyMode')
+        SurveyDriver = self.constants.get('SurveyDriver')
+        NewPurp = self.constants.get('NewPurp')
+        SURVEY_PU_PURP_CODE = self.constants.get('SURVEY_PU_PURP_CODE')
+        NewTransitAccess = self.constants.get('NewTransitAccess')
+        NewJointCategory = self.constants.get('NewJointCategory')
+        SurveyToll = self.constants.get('SurveyToll')
+        NewTripMode = self.constants.get('NewTripMode')
+        NewEscort = self.constants.get('NewEscort')
+        SURVEY_DO_PURP_CODE = self.constants.get('SURVEY_DO_PURP_CODE')
+        COMPUTE_TRIP_DIST = self.constants.get('COMPUTE_TRIP_DIST')
+
         #trip origin: 1st place on trip
         self.fields['ORIG_PLACENO'] = df['PLANO'].iloc[0]              
         self.fields['ORIG_X']       = df['XCORD'].iloc[0]                    
@@ -436,16 +483,16 @@ class Trip:
                                                          self.fields['TRIP_DUR_MIN'])   
         
         #calculate time window bin number
-        self.fields['ORIG_ARR_BIN'] = convert2bin(self.fields['ORIG_ARR_HR'],self.fields['ORIG_ARR_MIN'])
-        self.fields['ORIG_DEP_BIN'] = convert2bin(self.fields['ORIG_DEP_HR'],self.fields['ORIG_DEP_MIN'])
-        self.fields['DEST_ARR_BIN'] = convert2bin(self.fields['DEST_ARR_HR'],self.fields['DEST_ARR_MIN'])
-        self.fields['DEST_DEP_BIN'] = convert2bin(self.fields['DEST_DEP_HR'],self.fields['DEST_DEP_MIN'])
+        self.fields['ORIG_ARR_BIN'] = self.convert2bin(self.fields['ORIG_ARR_HR'], self.fields['ORIG_ARR_MIN'])
+        self.fields['ORIG_DEP_BIN'] = self.convert2bin(self.fields['ORIG_DEP_HR'], self.fields['ORIG_DEP_MIN'])
+        self.fields['DEST_ARR_BIN'] = self.convert2bin(self.fields['DEST_ARR_HR'], self.fields['DEST_ARR_MIN'])
+        self.fields['DEST_DEP_BIN'] = self.convert2bin(self.fields['DEST_DEP_HR'], self.fields['DEST_DEP_MIN'])
         self.fields['TRIP_DUR_BIN'] = 1 + self.fields['DEST_ARR_BIN'] - self.fields['ORIG_DEP_BIN']
 
         #check for loop trips, i.e. purposes at both ends are HOME
         #recode destination purpose as LOOP
-        if (self.fields['ORIG_PURP']==NewPurp['HOME']) & (self.fields['DEST_PURP']==NewPurp['HOME']):
-            self.fields['DEST_PURP']=NewPurp['LOOP']
+        if (self.fields['ORIG_PURP'] == NewPurp['HOME']) & (self.fields['DEST_PURP']==NewPurp['HOME']):
+            self.fields['DEST_PURP'] = NewPurp['LOOP']
             self.log_warning("RECODE: Destination Purpose of HOME-HOME trip recoded as LOOP")
         
              
@@ -580,13 +627,14 @@ class Trip:
                 #this is a joint episode: 
                 _num_joint_episodes = _num_joint_episodes+1
                 #create and populate a joint travel descriptor object           
-                _new_joint_leg = Joint_ultrip(self, 
+                _new_joint_leg = Joint_ultrip(self,
                                               df['TOTTR'].iloc[row_index],
                                               _hh_mem_on_trip, 
                                               convert2minutes(df['DEP_HR'].iloc[row_index-1], df['DEP_MIN'].iloc[row_index-1]),
                                               convert2minutes(df['ARR_HR'].iloc[row_index], df['ARR_MIN'].iloc[row_index]),
                                               [self.get_per_id(),df['PER1'].iloc[row_index],df['PER2'].iloc[row_index],df['PER3'].iloc[row_index],
-                                              df['PER4'].iloc[row_index], df['PER5'].iloc[row_index], df['PER6'].iloc[row_index]])
+                                              df['PER4'].iloc[row_index], df['PER5'].iloc[row_index], df['PER6'].iloc[row_index]],
+                                              self.constants)
                 self.joint_descriptors.append(_new_joint_leg)
                 if (df['DRIVER'].iloc[row_index]==SurveyDriver['DRIVER']):         #if a driver on this leg of the trip 
                     _new_joint_leg.add_driver(self.get_per_id(), self.get_tour_id(), self.trip_id)           
@@ -617,8 +665,8 @@ class Trip:
             self.fields['DEST_ESCORTING'] = NewEscort['NEITHER']
         
         if COMPUTE_TRIP_DIST:
-            if np.all(df['Distance'].iloc[1:]>=0):          #if all distance measures are valid
-                self.fields['DIST'] = np.sum(df['Distance'].iloc[1:])
+            if np.all(df['DISTANCE'].iloc[1:] >= 0):          #if all distance measures are valid
+                self.fields['DIST'] = np.sum(df['DISTANCE'].iloc[1:])
             else:
                 self.log_error("cannot compute trip distance")
                 
@@ -638,13 +686,17 @@ class Trip:
     def log_recode(self, msg):
         self.per_obj.log_recode("TRIP_ID={} \t".format(self.trip_id)+msg)
         
-    def print_header(fp):
+    def print_header(self, fp):
+        TripCol2Name = self.constants.get('TripCol2Name')
+
         _header=[]
         for _col_num, _col_name in sorted(TripCol2Name.items()):    #TODO: save a sorted copy of the dict to avoid repeated sorting 
             _header.append(_col_name)            
         fp.write(','.join(['%s' %name for name in _header])+'\n')
         
     def print_vals(self, fp):
+        TripCol2Name = self.constants.get('TripCol2Name')
+
         if 'ERROR' in self.fields:
             self.fields['ERROR'] = add_quote_char(self.fields['ERROR'])
 

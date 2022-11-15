@@ -22,8 +22,94 @@ SurveyWorkPurp: [1]
 SurveyWorkRelatedPurp: [10]
 
 
-# map mode name to mode code
-TRIP_MODE:
+
+# map TPURP from OHAS to the corresponding PURP code
+# TODO: This seems weird, can it be removed?
+# SurveyTpurp2Purp:
+    # 1: 0
+    # 2: 0
+    # 3: 1
+    # 4: 1
+    # 5: 2
+    # 6: 3
+    # 7: 12 #should not be "Change Mode" unless this is a partial-tour
+    # 8: 4
+    # 9: 4
+    # 10: 13
+    # 11: 10
+    # 12: 6
+    # 13: 5
+    # 14: 5
+    # 15: 6
+    # 16: 6
+    # 17: 7
+    # 18: 6
+    # 19: 9
+    # 20: 9
+    # 21: 9
+    # 22: 8
+    # 96: 11
+    # 97: 13
+    # 99: 13
+    # -9998: 13
+
+# map Survey mode name to mode code
+SurveyMode:
+    'SOV': 1
+    'HOV2':  2
+    'HOV3+': 3
+    'WALK': 4
+    'BIKE': 5
+    'TNC / TAXI': 6
+    'TRANSIT-BUS': 7
+    'TRANSIT-METRO': 8
+    'COMPANY-BUS': 9
+    'SCHOOLBUS': 10
+    'OTHER': 11    
+    # 'SOV-FREE': 1
+    # 'SOV-PAY': 
+    # 'HOV2-FREE': 2
+    # 'HOV2-PAY': 
+    # 'HOV3-FREE': 3
+    # 'HOV3-PAY': 
+    # 'WALK': 4
+    # 'BIKE': 5
+    # 'WALK-LB': 
+    # 'WALK-EB':
+    # 'WALK-LR':
+    # 'WALK-CR':
+    # 'PNR-LB':
+    # 'PNR-EB':
+    # 'PNR-LR':
+    # 'PNR-CR':
+    # 'KNR-LB':
+    # 'KNR-EB':
+    # 'KNR-LR':
+    # 'KNR-CR':
+    # 'SCHOOLBUS': 10
+    # 'TAXI': 6
+    # 'OTHER': 11
+
+# survey definition for driver/passanger
+SurveyDriver:
+    'DRIVER': 1
+    'PASSENGER': 2
+    'NA': 0
+
+# Survey definition for toll payment
+SurveyToll:
+    'TOLL': 1
+    'NOTOLL': 2
+
+SurveyTbus2TransitType:
+    'BUS': 1
+    'LRT': 2
+    'BRT': 3
+    'BUS': default
+
+
+# Updated to represent agg modes in SANDAG survey
+NewTripMode:
     'SOV': 1
     'HOV2':  2
     'HOV3+': 3
@@ -36,9 +122,13 @@ TRIP_MODE:
     'SCHOOLBUS': 10
     'OTHER': 11
 
-# Map trip modes to tour modes
-# use list to aggregate multiple (e.g., pnr-bus pnr-metro -> pnr)
-TOUR_MODE:
+NewTransitAccess:
+    'PNR':  1
+    'KNR':  2
+    'WALK': 3
+
+# map new mode name to mode code
+NewTourMode:
     'SOV': 1
     'HOV2':  2
     'HOV3+': 3
@@ -49,34 +139,10 @@ TOUR_MODE:
     'TRANSIT-METRO': 8
     'COMPANY-BUS': 9
     'SCHOOLBUS': 10
-    'OTHER': 11 
-
-# survey definition for driver/passanger
-DRIVER:
-    'DRIVER': 1
-    'PASSENGER': 2
-    'NA': 0
-
-# Survey definition for toll payment
-TOLL:
-    'TOLL': 1
-    'NOTOLL': 2
-    
-TRANSIT_MODES: [7, 8]
-
-TRANSIT_TYPES:
-    'BUS': 1
-    'LRT': 2
-    'BRT': 3
-    'default': 'BUS'
-
-TRANSIT_ACCESS:
-    'PNR':  1
-    'KNR':  2
-    'WALK': 3
+    'OTHER': 11
 
 # Map new purpose name to purpose code
-PURPOSE:
+NewPurp:
     'HOME':          0
     'WORK':          1
     'UNIVERSITY':    2
@@ -93,12 +159,12 @@ PURPOSE:
     'OTHER':         13
 
 # Map partial tour types to numeric code
-PARTIAL_TOUR:
+NewPartialTour:
     'NOT_PARTIAL':      0  #not a partial tour
     'PARTIAL_START':    1  #first tour of the day not starting at home
     'PARTIAL_END':      2   #last tour of the day not ending at home
 
-ESCORT_EVENT:
+NewEscort:
     'NEITHER':  0  #neither pick up or drop off
     'PICK_UP':  1  #pick up passenger
     'DROP_OFF': 2   #drop off passenger
@@ -106,12 +172,12 @@ ESCORT_EVENT:
     'DROP_OFF_NON_HH':    4   #pick up non household member
     'BOTH_PUDO':          5
 
-ESCORT_TYPE:
+NewEscortType:
     'RIDE_SHARING': 1
     'PURE_ESCORT': 2
     'NO_ESCORT': 3
 
-PERTYPE:
+NewPerType:
     'FW' : 1
     'PW' : 2
     'US' : 3
@@ -145,29 +211,29 @@ PERTYPE:
     # Visitors_Tourists: 23
     # Visitors_Business: 24
 
-STUDENT:
+NewStuCategory:
     'SCHOOL':       1
     'UNIVERSITY':   2
     'NON-STUDENT':  3
 
-EMPLOYMENT:
+NewEmpCategory:
     'FULLTIME':     1
     'PARTTIME':     2
     'UNEMPLOYED':   3
     'NON-WORKER':   4
 
 # Map travel party composition label to code
-COMPOSITION:
+NewCompType:
     'ALL_ADULTS':    1
     'ALL_CHILDREN':  2
     'MIXED':         3
 
-JOINT_CAT:
+NewJointCategory:
     'NOT-JOINT':     0
     'JOINT':         1
     'JOINT-GROUPED': 2
 
-JOINT_TOUR_CAT:
+NewJointTourStatus:
     'INDEPENDENT':   1
     'PART_JOINT':    2
     'FULL_JOINT':    3

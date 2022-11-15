@@ -23,7 +23,6 @@ PROCESSING_STEPS:
         data_directory: preprocessed
         from_pipeline: False
         output_name: final_data
-        # LegacySPA Constants
         specs:
             # These are variable key mappings for the variables aggregated in the SPA tool.
             trip_columns: spa_specs/trip_columns.csv

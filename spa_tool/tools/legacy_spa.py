@@ -50,7 +50,7 @@ class LegacySPA():
         SurveyHomeCode = self.constants.get('SurveyHomeCode')
         SurveyChangeModeCode = self.constants.get('SurveyChangeModeCode')
         WORK_LOCATION_BUFFER = self.constants.get('WORK_LOCATION_BUFFER')
-        NewPartialTour = self.constants.get('NewPartialTour')
+        PARTIAL_TOUR = self.constants.get('PARTIAL_TOUR')
 
         # add_place_distance('route.csv', 'place.csv', 'placeWithDist.csv' )
         # BMP[09/08/17] - survey data processed separately for each survey day
@@ -69,10 +69,17 @@ class LegacySPA():
         hh_list = []
         # loop through and process the PLACE data frame group for each household for each day
         # create the household, person, tour, and trip objects
+        of_count = len(df_place.groupby(['SAMPN']))
+        iter = 0
         for (hhid), df_persons in df_place.groupby(['SAMPN']):
             # create a new household object
             hh = Household(hhid, constants=self.constants)
             hh_list.append(hh)
+            iter += 1
+            # ({100*round(iter/of_count}}")
+
+            if iter % round(0.1 * of_count) == 0:
+                print(f"{round(100 * iter / of_count)}% complete")
 
             # loop through each person
             for (hhid, pid), df_psn_places in df_persons.groupby(['SAMPN', 'PERNO']):
@@ -84,8 +91,7 @@ class LegacySPA():
                 psn = Person(hh, pid, df_cur_per, self.constants)
 
                 num_places_for_person = len(df_psn_places)
-                print("No. of place entries for person " + str(pid) + " of household " + str(hhid) + ": " + str(
-                    num_places_for_person))
+                print(f"No. of place entries for person {pid} of household {hhid}: {num_places_for_person}")
 
                 # first make sure that the place entries are ordered by place number since they will be processed sequentially later
                 df_psn_places = df_psn_places.sort_values('PLANO')
@@ -94,7 +100,7 @@ class LegacySPA():
                 (wxcord, wycord) = (df_psn_places['WXCORD'].dropna().drop_duplicates().to_list(),
                                     df_psn_places['WXCORD'].dropna().drop_duplicates().to_list())
 
-                if not len(wxcord) > 1 or len(wycord) > 1:
+                if (wxcord and wycord) and (wxcord != 0 and wycord != 0):
                     # both X and Y coordinates for work location are found
                     for row_index, row in df_psn_places.iterrows():
                         # check place coordinates against work coordinates if TPURP is work or other activities at work
@@ -102,8 +108,8 @@ class LegacySPA():
                             xcord = row['XCORD']
                             ycord = row['YCORD']
                             buffer_dist = 0
-                            if not ((xcord == 0) | (ycord == 0)):
-                                buffer_dist = row['bufferDist']
+                            if (xcord and ycord) and (xcord != 0 and ycord !=0):
+                                buffer_dist = row['BUFFER_DIST']
                             # if (not xcord==wxcord) | (not ycord==wycord):
                             if (buffer_dist > WORK_LOCATION_BUFFER):
                                 # not the place of work -> recode TPURP to work-related
@@ -140,7 +146,7 @@ class LegacySPA():
                                 (df_psn_places['TPURP'].iloc[cur_row + 1] == SurveyChangeModeCode) &
                                 (cur_row + 1 == max_row)
                                )
-                    # true if next PLACE marks the start of a different trip, or if next PLACE is change mode and last stop of the day
+                    # true if next PLACE marks the start of a different trip, or if next SPLACE is change mode and last stop of the day
                     # TPURP codes 7 means 'change mode'
 
                     if (new_tour | new_trip):
@@ -174,16 +180,16 @@ class LegacySPA():
                 # check if the first and last tours are partial tours
                 num_HB_tours = len(psn.tours)
                 for i, tour in enumerate(psn.tours):
-                    _partial_code = NewPartialTour['NOT_PARTIAL']
+                    _partial_code = PARTIAL_TOUR['NOT_PARTIAL']
                     if i == 0:  # 1st tour of the day - check orig of first trip
                         if not tour.trips[0].is_orig_home():
-                            _partial_code = NewPartialTour['PARTIAL_START']
+                            _partial_code = PARTIAL_TOUR['PARTIAL_START']
                             psn.log_warning("Was not at home at the beginning of day")
 
                     # note: need to use 'if' as opposed to 'elif' below because 'elif' would miss cases where a person can have only 1 tour that is PARTIAL_END
                     if i == (num_HB_tours - 1):  # last tour of the day - check dest of last trip
                         if not tour.trips[-1].is_dest_home():
-                            _partial_code = NewPartialTour['PARTIAL_END']
+                            _partial_code = PARTIAL_TOUR['PARTIAL_END']
                             psn.log_warning("Did not return home at the end of day")
                     tour.set_partial(_partial_code)
 

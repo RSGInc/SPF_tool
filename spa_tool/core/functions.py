@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import math
+import numpy as np
 import yaml
 from collections import defaultdict
 
@@ -75,37 +76,32 @@ def load_pipeline_tables(namespace, kwargs):
 
     return input_tables
 
-
 def distance_on_unit_sphere(lat1, long1, lat2, long2):
     """source: http://www.johndcook.com/python_longitude_latitude.html """
     # returns distance in mile
-    
-    # Convert latitude and longitude to 
+
+
+    # Convert latitude and longitude to
     # spherical coordinates in radians.
-    degrees_to_radians = math.pi/180.0
-        
+    degrees_to_radians = math.pi / 180.0
+
     # phi = 90 - latitude
-    phi1 = (90.0 - lat1)*degrees_to_radians
-    phi2 = (90.0 - lat2)*degrees_to_radians
-        
+    phi1 = (90.0 - lat1) * degrees_to_radians
+    phi2 = (90.0 - lat2) * degrees_to_radians
+
     # theta = longitude
-    theta1 = long1*degrees_to_radians
-    theta2 = long2*degrees_to_radians
-        
+    theta1 = long1 * degrees_to_radians
+    theta2 = long2 * degrees_to_radians
+
     # Compute spherical distance from spherical coordinates.
-        
-    # For two locations in spherical coordinates 
+    # For two locations in spherical coordinates
     # (1, theta, phi) and (1, theta, phi)
-    # cosine( arc length ) = 
+    # cosine( arc length ) =
     #    sin phi sin phi` cos(theta-theta`) + cos phi cos phi`
     # distance = rho * arc length
-    
-    cos = (math.sin(phi1)*math.sin(phi2)*math.cos(theta1 - theta2) + 
-           math.cos(phi1)*math.cos(phi2))
-    arc = math.acos(cos)
-
+    cos = (np.sin(phi1) * np.sin(phi2) * np.cos(theta1 - theta2) + np.cos(phi1) * np.cos(phi2))
     # Multiply arc by the radius of the earth in feet
-    return arc*3960
+    return np.arccos(cos) * 3960
 
 
 def calculate_duration(start_hr, start_min, end_hr, end_min):

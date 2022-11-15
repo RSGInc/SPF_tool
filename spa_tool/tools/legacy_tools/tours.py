@@ -25,7 +25,7 @@ class Tour:
         self.error_flag = False
         self.constants = constants
 
-        self.set_partial(constants.get('NewPartialTour')['NOT_PARTIAL'])  # set as default value
+        self.set_partial(constants.get('PARTIAL_TOUR')['NOT_PARTIAL'])  # set as default value
         
     def add_trip(self, trip):
         self.trips.append(trip)
@@ -73,12 +73,12 @@ class Tour:
         return escorting
     
     def get_partial_status(self):
-        NewPartialTour = self.constants.get('NewPartialTour')
+        PARTIAL_TOUR = self.constants.get('PARTIAL_TOUR')
 
         if 'PARTIAL_TOUR' in self.fields:   #make sure the key exists
             return self.fields['PARTIAL_TOUR']
         else:
-            return NewPartialTour['NOT_PARTIAL']
+            return PARTIAL_TOUR['NOT_PARTIAL']
 
     def get_is_subtour(self):
         _is_subtour = 0
@@ -118,57 +118,66 @@ class Tour:
             self.fields['ERROR'] = self.fields['ERROR']+err_msg
     
     def _calc_tour_mode(self):
-        NewTripMode = self.constants.get('NewTripMode')
-        NewTourMode = self.constants.get('NewTourMode')
+        TRIP_MODE = self.constants.get('TRIP_MODE')
+        TOUR_MODE = self.constants.get('TOUR_MODE')
+        TOUR_MODE = {k: v if isinstance(v, list) else [v] for k, v in TOUR_MODE.items()}
 
         _mode = -1
         #put the modes used on all trips in one list 
         _modes_used = set()
         for _trip in self.trips:
-            _modes_used.add(_trip.fields['TRIPMODE'])
-        #determine the tour mode
-        _pnr_modes = {NewTripMode['PNR-LB'],NewTripMode['PNR-EB'],NewTripMode['PNR-LR'],NewTripMode['PNR-CR']}
-        _knr_modes = {NewTripMode['KNR-LB'],NewTripMode['KNR-EB'],NewTripMode['KNR-LR'],NewTripMode['KNR-CR']}
-        _wt_modes  = {NewTripMode['WALK-LB'],NewTripMode['WALK-EB'],NewTripMode['WALK-LR'],NewTripMode['WALK-CR']}
-        _hov3_modes = {NewTripMode['HOV3-FREE'],NewTripMode['HOV3-PAY']} 
-        _hov2_modes = {NewTripMode['HOV2-FREE'],NewTripMode['HOV2-PAY']} 
-        _sov_modes  = {NewTripMode['SOV-FREE'],NewTripMode['SOV-PAY']}
-        
-        #apply set intersection to check if the given modes are used
-        if len(_pnr_modes&_modes_used)>0:  
-            #If any trip on tour is PNR, tour mode is PNR
-            _mode = NewTourMode['PNR']
-        elif len(_knr_modes&_modes_used)>0:
-            #else if any trip on tour is KNR, tour mode is KNR
-            _mode = NewTourMode['KNR']
-        elif len(_wt_modes&_modes_used)>0:
-            #else if any trip on tour is Walk-Transit, tour mode is Walk-Transit
-            _mode = NewTourMode['WT']
-        elif NewTripMode['SCHOOLBUS'] in _modes_used:
-            #else if any trip on tour is school bus, tour mode is school bus
-            _mode = NewTourMode['SCHOOLBUS']
-        elif NewTripMode['BIKE'] in _modes_used:
-            #else if any trip on tour is bike/moped, tour mode is bike/moped
-            _mode = NewTourMode['BIKE']
-        elif NewTripMode['TAXI'] in _modes_used:
-            #else if any trip on tour is taxi, tour mode is taxi
-            _mode = NewTourMode['TAXI']
-        elif len(_hov3_modes&_modes_used)>0:  
-            #else if any trip on tour is shared-3+, tour mode is shared-3+
-            _mode = NewTourMode['HOV3']
-        elif len(_hov2_modes&_modes_used)>0:
-            #else if any trip on tour is shared-2, tour mode is shared-2
-            _mode = NewTourMode['HOV2']
-        elif len(_sov_modes&_modes_used)>0:
-            #else if any trip on tour is SOV, tour mode is SOV
-            _mode = NewTourMode['SOV']
-        elif NewTripMode['WALK'] in _modes_used:
-            #else if any trip on tour is walk, tour mode is walk
-            _mode = NewTourMode['WALK']
-        else:
-            _mode = NewTourMode['OTHER']
+            k = _trip.fields['TRIPMODE']
+            v = TRIP_MODE[k]
+            _modes_used.add(v)
+
+        _tour_mode = [k for k, v in TOUR_MODE.items() if _modes_used.intersection(v)]
+
+        assert len(_tour_mode) == 1, 'Multiple matching modes!'
+        _new_mode = _tour_mode[0]
+
+        # #determine the tour mode
+        # _pnr_modes = {NewTripMode['PNR-LB'],NewTripMode['PNR-EB'], NewTripMode['PNR-LR'],NewTripMode['PNR-CR']}
+        # _knr_modes = {NewTripMode['KNR-LB'],NewTripMode['KNR-EB'], NewTripMode['KNR-LR'],NewTripMode['KNR-CR']}
+        # _wt_modes  = {NewTripMode['WALK-LB'],NewTripMode['WALK-EB'], NewTripMode['WALK-LR'],NewTripMode['WALK-CR']}
+        # _hov3_modes = {NewTripMode['HOV3-FREE'],NewTripMode['HOV3-PAY']}
+        # _hov2_modes = {NewTripMode['HOV2-FREE'],NewTripMode['HOV2-PAY']}
+        # _sov_modes  = {NewTripMode['SOV-FREE'],NewTripMode['SOV-PAY']}
+        #
+        # #apply set intersection to check if the given modes are used
+        # if len(_pnr_modes&_modes_used)>0:
+        #     #If any trip on tour is PNR, tour mode is PNR
+        #     _mode = NewTourMode['PNR']
+        # elif len(_knr_modes&_modes_used)>0:
+        #     #else if any trip on tour is KNR, tour mode is KNR
+        #     _mode = NewTourMode['KNR']
+        # elif len(_wt_modes&_modes_used)>0:
+        #     #else if any trip on tour is Walk-Transit, tour mode is Walk-Transit
+        #     _mode = NewTourMode['WT']
+        # elif NewTripMode['SCHOOLBUS'] in _modes_used:
+        #     #else if any trip on tour is school bus, tour mode is school bus
+        #     _mode = NewTourMode['SCHOOLBUS']
+        # elif NewTripMode['BIKE'] in _modes_used:
+        #     #else if any trip on tour is bike/moped, tour mode is bike/moped
+        #     _mode = NewTourMode['BIKE']
+        # elif NewTripMode['TAXI'] in _modes_used:
+        #     #else if any trip on tour is taxi, tour mode is taxi
+        #     _mode = NewTourMode['TAXI']
+        # elif len(_hov3_modes&_modes_used)>0:
+        #     #else if any trip on tour is shared-3+, tour mode is shared-3+
+        #     _mode = NewTourMode['HOV3']
+        # elif len(_hov2_modes&_modes_used)>0:
+        #     #else if any trip on tour is shared-2, tour mode is shared-2
+        #     _mode = NewTourMode['HOV2']
+        # elif len(_sov_modes&_modes_used)>0:
+        #     #else if any trip on tour is SOV, tour mode is SOV
+        #     _mode = NewTourMode['SOV']
+        # elif NewTripMode['WALK'] in _modes_used:
+        #     #else if any trip on tour is walk, tour mode is walk
+        #     _mode = NewTourMode['WALK']
+        # else:
+        #     _mode = NewTourMode['OTHER']
          
-        return _mode
+        return _tour_mode
         
     def _get_is_driver(self):
         _is_driver = int(0)
@@ -229,8 +238,9 @@ class Tour:
             self.fields[_label+'DEP_BIN']  = self.trips[_j].fields['DEST_DEP_BIN']
             #calculate stop duration based on arrival and departure at stop
             (self.fields[_label+'DUR_HR'], self.fields[_label+'DUR_MIN']) = calculate_duration(
-                                                                                        self.fields[_label+'ARR_HR'], self.fields[_label+'ARR_MIN'], 
-                                                                                        self.fields[_label+'DEP_HR'], self.fields[_label+'DEP_MIN']) 
+                self.fields[_label+'ARR_HR'], self.fields[_label+'ARR_MIN'],
+                self.fields[_label+'DEP_HR'], self.fields[_label+'DEP_MIN']
+            )
             self.fields[_label+'DUR_BIN'] = 1 + self.fields[_label+'DEP_BIN'] - self.fields[_label+'ARR_BIN']
             
             self.fields[_label+'PURP']  = self.trips[_j].fields['DEST_PURP']
@@ -245,10 +255,10 @@ class Tour:
         
     def populate_attributes(self):
         """ determine tour attributes based on its constituting trips """
-        NewPartialTour = self.constants.get('NewPartialTour')
-        NewPurp = self.constants.get('NewPurp')
+        PARTIAL_TOUR = self.constants.get('PARTIAL_TOUR')
+        PURPOSE = self.constants.get('PURPOSE')
 
-        if self.get_partial_status() == NewPartialTour['PARTIAL_START']:
+        if self.get_partial_status() == PARTIAL_TOUR['PARTIAL_START']:
             #assume primary destination is the origin of first trip of the day    
             _prim_purp = self.trips[0].get_orig_purpose()    
             self.fields['TOURPURP'] = _prim_purp  
@@ -286,7 +296,7 @@ class Tour:
             #inbound stops
             self._set_inbound_stops(0, _last_i)  #inbound stops are dest of trips[0] to trips[_last_i-1]
              
-        elif self.get_partial_status() == NewPartialTour['PARTIAL_END']:
+        elif self.get_partial_status() == PARTIAL_TOUR['PARTIAL_END']:
             _prim_purp = self.trips[-1].get_dest_purpose()   #set to purpose at destination of last trip of the day
             self.fields['TOURPURP'] = _prim_purp  
       
@@ -335,7 +345,7 @@ class Tour:
       
             #extract at-work subtours from the current tour if the current tour is a WORK tour
             #this needs to be done before processing any outbound and inbound stops 
-            if _prim_purp == NewPurp['WORK']:
+            if _prim_purp == PURPOSE['WORK']:
                 self._set_AW_subtours(_prim_i)
                 #TODO: trip id may have been changed when subtours are created
                 #quick-fix: re-calculate primary destination
@@ -385,7 +395,7 @@ class Tour:
             
             if len(self.trips)==1:  #loop tour
                 #check if purpose is 'loop
-                if not self.fields['TOURPURP']==NewPurp['LOOP']:
+                if not self.fields['TOURPURP']==PURPOSE['LOOP']:
                     self.log_error("Only 1 trip in the tour, but purpose is {}".format(self.fields['TOURPURP']))
                 #outbound stops
                 self._set_outbound_stops(0, 0)     
@@ -433,8 +443,8 @@ class Tour:
         self.fields['JOINT_TOUR_PURP'] = purp
         
     def set_joint_status(self): 
-        NewJointTourStatus = self.constants.get('NewJointTourStatus')
-        NewJointCategory = self.constants.get('NewJointCategory')
+        JOINT_TOUR_CAT = self.constants.get('JOINT_TOUR_CAT')
+        JOINT_CAT = self.constants.get('JOINT_CAT')
 
         #classify a tour as one of the following:
         # (1) independent tours:        no trips are joint
@@ -447,31 +457,31 @@ class Tour:
         num_indep_trips = num_trips - num_grouped_joint_trips - num_problem_joint_trips
         
         if num_trips==num_indep_trips:
-            status = NewJointTourStatus['INDEPENDENT']
+            status = JOINT_TOUR_CAT['INDEPENDENT']
         elif self.get_is_fully_joint():
-            status = NewJointTourStatus['FULL_JOINT']
+            status = JOINT_TOUR_CAT['FULL_JOINT']
         elif num_grouped_joint_trips>0 & num_problem_joint_trips==0:
-            status = NewJointTourStatus['PART_JOINT']
+            status = JOINT_TOUR_CAT['PART_JOINT']
         else:
-            status = NewJointTourStatus['PROB_JOINT']
+            status = JOINT_TOUR_CAT['PROB_JOINT']
             
         self.fields['JOINT_STATUS'] = status
     
     def get_num_grouped_joint_trips(self):
-        NewJointCategory = self.constants.get('NewJointCategory')
+        JOINT_CAT = self.constants.get('JOINT_CAT')
 
         count = 0
         for trip in self.trips:
-            if trip.get_joint_status() == NewJointCategory['JOINT-GROUPED']:
+            if trip.get_joint_status() == JOINT_CAT['JOINT-GROUPED']:
                 count = count+1
         return count
 
     def get_num_prob_joint_trips(self):
-        NewJointCategory = self.constants.get('NewJointCategory')
+        JOINT_CAT = self.constants.get('JOINT_CAT')
 
         count = 0
         for trip in self.trips:
-            if trip.get_joint_status() == NewJointCategory['JOINT']:
+            if trip.get_joint_status() == JOINT_CAT['JOINT']:
                 count = count+1
         return count
     
@@ -485,8 +495,8 @@ class Tour:
             
     
     def set_escorted_fields(self):
-        NewEscort = self.constants.get('NewEscort')
-        NewEscortType = self.constants.get('NewEscortType')
+        ESCORT_EVENT = self.constants.get('ESCORT_EVENT')
+        ESCORT_TYPE = self.constants.get('ESCORT_TYPE')
 
         _escorted = False
         _chauffuer_set = set()
@@ -502,11 +512,11 @@ class Tour:
         _purpose = self.get_purp()
         for _trip in self.trips:
             #set union with the trip's chauffeur, if applicable
-            if _trip.get_escorted()!=NewEscort['NEITHER']:
+            if _trip.get_escorted()!=ESCORT_EVENT['NEITHER']:
                 _escorted = True
                 _chauffuer_set.add(_trip.get_chauffuer())
             #find chauffeur for outbound leg of the tour
-            if (_trip.fields['IS_INBOUND']==0) & (_trip.get_escorted()!=NewEscort['NEITHER']):
+            if (_trip.fields['IS_INBOUND']==0) & (_trip.get_escorted()!=ESCORT_EVENT['NEITHER']):
                 _out_chauffuer = _trip.get_chauffuer()
                 _out_jtripID = _trip.get_jtripID()
                 #find tour purpose for chauffeur for outbound jtripID
@@ -520,7 +530,7 @@ class Tour:
                             _out_chauffer_purp = _ctour.get_purp()
                             _ctour.set_escortee_purp(_out_jtripID, _purpose)
             #find chauffeur for inbound leg of the tour
-            if (_trip.fields['IS_INBOUND']==1) & (_trip.get_escorted()!=NewEscort['NEITHER']):
+            if (_trip.fields['IS_INBOUND']==1) & (_trip.get_escorted()!=ESCORT_EVENT['NEITHER']):
                 _inb_chauffuer = _trip.get_chauffuer()
                 _inb_jtripID = _trip.get_jtripID()
                 #find tour purpose for chauffeur for inbound jtripID
@@ -536,27 +546,27 @@ class Tour:
         #code escort type on outbound and inbound leg of the tour
         if  not math.isnan(_out_chauffer_purp):
             if ((_out_chauffer_purp>0) & (_out_chauffer_purp<=3)) | (_out_chauffer_purp==10):
-                _out_escort_type = NewEscortType['RIDE_SHARING']
+                _out_escort_type = ESCORT_TYPE['RIDE_SHARING']
             elif (_out_chauffer_purp>3) & (_out_chauffer_purp<10):
-                _out_escort_type = NewEscortType['PURE_ESCORT']
+                _out_escort_type = ESCORT_TYPE['PURE_ESCORT']
         elif (_out_chauffer_ptype==4) | (_out_chauffer_ptype==5):
-            _out_escort_type = NewEscortType['PURE_ESCORT']
+            _out_escort_type = ESCORT_TYPE['PURE_ESCORT']
         elif ((_out_chauffer_ptype > 0) & (_out_chauffer_ptype <=3)) | (_out_chauffer_ptype==6):
-            _out_escort_type = NewEscortType['RIDE_SHARING']
+            _out_escort_type = ESCORT_TYPE['RIDE_SHARING']
         else:
-            _out_escort_type = NewEscortType['NO_ESCORT']
+            _out_escort_type = ESCORT_TYPE['NO_ESCORT']
             
         if not math.isnan(_inb_chauffer_purp):
             if ((_inb_chauffer_purp>0) & (_inb_chauffer_purp<=3)) | (_inb_chauffer_purp==10):
-                _inb_escort_type = NewEscortType['RIDE_SHARING']
+                _inb_escort_type = ESCORT_TYPE['RIDE_SHARING']
             elif (_inb_chauffer_purp>3) & (_inb_chauffer_purp<10):
-                _inb_escort_type = NewEscortType['PURE_ESCORT']
+                _inb_escort_type = ESCORT_TYPE['PURE_ESCORT']
         elif (_inb_chauffer_ptype==4) | (_inb_chauffer_ptype==5):
-            _inb_escort_type = NewEscortType['PURE_ESCORT']
+            _inb_escort_type = ESCORT_TYPE['PURE_ESCORT']
         elif ((_inb_chauffer_ptype > 0) & (_inb_chauffer_ptype <=3)) | (_inb_chauffer_ptype==6):
-            _inb_escort_type = NewEscortType['RIDE_SHARING']
+            _inb_escort_type = ESCORT_TYPE['RIDE_SHARING']
         else:
-            _inb_escort_type = NewEscortType['NO_ESCORT']
+            _inb_escort_type = ESCORT_TYPE['NO_ESCORT']
                     
         self.fields['ESCORTED_TOUR'] = int(_escorted)
         self.fields['CHAUFFUER_ID'] = '"'+','.join(['%s' %id for id in list(_chauffuer_set)])+'"'   #in case there are more than 1 chauffuer
@@ -571,8 +581,8 @@ class Tour:
                    
         
     def set_escorting_fields(self):
-        NewEscort = self.constants.get('NewEscort')
-        NewEscortType = self.constants.get('NewEscortType')
+        ESCORT_EVENT = self.constants.get('ESCORT_EVENT')
+        ESCORT_TYPE = self.constants.get('ESCORT_TYPE')
         
         #initialize set of escorted hh members to empty set
         _escort_pers_set = set()
@@ -590,35 +600,35 @@ class Tour:
             #number of escorting episodes in outbound/inbound direction
             #check if ESCORTING key exists, otherwise no escortin on this trip
             if 'ESCORTING' in _trip.fields:
-                if (_trip.fields['IS_INBOUND']==0) & (_trip.fields['ESCORTING']!=NewEscort['NEITHER']):
+                if (_trip.fields['IS_INBOUND']==0) & (_trip.fields['ESCORTING']!=ESCORT_EVENT['NEITHER']):
                     _out_escorting = _out_escorting + 1
-                if (_trip.fields['IS_INBOUND']==1) & (_trip.fields['ESCORTING']!=NewEscort['NEITHER']):
+                if (_trip.fields['IS_INBOUND']==1) & (_trip.fields['ESCORTING']!=ESCORT_EVENT['NEITHER']):
                     _inb_escorting = _inb_escorting + 1
             
         #code escorting type for outbound and inbound leg
         if  (not math.isnan(_tour_purp)) & (_out_escorting>0):
             if ((_tour_purp>0) & (_tour_purp<=3)) | (_tour_purp==10):
-                _out_escort_type = NewEscortType['RIDE_SHARING']
+                _out_escort_type = ESCORT_TYPE['RIDE_SHARING']
             elif (_tour_purp>3) & (_tour_purp<10):
-                _out_escort_type = NewEscortType['PURE_ESCORT']
+                _out_escort_type = ESCORT_TYPE['PURE_ESCORT']
         elif ((_pertype==4) | (_pertype==5)) & (_out_escorting>0):
-            _out_escort_type = NewEscortType['PURE_ESCORT']
+            _out_escort_type = ESCORT_TYPE['PURE_ESCORT']
         elif (((_pertype > 0) & (_pertype <=3)) | (_pertype==6)) & (_out_escorting>0):
-            _out_escort_type = NewEscortType['RIDE_SHARING']
+            _out_escort_type = ESCORT_TYPE['RIDE_SHARING']
         else:
-            _out_escort_type = NewEscortType['NO_ESCORT']
+            _out_escort_type = ESCORT_TYPE['NO_ESCORT']
             
         if (not math.isnan(_tour_purp)) & (_inb_escorting>0):
             if ((_tour_purp>0) & (_tour_purp<=3)) | (_tour_purp==10):
-                _inb_escort_type = NewEscortType['RIDE_SHARING']
+                _inb_escort_type = ESCORT_TYPE['RIDE_SHARING']
             elif (_tour_purp>3) & (_tour_purp<10):
-                _inb_escort_type = NewEscortType['PURE_ESCORT']
+                _inb_escort_type = ESCORT_TYPE['PURE_ESCORT']
         elif ((_pertype==4) | (_pertype==5)) & (_inb_escorting>0):
-            _inb_escort_type = NewEscortType['PURE_ESCORT']
+            _inb_escort_type = ESCORT_TYPE['PURE_ESCORT']
         elif (((_pertype > 0) & (_pertype <=3)) | (_pertype==6)) & (_inb_escorting>0):
-            _inb_escort_type = NewEscortType['RIDE_SHARING']
+            _inb_escort_type = ESCORT_TYPE['RIDE_SHARING']
         else:
-            _inb_escort_type = NewEscortType['NO_ESCORT']
+            _inb_escort_type = ESCORT_TYPE['NO_ESCORT']
         
         _num_escorted = len(_escort_pers_set)
         _escorted_list = sorted(list(_escort_pers_set))
@@ -637,7 +647,7 @@ class Tour:
         
     def _set_AW_subtours(self, prim_i):
         NewPurp = self.constants.get('NewPurp')
-        NewPartialTour = self.constants.get('NewPartialTour')
+        PARTIAL_TOUR = self.constants.get('PARTIAL_TOUR')
 
         """ scan through trips in the tour to identify and extract any at-work subtours """
         """ prim_i: trips list index of the primary destination                         """
@@ -683,7 +693,7 @@ class Tour:
                     self.trips.remove(_trip)
                 #renumber the trips
                 self.renumber_trips() 
-        elif self.fields['PARTIAL_TOUR'] == NewPartialTour['NOT_PARTIAL']:
+        elif self.fields['PARTIAL_TOUR'] == PARTIAL_TOUR['NOT_PARTIAL']:
             self.log_error("to- and from-work trips not matching up")
             
         #TODO: provide warning msg when there are not enough place holders for child tour id (currently table allows for 3)
@@ -693,11 +703,11 @@ class Tour:
         return _num_subtours
          
     def _find_prim_stop(self):
-        NewPartialTour = self.constants.get('NewPartialTour')
+        PARTIAL_TOUR = self.constants.get('PARTIAL_TOUR')
 
         if len(self.trips)==1:      #single trip in the tour ->loop?
             _prim_trip = 0
-        elif self.get_partial_status() == NewPartialTour['NOT_PARTIAL']:
+        elif self.get_partial_status() == PARTIAL_TOUR['NOT_PARTIAL']:
             _prim_trip = self._find_prim_by_score()
         else:
             _prim_trip = None

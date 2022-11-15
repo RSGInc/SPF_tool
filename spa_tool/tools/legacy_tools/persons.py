@@ -29,53 +29,53 @@ class Person:
         fp.write(','.join(['%s' % v for v in _vals])+'\n')
 
     def _calc_emp_cat(self, age, emply, hours):
-        NewEmpCategory = self.constants.get('NewEmpCategory')
+        EMPLOYMENT = self.constants.get('EMPLOYMENT')
         age = int(age)
         emply = int(emply)
 
         _emp = np.NAN     # BMP [08/29/17] - updated to work with SANDAG HTS coding of age and employment status
         if (age >=3) & (emply==1):
-            _emp = NewEmpCategory['FULLTIME']
+            _emp = EMPLOYMENT['FULLTIME']
         elif (age>=3) & (emply==2):
-            _emp = NewEmpCategory['PARTTIME']
+            _emp = EMPLOYMENT['PARTTIME']
         elif (age>=3) & (emply>2):
-            _emp = NewEmpCategory['UNEMPLOYED']
+            _emp = EMPLOYMENT['UNEMPLOYED']
         elif age<3:
-            _emp = NewEmpCategory['NON-WORKER']
-           
+            _emp = EMPLOYMENT['NON-WORKER']
+
         self.fields['AGE_CAT'] = age
         self.fields['EMPLY'] = emply
         self.fields['HOURS_CAT'] = hours
         self.fields['EMP_CAT'] = _emp
-        
+
         return _emp
 
     def _calc_emp_cat_no_recode(self, age, emply, hours):
-        NewEmpCategory = self.constants.get('NewEmpCategory')
+        EMPLOYMENT = self.constants.get('EMPLOYMENT')
         age = int(age)
         emply = int(emply)
 
         _emp = np.NAN     #BMP [08/29/17] - updated to work with SANDAG HTS coding of age and employment status
         if (age>=3) & (emply==1):
-            _emp = NewEmpCategory['FULLTIME']
+            _emp = EMPLOYMENT['FULLTIME']
         elif (age>=3) & (emply==2):
-            _emp = NewEmpCategory['PARTTIME']
+            _emp = EMPLOYMENT['PARTTIME']
         elif (age>=3) & (emply>2):
-            _emp = NewEmpCategory['UNEMPLOYED']
+            _emp = EMPLOYMENT['UNEMPLOYED']
         elif age<3:
-            _emp = NewEmpCategory['NON-WORKER']
-        else: #emp_cat cannot be determined based on the above rules 
+            _emp = EMPLOYMENT['NON-WORKER']
+        else: #emp_cat cannot be determined based on the above rules
             pass
-        
+
         self.fields['AGE_CAT'] = age
         self.fields['EMPLY'] = emply
         self.fields['HOURS_CAT'] = hours
         self.fields['EMP_CAT'] = _emp
-        
+
         return _emp
-            
+
     def _calc_stu_cat(self, age, stude, schol, emp_cat):
-        NewStuCategory = self.constants.get('NewStuCategory')
+        STUDENT = self.constants.get('STUDENT')
         age = int(age)
         stude = int(stude)
         schol = int(schol)
@@ -83,74 +83,74 @@ class Person:
 
         _stu = np.NAN     #BMP [08/29/17] - updated to work with SANDAG HTS coding of age and schooling status
         if (age<=3) & (stude in [2,3]) & (schol<=9) & (emp_cat in [2,3,4]):
-            _stu = NewStuCategory['SCHOOL']
+            _stu = STUDENT['SCHOOL']
         elif (age<=2) & (stude in [2,3]) & (schol>9) & (emp_cat in [2,3,4]):
-            _stu = NewStuCategory['SCHOOL']
+            _stu = STUDENT['SCHOOL']
         elif (age>=4) & (stude in [2,3]) & (schol<=9) & (emp_cat in [2,3,4]):
-            _stu = NewStuCategory['UNIVERSITY']
+            _stu = STUDENT['UNIVERSITY']
         elif (age>=3) & (stude in [2,3]) & (schol>9) & (emp_cat in [2,3,4]):
-            _stu = NewStuCategory['UNIVERSITY']
+            _stu = STUDENT['UNIVERSITY']
         elif emp_cat==1:
-            _stu = NewStuCategory['NON-STUDENT']
+            _stu = STUDENT['NON-STUDENT']
         elif stude==1:
-            _stu = NewStuCategory['NON-STUDENT']
+            _stu = STUDENT['NON-STUDENT']
         else:
             #stu_cat cannot be determined -> assign based on age
-            if (age<=3):        #TODO: define constant 
+            if (age<=3):        #TODO: define constant
                 stude = 3
                 schol = 9
-                _stu = NewStuCategory['SCHOOL']
-                self.recode_student_category(_stu, 
+                _stu = STUDENT['SCHOOL']
+                self.recode_student_category(_stu,
                         "missing student status/grade info; assign STUDE=1, SCHOL=4, STU_CAT=1 (grade 9-12 student) based on age<=17")
             else:
                 stude=1         #TODO: define constant
                 schol=np.nan
-                _stu = NewStuCategory['NON-STUDENT']
+                _stu = STUDENT['NON-STUDENT']
                 self.recode_student_category(_stu,
-                        "missing student status/grade info; assign STUDE=1, SCHOL=NA, STU_CAT=3 (non-student) based on age>=16")                
+                        "missing student status/grade info; assign STUDE=1, SCHOL=NA, STU_CAT=3 (non-student) based on age>=16")
 
         self.fields['STUDE'] = stude
         self.fields['SCHOL'] = schol
         self.fields['STU_CAT'] = _stu
 
         return _stu
-            
+
     def _calc_stu_cat_no_recode(self, age, stude, schol, emp_cat):
-        NewStuCategory = self.constants.get('NewStuCategory')
+        STUDENT = self.constants.get('STUDENT')
 
         _stu = np.NAN        #BMP [08/29/17] - updated to work with SANDAG HTS coding of age and schooling status
         if (age<=3) & (stude in [2,3]) & (schol<=9) & (emp_cat in [2,3,4]):
-            _stu = NewStuCategory['SCHOOL']
+            _stu = STUDENT['SCHOOL']
         elif (age<=2) & (stude in [2,3]) & (schol>9) & (emp_cat in [2,3,4]):
-            _stu = NewStuCategory['SCHOOL']
+            _stu = STUDENT['SCHOOL']
         elif (age>=4) & (stude in [2,3]) & (schol<=9) & (emp_cat in [2,3,4]):
-            _stu = NewStuCategory['UNIVERSITY']
+            _stu = STUDENT['UNIVERSITY']
         elif (age>=3) & (stude in [2,3]) & (schol>9) & (emp_cat in [2,3,4]):
-            _stu = NewStuCategory['UNIVERSITY']
+            _stu = STUDENT['UNIVERSITY']
         elif emp_cat==1:
-            _stu = NewStuCategory['NON-STUDENT']
+            _stu = STUDENT['NON-STUDENT']
         elif stude==1:
-            _stu = NewStuCategory['NON-STUDENT']
+            _stu = STUDENT['NON-STUDENT']
         else:
             pass
-        
+
         self.fields['STUDE'] = stude
         self.fields['SCHOL'] = schol
         self.fields['STU_CAT'] = _stu
 
         return _stu
-        
+
     def _calc_per_type(self, df_per):
-        NewStuCategory = self.constants.get('NewStuCategory')
-        NewEmpCategory = self.constants.get('NewEmpCategory')
-        NewPerType = self.constants.get('NewPerType')
+        STUDENT = self.constants.get('STUDENT')
+        EMPLOYMENT = self.constants.get('EMPLOYMENT')
+        PERTYPE = self.constants.get('PERTYPE')
 
         # BMP[08/30/17] - updated to work SNADAG HTS coding of variables
-        _type = np.NAN 
-        
+        _type = np.NAN
+
         if len(df_per) != 1:
             self.log_error("person record not found")
-        
+
         _age = df_per['AGE_CAT'].iloc[0]
         _emply = df_per['EMPLY'].iloc[0]
         _hours = df_per['HOURS_CAT'].iloc[0]
@@ -159,69 +159,69 @@ class Person:
         _schol = df_per['SCHOL'].iloc[0]
         _emp_cat = self._calc_emp_cat(_age, _emply, _hours)
         _stu_cat = self._calc_stu_cat(_age, _stude, _schol, _emp_cat)
-        
-        #if (_age>=16) & (_emp_cat==NewEmpCategory['FULLTIME']) & (_stu_cat==NewStuCategory['NON-STUDENT']):
-        if (_age>=3) & (_emp_cat==NewEmpCategory['FULLTIME']):
-            #Full-time worker 
-            _type = NewPerType['FW']
-            
-        elif (_age>=3) & (_emp_cat==NewEmpCategory['PARTTIME']) & (_stu_cat==NewStuCategory['NON-STUDENT']):
-            #Part-time worker 
-            _type = NewPerType['PW']
-            
-        #if (_age>=16) & (_emp_cat in [2,3]) & (_stu_cat==2):
-        #elif (_age>=17) & (_stu_cat==NewStuCategory['UNIVERSITY']):  
-        elif (_age>=4) & (_emp_cat in [NewEmpCategory['PARTTIME'],NewEmpCategory['UNEMPLOYED']]) & (_stu_cat==NewStuCategory['UNIVERSITY']):  
-            #University Student
-            _type = NewPerType['US']
-            
-        elif (_age>=3) & (_age<=10) & (_emp_cat==NewEmpCategory['UNEMPLOYED']) & (_stu_cat==NewStuCategory['NON-STUDENT']):
-            #Non-worker
-            _type = NewPerType['NW']
-            
-        elif (_age>=11) & (_emp_cat==NewEmpCategory['UNEMPLOYED']) & (_stu_cat==NewStuCategory['NON-STUDENT']):
-            #Retired (non-working) adult
-            _type = NewPerType['RE']
-            
-        #elif (_age>=16) & (_age<=19) & (_emp_cat in [2,3]) & (_stu_cat==1):
-        elif (_age==3) & (_stu_cat==NewStuCategory['SCHOOL']):
-            #Driving Age Student
-            _type = NewPerType['DS']
-            
-        elif (_age==3) & (_stu_cat==NewStuCategory['UNIVERSITY']):    #recode 16-17 year olds going to university as going to school
-            #Driving Age Student
-            _type = NewPerType['DS']
-            self.recode_student_category(NewStuCategory['SCHOOL'], "16-year old found to attend university; reset STU_CAT to SCHOOL and assign PERTYPE to DS")
-            
-        elif (_age==2) & (_emp_cat==NewEmpCategory['NON-WORKER']) & (_stu_cat==NewStuCategory['SCHOOL']):
-            #Non-driving student
-            _type = NewPerType['ND']
-            
-        elif (_age==2) & (_emp_cat==NewEmpCategory['NON-WORKER']) & (_stu_cat==NewStuCategory['NON-STUDENT']):    #recode none students as students; see email exchange with JF on 6/5/2014 
-            #Non-driving student
-            _type = NewPerType['ND']
-            self.recode_student_category(NewStuCategory['SCHOOL'], "6~15 year old not attending school; reset STU_CAT to SCHOOL and assign PERTYPE to ND")
 
-        elif (_age==1): 
+        #if (_age>=16) & (_emp_cat==EMPLOYMENT['FULLTIME']) & (_stu_cat==STUDENT['NON-STUDENT']):
+        if (_age>=3) & (_emp_cat==EMPLOYMENT['FULLTIME']):
+            #Full-time worker
+            _type = PERTYPE['FW']
+
+        elif (_age>=3) & (_emp_cat==EMPLOYMENT['PARTTIME']) & (_stu_cat==STUDENT['NON-STUDENT']):
+            #Part-time worker
+            _type = PERTYPE['PW']
+
+        #if (_age>=16) & (_emp_cat in [2,3]) & (_stu_cat==2):
+        #elif (_age>=17) & (_stu_cat==STUDENT['UNIVERSITY']):
+        elif (_age>=4) & (_emp_cat in [EMPLOYMENT['PARTTIME'],EMPLOYMENT['UNEMPLOYED']]) & (_stu_cat==STUDENT['UNIVERSITY']):
+            #University Student
+            _type = PERTYPE['US']
+
+        elif (_age>=3) & (_age<=10) & (_emp_cat==EMPLOYMENT['UNEMPLOYED']) & (_stu_cat==STUDENT['NON-STUDENT']):
+            #Non-worker
+            _type = PERTYPE['NW']
+
+        elif (_age>=11) & (_emp_cat==EMPLOYMENT['UNEMPLOYED']) & (_stu_cat==STUDENT['NON-STUDENT']):
+            #Retired (non-working) adult
+            _type = PERTYPE['RE']
+
+        #elif (_age>=16) & (_age<=19) & (_emp_cat in [2,3]) & (_stu_cat==1):
+        elif (_age==3) & (_stu_cat==STUDENT['SCHOOL']):
+            #Driving Age Student
+            _type = PERTYPE['DS']
+
+        elif (_age==3) & (_stu_cat==STUDENT['UNIVERSITY']):    #recode 16-17 year olds going to university as going to school
+            #Driving Age Student
+            _type = PERTYPE['DS']
+            self.recode_student_category(STUDENT['SCHOOL'], "16-year old found to attend university; reset STU_CAT to SCHOOL and assign PERTYPE to DS")
+
+        elif (_age==2) & (_emp_cat==EMPLOYMENT['NON-WORKER']) & (_stu_cat==STUDENT['SCHOOL']):
+            #Non-driving student
+            _type = PERTYPE['ND']
+
+        elif (_age==2) & (_emp_cat==EMPLOYMENT['NON-WORKER']) & (_stu_cat==STUDENT['NON-STUDENT']):    #recode none students as students; see email exchange with JF on 6/5/2014
+            #Non-driving student
+            _type = PERTYPE['ND']
+            self.recode_student_category(STUDENT['SCHOOL'], "6~15 year old not attending school; reset STU_CAT to SCHOOL and assign PERTYPE to ND")
+
+        elif (_age==1):
             #Preschool
-            _type = NewPerType['PS']
-            
+            _type = PERTYPE['PS']
+
         else:
             self.log_error("per_type not found")
 
         return _type
 
     def _calc_per_type_no_recode(self, df_per):
-        NewStuCategory = self.constants.get('NewStuCategory')
-        NewEmpCategory = self.constants.get('NewEmpCategory')
-        NewPerType = self.constants.get('NewPerType')
+        STUDENT = self.constants.get('STUDENT')
+        EMPLOYMENT = self.constants.get('EMPLOYMENT')
+        PERTYPE = self.constants.get('PERTYPE')
 
         # BMP[08/30/17] - updated to work SNADAG HTS coding of variables
-        _type = np.NAN 
-        
+        _type = np.NAN
+
         if len(df_per) != 1:
             self.log_error("person record not found")
-        
+
         _age = df_per['AGE_CAT'].iloc[0]
         _emply = df_per['EMPLY'].iloc[0]
         _hours = df_per['HOURS_CAT'].iloc[0]
@@ -230,52 +230,52 @@ class Person:
         _schol = df_per['SCHOL'].iloc[0]
         _emp_cat = self._calc_emp_cat_no_recode(_age, _emply, _hours)
         _stu_cat = self._calc_stu_cat_no_recode(_age, _stude, _schol, _emp_cat)
-        
-        #if (_age>=16) & (_emp_cat==NewEmpCategory['FULLTIME']) & (_stu_cat==NewStuCategory['NON-STUDENT']):
-        if (_age>=16) & (_emp_cat==NewEmpCategory['FULLTIME']):
-            #Full-time worker 
-            _type = NewPerType['FW']
-            
-        elif (_age>=16) & (_emp_cat==NewEmpCategory['PARTTIME']) & (_stu_cat==NewStuCategory['NON-STUDENT']):
-            #Part-time worker 
-            _type = NewPerType['PW']
-            
+
+        #if (_age>=16) & (_emp_cat==EMPLOYMENT['FULLTIME']) & (_stu_cat==STUDENT['NON-STUDENT']):
+        if (_age>=16) & (_emp_cat==EMPLOYMENT['FULLTIME']):
+            #Full-time worker
+            _type = PERTYPE['FW']
+
+        elif (_age>=16) & (_emp_cat==EMPLOYMENT['PARTTIME']) & (_stu_cat==STUDENT['NON-STUDENT']):
+            #Part-time worker
+            _type = PERTYPE['PW']
+
         #if (_age>=16) & (_emp_cat in [2,3]) & (_stu_cat==2):
-        #elif (_age>=17) & (_stu_cat==NewStuCategory['UNIVERSITY']):  
-        elif (_age>=17) & (_emp_cat in [NewEmpCategory['PARTTIME'],NewEmpCategory['UNEMPLOYED']]) & (_stu_cat==NewStuCategory['UNIVERSITY']):  
+        #elif (_age>=17) & (_stu_cat==STUDENT['UNIVERSITY']):
+        elif (_age>=17) & (_emp_cat in [EMPLOYMENT['PARTTIME'],EMPLOYMENT['UNEMPLOYED']]) & (_stu_cat==STUDENT['UNIVERSITY']):
             #University Student
-            _type = NewPerType['US']
-            
-        elif (_age>=16) & (_age<=64) & (_emp_cat==NewEmpCategory['UNEMPLOYED']) & (_stu_cat==NewStuCategory['NON-STUDENT']):
+            _type = PERTYPE['US']
+
+        elif (_age>=16) & (_age<=64) & (_emp_cat==EMPLOYMENT['UNEMPLOYED']) & (_stu_cat==STUDENT['NON-STUDENT']):
             #Non-worker
-            _type = NewPerType['NW']
-            
-        elif (_age>=65) & (_emp_cat==NewEmpCategory['UNEMPLOYED']) & (_stu_cat==NewStuCategory['NON-STUDENT']):
+            _type = PERTYPE['NW']
+
+        elif (_age>=65) & (_emp_cat==EMPLOYMENT['UNEMPLOYED']) & (_stu_cat==STUDENT['NON-STUDENT']):
             #Retired (non-working) adult
-            _type = NewPerType['RE']
-            
+            _type = PERTYPE['RE']
+
         #elif (_age>=16) & (_age<=19) & (_emp_cat in [2,3]) & (_stu_cat==1):
-        elif (_age>=16) & (_age<=19) & (_stu_cat==NewStuCategory['SCHOOL']):
+        elif (_age>=16) & (_age<=19) & (_stu_cat==STUDENT['SCHOOL']):
             #Driving Age Student
-            _type = NewPerType['DS']
-            
-        elif (_age==16) & (_stu_cat==NewStuCategory['UNIVERSITY']):    #recode 16-year olds going to university as going to school
+            _type = PERTYPE['DS']
+
+        elif (_age==16) & (_stu_cat==STUDENT['UNIVERSITY']):    #recode 16-year olds going to university as going to school
             #Driving Age Student
-            _type = NewPerType['DS']
-            self.recode_student_category(NewStuCategory['SCHOOL'], "16-year old found to attend university; reset STU_CAT to SCHOOL and assign PERTYPE to DS")
-            
-        elif (_age>=6) & (_age<=15) & (_emp_cat==NewEmpCategory['NON-WORKER']) & (_stu_cat==NewStuCategory['SCHOOL']):
+            _type = PERTYPE['DS']
+            self.recode_student_category(STUDENT['SCHOOL'], "16-year old found to attend university; reset STU_CAT to SCHOOL and assign PERTYPE to DS")
+
+        elif (_age>=6) & (_age<=15) & (_emp_cat==EMPLOYMENT['NON-WORKER']) & (_stu_cat==STUDENT['SCHOOL']):
             #Non-driving student
-            _type = NewPerType['ND']
-            
-        elif (_age>=6) & (_age<=15) & (_emp_cat==NewEmpCategory['NON-WORKER']) & (_stu_cat==NewStuCategory['NON-STUDENT']):    #recode none students as students; see email exchange with JF on 6/5/2014 
+            _type = PERTYPE['ND']
+
+        elif (_age>=6) & (_age<=15) & (_emp_cat==EMPLOYMENT['NON-WORKER']) & (_stu_cat==STUDENT['NON-STUDENT']):    #recode none students as students; see email exchange with JF on 6/5/2014
             #Non-driving student
-            _type = NewPerType['ND']
-            self.recode_student_category(NewStuCategory['SCHOOL'], "6~15 year old not attending school; reset STU_CAT to SCHOOL and assign PERTYPE to ND")
+            _type = PERTYPE['ND']
+            self.recode_student_category(STUDENT['SCHOOL'], "6~15 year old not attending school; reset STU_CAT to SCHOOL and assign PERTYPE to ND")
 
         elif (_age>=0) & (_age<=5): #see email exchange with Joel 6/5/2014
             #Preschool
-            _type = NewPerType['PS']
+            _type = PERTYPE['PS']
             
         else:
             self.log_error("per_type not found")
@@ -289,15 +289,15 @@ class Person:
         return self.per_id
     
     def get_is_adult(self):
-        NewPerType = self.constants.get('NewPerType')
+        PERTYPE = self.constants.get('PERTYPE')
 
         ptype = self.get_per_type()
         return ptype in [
-            NewPerType['FW'],
-            NewPerType['PW'],
-            NewPerType['US'],
-            NewPerType['NW'],
-            NewPerType['RE']
+            PERTYPE['FW'],
+            PERTYPE['PW'],
+            PERTYPE['US'],
+            PERTYPE['NW'],
+            PERTYPE['RE']
         ]
     
     def set_per_type(self, ptype):

@@ -56,18 +56,22 @@ trip,TPURP,INT,categorical,Trip Purpose,9,Discretionary,"trip.trip_purp.isin([65
 #trip,TPURP,INT,categorical,Trip Purpose,10,Work Related,trip.trip_purp.isin([999])
 #trip,TPURP,INT,categorical,Trip Purpose,11,Loop (Home -> Home),"trip[trip.trip_num==1].reset_index().merge(household['home_zone_id'].reset_index()).set_index('trip_id').apply(lambda x: x['home_zone_id']==x['dest_zone_id'],axis=1)"
 #trip,TPURP,INT,categorical,Trip Purpose,12,Change Mode,trip.trip_purp.isin([999])
-trip,TPURP,INT,categorical,Trip Purpose,10,Other,trip.trip_purp.isin([9])
-trip,MODE,INT,categorical,Surveyed Trip Mode,1,SOV,"(trip.mode_mainline.isin([2,11,12,13]) & (pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)==0))"
-trip,MODE,INT,categorical,Surveyed Trip Mode,2,HOV2,"(trip.mode_mainline.isin([2,3,11,12,13]) & (pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)==1)) | (trip.mode_mainline.isin([3]) & (pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)==0))"
-trip,MODE,INT,categorical,Surveyed Trip Mode,3,HOV3+,"(trip.mode_mainline.isin([2,3,11,12,13]) & (pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)>1))"
-trip,MODE,INT,categorical,Surveyed Trip Mode,4,Walk,trip.mode_mainline.isin([1])
-trip,MODE,INT,categorical,Surveyed Trip Mode,5,Bike,trip.mode_mainline.isin([14])
-trip,MODE,INT,categorical,Surveyed Trip Mode,6,TNC / Taxi,"trip.mode_mainline.isin([8,9])"
-trip,MODE,INT,categorical,Surveyed Trip Mode,7,Transit-Bus,trip.mode_mainline.isin([5])
-trip,MODE,INT,categorical,Surveyed Trip Mode,8,Transit-Metro,trip.mode_mainline.isin([4])
-trip,MODE,INT,categorical,Surveyed Trip Mode,9,Company-Bus,trip.mode_mainline.isin([6])
-trip,MODE,INT,categorical,Surveyed Trip Mode,10,Schoolbus,trip.mode_mainline.isin([7])
-trip,MODE,INT,categorical,Surveyed Trip Mode,11,Other,"trip.mode_mainline.isin([10,15])"
+trip,TPURP,INT,categorical,Trip Purpose,13,Other,trip.trip_purp.isin([9])
+trip,MODE,INT,categorical,Surveyed Trip Mode,1,SOV,"self.get_mode_bool('SOV', trip, trip_hhcompanions_pnum)"
+trip,MODE,INT,categorical,Surveyed Trip Mode,2,HOV2,"self.get_mode_bool('HOV2', trip, trip_hhcompanions_pnum)"
+trip,MODE,INT,categorical,Surveyed Trip Mode,3,HOV3+,"self.get_mode_bool('HOV3+', trip, trip_hhcompanions_pnum)"
+trip,MODE,INT,categorical,Surveyed Trip Mode,4,Walk,"self.get_mode_bool('WALK', trip, trip_hhcompanions_pnum)"
+trip,MODE,INT,categorical,Surveyed Trip Mode,5,Bike,"self.get_mode_bool('BIKE', trip, trip_hhcompanions_pnum)"
+trip,MODE,INT,categorical,Surveyed Trip Mode,6,TNC / Taxi,"self.get_mode_bool('TNC / TAXI', trip, trip_hhcompanions_pnum)"
+trip,MODE,INT,categorical,Surveyed Trip Mode,7,WALK-BUS,"self.get_mode_bool('WALK-BUS', trip, trip_hhcompanions_pnum)"
+trip,MODE,INT,categorical,Surveyed Trip Mode,8,WALK-METRO,"self.get_mode_bool('WALK-METRO', trip, trip_hhcompanions_pnum)"
+trip,MODE,INT,categorical,Surveyed Trip Mode,9,PNR-BUS,"self.get_mode_bool('PNR-BUS', trip, trip_hhcompanions_pnum)"
+trip,MODE,INT,categorical,Surveyed Trip Mode,10,PNR-METRO,"self.get_mode_bool('PNR-METRO', trip, trip_hhcompanions_pnum)"
+trip,MODE,INT,categorical,Surveyed Trip Mode,11,KNR-BUS,"self.get_mode_bool('TRANSIT-BUS', trip, trip_hhcompanions_pnum)"
+trip,MODE,INT,categorical,Surveyed Trip Mode,12,KNR-METRO,"self.get_mode_bool('TRANSIT-METRO', trip, trip_hhcompanions_pnum)"
+trip,MODE,INT,categorical,Surveyed Trip Mode,13,Company-Bus,"self.get_mode_bool('COMPANY-BUS', trip, trip_hhcompanions_pnum)"
+trip,MODE,INT,categorical,Surveyed Trip Mode,14,Schoolbus,"self.get_mode_bool('SCHOOLBUS', trip, trip_hhcompanions_pnum)"
+trip,MODE,INT,categorical,Surveyed Trip Mode,15,Other,"self.get_mode_bool('OTHER', trip, trip_hhcompanions_pnum)"
 trip,DEP_HR,INT,continuous,Trip Departure Hour (0- 23),,,trip.start_h
 trip,DEP_MIN,INT,continuous,Trip Departure Minute of Hour (0-59),,,trip.start_min
 trip,ARR_HR,INT,continuous,Trip Arrival Hour (0-23),,,trip.arrival_h
@@ -85,14 +89,15 @@ trip,PER3,INT,continuous,Person ID of third additional household member on trip,
 trip,PER4,INT,continuous,Person ID of fourth additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(3).astype(str).reindex(trip.index)
 trip,PER5,INT,continuous,Person ID of fifth additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(4).astype(str).reindex(trip.index)
 trip,PER6,INT,continuous,Person ID of sixth additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(5).astype(str).reindex(trip.index)
-trip,XCORD,INT,continuous,X Coordinate (longitude),,,"trip.dest_latlon.str.split(',', expand=True)[1]"
-trip,YCORD,INT,continuous,Y Coordinate (latitude),,,"trip.dest_latlon.str.split(',', expand=True)[0]"
-trip,WXCORD,INT,continuous,Work X Coordinate (longitude),,,"self.get_WXYCORD('X', trip)"
-trip,WYCORD,INT,continuous,Work Y Coordinate (latitude),,,"self.get_WXYCORD('Y', trip)"
+trip,XCORD,INT,continuous,X Coordinate (longitude),,,"self.get_XYCORD('LON', trip)"
+trip,YCORD,INT,continuous,Y Coordinate (latitude),,,"self.get_XYCORD('LAT', trip)"
+trip,WXCORD,INT,continuous,Work X Coordinate (longitude),,,"self.get_WXYCORD('LON', trip)"
+trip,WYCORD,INT,continuous,Work Y Coordinate (latitude),,,"self.get_WXYCORD('LAT', trip)"
 trip,PLANO,INT,continuous,Place Number per person,,,trip.trip_num
 trip,DAYNO,INT,continuous,Day Number per person,,,"trip.reset_index().merge(day.set_index('person_id').sort_values('day_date').groupby(level=0).day_date.rank().astype(int), on='person_id', how='left').set_index('trip_id').day_date"
 trip,PNAME,INT,continuous,Place name,,,"trip.reset_index().merge(zone[['OLDZONE', 'NAME']], left_on='dest_zone_id', right_on='OLDZONE', how='left').set_index('trip_id').NAME"
 trip,DISTANCE,REAL,continuous,Trip distance in km,,,"trip.trip_dist_km + trip.trip_dist_m/1000"
+trip,BUFFER_DIST,REAL,continuous,Trip distance in km,,,"self.get_buffer_dist(trip)"
 # place,place_id,INT,continuous,dataframe index,,,"pd.Series(trip.index, index=trip.index)"
 # place,SAMPN,INT,continuous,Household ID,,,trip.household_id
 # place,PERNO,INT,continuous,Person ID,,,trip.person_num

@@ -46,53 +46,72 @@ def get_buffer_dist(trip):
 
     return dist
 
-def get_mode_bool(mode, trip, trip_hhcompanions_pnum):
-    if mode == 'SOV':
-        (trip.mode_mainline.isin([2,11,12,13]) & (pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)==0))
-    if mode == 'HOV2':
-        (trip.mode_mainline.isin([2,3,11,12,13]) & (pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)==1)) | \
-        (trip.mode_mainline.isin([3]) & (pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)==0))
-    if mode == 'HOV3+':
-       (trip.mode_mainline.isin([2,3,11,12,13]) & (pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)>1))
-    if mode == 'WALK':
-        trip.mode_mainline.isin([1])
-    if mode == 'BIKE':
-        trip.mode_mainline.isin([14])
-    if mode == 'TNC / TAXI':
-        trip.mode_mainline.isin([8,9])
-    if mode == 'TRANSIT-BUS':
-        trip.mode_mainline.isin([5])
-    if mode == 'WALK-BUS':
-        trip.mode_mainline.isin([5])
+def get_hov(hov_type, trip, trip_hhcompanions_pnum):
+    # Person is driver in auto
+    is_driver = trip.mode_mainline.isin([2, 11, 12, 13])
 
-        mode_cols = ['mode_' + str(x) for x in range(1, 6)]
+    # Person is a passenger in auto
+    is_pax = trip.mode_mainline.isin([3])
 
-        [x for x in mode_cols]
+    # Trip has no other passengers
+    no_pax = pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(
+        axis=1).astype(int) == 0
 
-        trip[mode_cols].apply(lambda x: )
+    # Trip has one passenger
+    one_pax = pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(
+        0).sum(axis=1).astype(int) == 1
+
+    # Trip has 2 or more passengers
+    twomore_pax = pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(
+        0).sum(
+        axis=1).astype(int) > 1
+
+    if hov_type == 'SOV':
+        return is_driver & no_pax
+    if hov_type == 'HOV2':
+        return (is_driver & one_pax) | (is_pax & ~twomore_pax)
+    if hov_type == 'HOV3+':
+        return (is_driver & twomore_pax) | (is_pax & twomore_pax)
+
+def get_transit_type(mode, trip):
+
+    access_mode, transit_mode = mode.split('-')
+
+    # Other transit modes preceding mainline mode are 'walk'
+    # FIXME Should put this as a setting in the config file
+    amode = {'WALK': [1, 4, 5, 6, 7], 'PNR': [2, 10, 11, 12, 13, 14, 15], 'KNR': [3, 8, 9]}[access_mode]
+    tmode = {'METRO': 4, 'BUS': 5}[transit_mode]
+
+    # Filter the transit trips only
+    transit_trips = trip[trip.mode_mainline.isin([tmode])]
+
+    # mode columns
+    mode_cols = ['mode_' + str(x) for x in range(1, 6)]
+
+    # Re-shape to long to allow convenient groupby function
+    df_mode_seq = pd.melt(transit_trips, id_vars='mode_mainline', value_vars=mode_cols,
+                          var_name='sequence', value_name='part_mode',
+                          ignore_index=False)
+
+    # sequence string to integer
+    df_mode_seq.sequence = df_mode_seq.sequence.str.strip('mode_').astype(int)
+
+    # Which mode part is mainline
+    df_mode_seq['is_mainline'] = False
+    df_mode_seq.loc[df_mode_seq.mode_mainline == df_mode_seq.part_mode, 'is_mainline'] = True
+
+    # Check if mainline mode is only mode, otherwise check if walk, drive, or dropoff
+    res = pd.Series(False, index=trip.index)
+    # tripid, df = list(df_mode_seq.groupby(level=0))[17]
+    for tripid, df in df_mode_seq.groupby(level=0):
+
+        # If access mode is walk and if transit is only mode, then walk-transit
+        if access_mode == 'WALK' and df.loc[df.sequence == 1, 'is_mainline'].all():
+            res.loc[tripid] = True
+
+        # If access mode is before mainline transit mode
+        elif not df[~df.is_mainline & df.part_mode.isin(amode)].empty:
+            res.loc[tripid] = df[df.sequence.isin(df[df.is_mainline].sequence - 1)].part_mode.isin(amode).any()
 
 
-        trip.mode_2
-        trip.mode_3
-        trip.mode_4
-        trip.mode_5
-        trip.mode_6
-
-    if mode == 'WALK-METRO':
-        pass
-    if mode == 'KNR-BUS':
-        pass
-    if mode == 'PNR-BUS':
-        pass
-    if mode == 'PNR-METRO':
-        pass
-    if mode == 'KNR-METRO':
-        pass
-    if mode == 'TRANSIT-METRO':
-        trip.mode_mainline.isin([4])
-    if mode == 'COMPANY-BUS':
-        trip.mode_mainline.isin([6])
-    if mode == 'SCHOOLBUS':
-        trip.mode_mainline.isin([7])
-    if mode == 'OTHER':
-        trip.mode_mainline.isin([10,15])
+    return res

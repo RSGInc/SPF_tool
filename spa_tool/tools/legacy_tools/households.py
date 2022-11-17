@@ -17,7 +17,7 @@ class Household:
         self.recode_tags = []
         self.constants = constants
         
-    def print_header(self, fp):
+    def print_header(fp):
         _header = ["HH_ID", "NUM_PERS", "AREA"]
         fp.write(','.join(['%s' % field for field in _header])+'\n')
         
@@ -85,7 +85,7 @@ class Household:
             
     def process_joint_episodes(self):
 
-        NewCompType = self.constants.get('NewCompType')
+        COMPOSITION = self.constants.get('COMPOSITION')
 
         _dep_time_list = sorted(self.joint_episodes.keys())  #sorted list of joint-trip departure times as key values 
         #process each dep_time entry at a time
@@ -255,13 +255,13 @@ class Household:
                 #TODO: verify that a driver is indeed found for an auto joint trip                            
                                            
                 #derive travel party composition
-                _composition = NewCompType["MIXED"]
+                _composition = COMPOSITION["MIXED"]
                 if _num_adults==_size:  
                     #number of adults equals number of people in the travel party
-                    _composition = NewCompType["ALL_ADULTS"]
+                    _composition = COMPOSITION["ALL_ADULTS"]
                 elif _num_adults==0:
                     #no adults
-                    _composition = NewCompType["ALL_CHILDREN"]
+                    _composition = COMPOSITION["ALL_CHILDREN"]
     
                 #go back and update the joint-unlinked-trip records
                 for _i in range(_start_ix, _stop_ix):
@@ -287,7 +287,7 @@ class Household:
     def process_joint_tours(self):       
         """determine partially vs fully joint tour"""
         #a tour is fully joint if all the constituting trips are joint-grouped and made by the same group of people
-        NewJointCategory = self.constants.get('NewJointCategory')
+        JOINT_CAT = self.constants.get('JOINT_CAT')
 
         _jt_dict = dict()       #dictionary with jt_id as the key and ([per ids],[tour ids],[trip ids], [tour lengths]) as the value 
         _start_jtour = -1       #index into unique_jt_groups that marks the start of potentially a fully joint tour
@@ -301,7 +301,7 @@ class Household:
             #first check if the parent trips are all joint and grouped. if not, stop processing this group of joint travel
             _all_grouped = True
             for _jt in _cur_jt_group:
-                if not (_jt.parent_trip.get_joint_status() == NewJointCategory['JOINT-GROUPED']):
+                if not (_jt.parent_trip.get_joint_status() == JOINT_CAT['JOINT-GROUPED']):
                     _all_grouped = False
             if not _all_grouped:
                 continue
@@ -366,7 +366,7 @@ class Household:
         self.unique_jtours.append(Joint_tour(jtour_id, jt_groups))        
                 
     def process_escort_trips(self):
-        NewEscort = self.constants.get('NewEscort')
+        ESCORT_EVENT = self.constants.get('ESCORT_EVENT')
 
         #scan through each unique joint episode group
         for _jt_group in self.unique_jt_groups:
@@ -386,8 +386,8 @@ class Household:
                 for _jt in _jt_group:
                     if _jt.get_per_id()==_driver_id:
                         #found driver's trip
-                        _drop_off = _jt.get_dest_escort_pudo() == NewEscort['DROP_OFF']
-                        _pick_up =  _jt.get_orig_escort_pudo() == NewEscort['PICK_UP']
+                        _drop_off = _jt.get_dest_escort_pudo() == ESCORT_EVENT['DROP_OFF']
+                        _pick_up =  _jt.get_orig_escort_pudo() == ESCORT_EVENT['PICK_UP']
                         _driver_jt = _jt
                         break
                     
@@ -402,7 +402,7 @@ class Household:
                             #found a person being dropped off 
                             _escorted_pers.add(_jt.get_per_id())    #add person to the driver's set of escorted persons
                             #set person's trip as being dropped off at destination                                
-                            _jt.parent_trip.set_escorted(NewEscort['DROP_OFF']) 
+                            _jt.parent_trip.set_escorted(ESCORT_EVENT['DROP_OFF'])
                             
                 if _pick_up:
                     #if trip was for picking up, the person(s) being picked up is given by   
@@ -416,7 +416,7 @@ class Household:
                     for _jt in _jt_group:
                         if _jt.get_per_id() in _set_diff:
                             #found a person being picked up
-                            _jt.parent_trip.set_escorted(NewEscort['PICK_UP'])
+                            _jt.parent_trip.set_escorted(ESCORT_EVENT['PICK_UP'])
                         else:
                             #otherwise person is escorting -> add to the set of escorting trips
                             _escorting_jt.add(_jt)
@@ -426,11 +426,11 @@ class Household:
                     
                 #set escorting-related fields in driver's and any other escorting individuals' trip
                 if _drop_off:
-                    _pudo = NewEscort['DROP_OFF']
+                    _pudo = ESCORT_EVENT['DROP_OFF']
                 elif _pick_up:
-                    _pudo = NewEscort['PICK_UP']
+                    _pudo = ESCORT_EVENT['PICK_UP']
                 else:
-                    _pudo = NewEscort['NEITHER']
+                    _pudo = ESCORT_EVENT['NEITHER']
                 for _jt in _escorting_jt:    
                     _jt.parent_trip.set_escorting(_pudo, _escorted_pers)
                 

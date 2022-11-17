@@ -15,7 +15,7 @@ class Person:
         self.tours = []
         self.error_flag = False
 
-    def print_header(self, fp):
+    def print_header(fp):
         _header = ["HH_ID", "PER_ID", "PERSONTYPE", "AGE_CAT", "EMPLY", "HOURS_CAT", "EMP_CAT", "STUDE", "SCHOL",
                    "STU_CAT", "PERSONTYPE0", "EMP_CAT0", "STU_CAT0", "ERROR"]
         fp.write(','.join(['%s' % field for field in _header])+'\n')

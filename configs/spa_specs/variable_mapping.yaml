@@ -13,13 +13,13 @@ START_OF_DAY_MIN: 180       #3:00am
 TIME_WINDOW_BIN_MIN: 30     #bin width in minutes
 WORK_LOCATION_BUFFER: 0.25  # distance buffer to check if activity location is primary work location
 INDEX_JTRIP_BY_DEPTIME: 0   #1 if index by trip departure time at origin, 0 if by trip arrival time at destination
-SurveyChangeModeCode: [12]
-SurveyHomeCode: [0]
-SURVEY_DO_PURP_CODE: [8]
-SURVEY_PU_PURP_CODE: [9] # WHAT IS DO AND PU?
+SurveyChangeModeCode: 12
+SurveyHomeCode: 0
+SURVEY_DO_PURP_CODE: 8
+SURVEY_PU_PURP_CODE: 9
 SurveySchoolPurp: [2,3]
-SurveyWorkPurp: [1]
-SurveyWorkRelatedPurp: [10]
+SurveyWorkPurp: 1
+SurveyWorkRelatedPurp: 10
 
 
 # map mode name to mode code
@@ -30,11 +30,15 @@ TRIP_MODE:
     'WALK': 4
     'BIKE': 5
     'TNC / TAXI': 6
-    'TRANSIT-BUS': 7
-    'TRANSIT-METRO': 8
-    'COMPANY-BUS': 9
-    'SCHOOLBUS': 10
-    'OTHER': 11
+    'WALK-BUS': 7    
+    'WALK-METRO': 8
+    'PNR-BUS': 9
+    'PNR-METRO': 10
+    'KNR-BUS': 11
+    'KNR-METRO': 12
+    'COMPANY-BUS': 13
+    'SCHOOLBUS': 14
+    'OTHER': 15
 
 # Map trip modes to tour modes
 # use list to aggregate multiple (e.g., pnr-bus pnr-metro -> pnr)
@@ -45,11 +49,15 @@ TOUR_MODE:
     'WALK': 4
     'BIKE': 5
     'TNC / TAXI': 6
-    'TRANSIT-BUS': 7
-    'TRANSIT-METRO': 8
-    'COMPANY-BUS': 9
-    'SCHOOLBUS': 10
-    'OTHER': 11 
+    'WALK-BUS': 7    
+    'WALK-METRO': 8
+    'PNR-BUS': 9
+    'PNR-METRO': 10
+    'KNR-BUS': 11
+    'KNR-METRO': 12
+    'COMPANY-BUS': 13
+    'SCHOOLBUS': 14
+    'OTHER': 15
 
 # survey definition for driver/passanger
 DRIVER:

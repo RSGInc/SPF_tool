@@ -70,16 +70,19 @@ class LegacySPA():
         # loop through and process the PLACE data frame group for each household for each day
         # create the household, person, tour, and trip objects
         of_count = len(df_place.groupby(['SAMPN']))
-        iter = 0
+        ct = 0
+
+        # FIXME DELETEME
+        # TESTING
+        # df_place = df_place.iloc[:100]
+
         for (hhid), df_persons in df_place.groupby(['SAMPN']):
             # create a new household object
             hh = Household(hhid, constants=self.constants)
             hh_list.append(hh)
-            iter += 1
-            # ({100*round(iter/of_count}}")
-
-            if iter % round(0.1 * of_count) == 0:
-                print(f"{round(100 * iter / of_count)}% complete")
+            ct += 1
+            if ct % 100 == 0:
+                print(f"Processed household {ct} of {of_count}, {round(100 * ct / of_count)}%", end='\r')
 
             # loop through each person
             for (hhid, pid), df_psn_places in df_persons.groupby(['SAMPN', 'PERNO']):
@@ -91,7 +94,7 @@ class LegacySPA():
                 psn = Person(hh, pid, df_cur_per, self.constants)
 
                 num_places_for_person = len(df_psn_places)
-                print(f"No. of place entries for person {pid} of household {hhid}: {num_places_for_person}")
+                # print(f"No. of place entries for person {pid} of household {hhid}: {num_places_for_person}")
 
                 # first make sure that the place entries are ordered by place number since they will be processed sequentially later
                 df_psn_places = df_psn_places.sort_values('PLANO')
@@ -104,7 +107,7 @@ class LegacySPA():
                     # both X and Y coordinates for work location are found
                     for row_index, row in df_psn_places.iterrows():
                         # check place coordinates against work coordinates if TPURP is work or other activities at work
-                        if row['TPURP'] in SurveyWorkPurp:
+                        if row['TPURP'] == SurveyWorkPurp:
                             xcord = row['XCORD']
                             ycord = row['YCORD']
                             buffer_dist = 0
@@ -113,7 +116,7 @@ class LegacySPA():
                             # if (not xcord==wxcord) | (not ycord==wycord):
                             if (buffer_dist > WORK_LOCATION_BUFFER):
                                 # not the place of work -> recode TPURP to work-related
-                                df_psn_places['TPURP'][row_index] = SurveyWorkRelatedPurp
+                                df_psn_places.loc[row_index, 'TPURP'] = SurveyWorkRelatedPurp
                                 psn.log_recode(
                                     "work activity reported for PLANO={}, which is not the primary work location; recode activity as work-related".format(
                                         row['PLANO']))
@@ -139,7 +142,7 @@ class LegacySPA():
                     cur_tripid = 0
 
                     # true if next PLACE marks the start of a different tour
-                    new_tour = (df_psn_places['TPURP'].iloc[cur_row + 1] in SurveyHomeCode)
+                    new_tour = (df_psn_places['TPURP'].iloc[cur_row + 1] == SurveyHomeCode)
                     # TPURP codes 1,2 mean 'home'
                     new_trip = (df_psn_places['TPURP'].iloc[cur_row + 1] != SurveyChangeModeCode) | \
                                (
@@ -222,7 +225,7 @@ class LegacySPA():
                         trip.set_per_type(psn.get_per_type())
 
         # print_in_separate_files(hh_list, OUT_DIR)
-        functions.print_in_same_files(hh_list, OUT_DIR)
+        self.print_in_same_files(hh_list, OUT_DIR)
 
     def add_place_distance(self, route_file, place_file, out_file):
         # read in ROUTE records into a data frame object
@@ -331,22 +334,22 @@ class LegacySPA():
     def print_in_same_files(self, hh_list, out_dir):
         """ print problematic records (relating to joint travel) in the same files as the 'clean' records """
         # specify output files
-        hh_file = open(out_dir + 'households.csv', 'w')
-        per_file = open(out_dir + 'persons.csv', 'w')
-        trip_file = open(out_dir + 'trips.csv', 'w')
-        joint_trip_file = open(out_dir + 'joint_ultrips.csv', 'w')
-        unique_jtrip_file = open(out_dir + 'unique_joint_ultrips.csv', 'w')
-        tour_file = open(out_dir + 'tours.csv', 'w')
-        unique_jtour_file = open(out_dir + 'unique_joint_tours.csv', 'w')
+        hh_file = open(os.path.join(out_dir, 'households.csv'), 'w')
+        per_file = open(os.path.join(out_dir, 'persons.csv'), 'w')
+        trip_file = open(os.path.join(out_dir, 'trips.csv'), 'w')
+        joint_trip_file = open(os.path.join(out_dir, 'joint_ultrips.csv'), 'w')
+        unique_jtrip_file = open(os.path.join(out_dir, 'unique_joint_ultrips.csv'), 'w')
+        tour_file = open(os.path.join(out_dir, 'tours.csv'), 'w')
+        unique_jtour_file = open(os.path.join(out_dir, 'unique_joint_tours.csv'), 'w')
 
-        err_log_file = open(out_dir + 'error_log.txt', 'w')
-        recode_log_file = open(out_dir + 'recode_log.txt', 'w')
+        err_log_file = open(os.path.join(out_dir, 'error_log.txt'), 'w')
+        recode_log_file = open(os.path.join(out_dir, 'recode_log.txt'), 'w')
 
         # print column headers in tables
-        Trip.print_header(trip_file)
+        Trip.print_header(trip_file, self.constants.get('trip_columns'))
         Joint_ultrip.print_header(joint_trip_file)
         Joint_ultrip.print_header_unique(unique_jtrip_file)
-        Tour.print_header(tour_file)
+        Tour.print_header(tour_file, self.constants.get('tour_columns'))
         Joint_tour.print_header(unique_jtour_file)
         Person.print_header(per_file)
         Household.print_header(hh_file)

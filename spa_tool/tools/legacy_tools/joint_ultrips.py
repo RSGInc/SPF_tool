@@ -62,10 +62,10 @@ class Joint_ultrip:
         return self.parent_trip.get_dest_escort_pudo()
     
     def get_orig_escort_pudo(self):
-        NewEscort = self.constants.get('NewEscort')
+        ESCORT_EVENT = self.constants.get('ESCORT_EVENT')
 
         _cur_trip_id = self.parent_trip.get_id()
-        _pudo = NewEscort['NEITHER']
+        _pudo = ESCORT_EVENT['NEITHER']
         if _cur_trip_id>1:
             _prev_trip = self.parent_trip.tour_obj.get_trip(_cur_trip_id-1)
             _pudo = _prev_trip.get_dest_escort_pudo()        
@@ -122,7 +122,7 @@ class Joint_ultrip:
             self.error_msg = self.error_msg + "E: " + err_msg        
             self.parent_trip.log_error(err_msg)
         
-    def print_header(self, fp):
+    def print_header(fp):
         _header=["HH_ID", "PER_ID", "TOUR_ID", "TRIP_ID", "LEG_DEST_PLACENO", "JTRIP_ID", 
                  "NUMBER_HH", "CHAUFFUER_ID", 
                  "ORIG_DEP_HR", "ORIG_DEP_MIN", "DEST_ARR_HR", "DEST_ARR_MIN", 
@@ -149,7 +149,7 @@ class Joint_ultrip:
         fp.write(','+'_'.join(['%s' %int(pid) for pid in sorted(self.travel_party)]))   #print travel party
         fp.write(','+ functions.add_quote_char(self.error_msg)+'\n')                                               #print error message
 
-    def print_header_unique(self, fp):
+    def print_header_unique(fp):
         _header=["HH_ID", "JTRIP_ID", "NUMBER_HH"]
         #PERSON_1 to PERSON_9
         for _i in range(1, 10):

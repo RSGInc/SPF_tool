@@ -646,7 +646,7 @@ class Tour:
         
         
     def _set_AW_subtours(self, prim_i):
-        NewPurp = self.constants.get('NewPurp')
+        PURPOSE = self.constants.get('PURPOSE')
         PARTIAL_TOUR = self.constants.get('PARTIAL_TOUR')
 
         """ scan through trips in the tour to identify and extract any at-work subtours """
@@ -657,10 +657,10 @@ class Tour:
 
         for _i, _trip in enumerate(self.trips):   
             #_trip = self.trips[_i]
-            if _trip.fields['ORIG_PURP'] == NewPurp["WORK"]:
+            if _trip.fields['ORIG_PURP'] == PURPOSE["WORK"]:
                 #found a trip leaving work
                 _from_work.append(_i)
-            if _trip.fields['DEST_PURP'] == NewPurp["WORK"]:
+            if _trip.fields['DEST_PURP'] == PURPOSE["WORK"]:
                 #found a trip going to work
                 _to_work.append(_i)
         
@@ -778,10 +778,8 @@ class Tour:
         return _prim_i               
     """
                 
-    def print_header(self, fp):
+    def print_header(fp, TourCol2Name):
         #fp.write(','.join(['%s' %field for field in self.fields.keys()])+'\n')
-        TourCol2Name = self.constants.get('TourCol2Name')
-
         _header=[]
         # TODO: save a sorted copy of the dict to avoid repeated sorting
         for _col_num, _col_name in sorted(TourCol2Name.items()):
@@ -789,7 +787,7 @@ class Tour:
         fp.write(','.join(['%s' %name for name in _header])+'\n')
         
     def print_vals(self, fp):
-        TourCol2Name = self.constants.get('TourCol2Name')
+        TourCol2Name = self.constants.get('tour_columns')
 
         #fp.write(','.join(['%s' %value for value in self.fields.values()])+'\n')
         if 'ERROR' in self.fields:

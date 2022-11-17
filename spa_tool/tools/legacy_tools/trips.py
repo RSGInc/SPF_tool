@@ -326,7 +326,7 @@ class Trip:
         """ determine parking location and related attributes for auto trips ending with non-auto, access mode (most likely walk) """
         _modes_col = df['MODE'].iloc[1:]    #note: skip row#0
         #locate the auto segments of the trip 
-        _auto_idx = np.where((_modes_col==MODE['DRIVER'])|(_modes_col==MODE['PASSENGER'])|(_modes_col==MODE['CAR/VANPOOL']))        
+        _auto_idx = np.where((_modes_col==TRIP_MODE['DRIVER'])|(_modes_col==TRIP_MODE['PASSENGER'])|(_modes_col==TRIP_MODE['CAR/VANPOOL']))
         _auto_idx_last  = np.max(_auto_idx)         #the last row where auto is used
         if _auto_idx_last < (len(_modes_col)-1):    #is this the last row for the trip?
             #found non-auto modes used before arriving at trip destination
@@ -346,15 +346,15 @@ class Trip:
         #thus, need to add 1 back to narray index to get back to the row number 
         _modes_array = df['MODE'].iloc[1:]
         #locate the DRIVER segments of the trip, if any
-        _auto_idx = np.where(_modes_array==MODE['DRIVER'])[0]  
+        _auto_idx = np.where(_modes_array==TRIP_MODE['DRIVER'])[0]
         if np.size(_auto_idx)==0: 
             #person was not a driver
             #locate the PASSENGER segments of the trip, if any
-            _auto_idx = np.where(_modes_array==MODE['PASSENGER'])[0]
+            _auto_idx = np.where(_modes_array==TRIP_MODE['PASSENGER'])[0]
             if np.size(_auto_idx)==0: 
                 #person was not a passenger
                 #locate the CAR/VANPOOL segments of the trip, if any
-                _auto_idx = np.where(_modes_array==MODE['CAR/VANPOOL'])[0]
+                _auto_idx = np.where(_modes_array==TRIP_MODE['CAR/VANPOOL'])[0]
         
         if np.size(_auto_idx)==0: 
             #trip did not involve any of the 3 above auto modes 
@@ -367,12 +367,12 @@ class Trip:
     def _calc_purpose(self, old_purp_code, old_place_no, old_place_name, dur_hr, dur_min):
         """ derive the new purpose code from input data purpose code; resolve inconsistencies between activity purpose and person status """
 
-        SurveyTpurp2Purp = self.constants.get('SurveyTpurp2Purp')
+        PURPOSE = self.constants.get('PURPOSE')
         SurveySchoolPurp = self.constants.get('SurveySchoolPurp')
-        NewStuCategory = self.constants.get('NewStuCategory')
+        STUDENT = self.constants.get('STUDENT')
         PERTYPE = self.constants.get('PERTYPE')
         PURPOSE = self.constants.get('PURPOSE')
-        NewEmpCategory = self.constants.get('NewEmpCategory')
+        EMPLOYMENT = self.constants.get('EMPLOYMENT')
         MAX_VOLUNTEER_MINUTES = self.constants.get('MAX_VOLUNTEER_MINUTES')
 
         _new_purp = -1
@@ -388,28 +388,29 @@ class Trip:
             elif _pertype==PERTYPE['PS']:  
                 #person is a pre-schooler, who may or may not be a student        
                 _new_purp = PURPOSE['SCHOOL']
-                if self.per_obj.get_student_category()==NewStuCategory['NON-STUDENT']:       
+                if self.per_obj.get_student_category()==STUDENT['NON-STUDENT']:
                     #inconsistent with non-student status
-                    self.per_obj.recode_student_category(NewStuCategory['SCHOOL'],
+                    self.per_obj.recode_student_category(STUDENT['SCHOOL'],
                         "found school activity (PLANO={}, PNAME={}) for non-student preschooler; reset STU_CAT to SCHOOL".format(old_place_no, old_place_name))            
 
             else: #person types: FW, PW, NW, RE
                 _new_purp = PURPOSE['UNIVERSITY']  
-                self.per_obj.recode_student_category(NewStuCategory['UNIVERSITY'],
+                self.per_obj.recode_student_category(STUDENT['UNIVERSITY'],
                         "found school activity (PLANO={}, PNAME={}) for Pertype={}; reset STU_CAT to UNIVERSITY".format(old_place_no, old_place_name, _pertype))
                 if _pertype in [ PERTYPE['PW'], PERTYPE['NW'], PERTYPE['RE'] ] : #person types PW,NW,RE by definition are not supposed to have school activities
                     self.per_obj.recode_per_type(PERTYPE['US'],
                                 "found school activity (PLANO={}, PNAME={}) for Pertype={}; reset PERSONTYPE to US".format(old_place_no, old_place_name, _pertype))
     
         else: 
-            _new_purp = SurveyTpurp2Purp[old_purp_code]
+            # _new_purp = SurveyTpurp2Purp[old_purp_code]
+            _new_purp = old_purp_code
             if _new_purp in [ PURPOSE['WORK'], PURPOSE['WORK-RELATED'] ]:
                 #found work or work-related activity, check if worker
                 _pertype = self.per_obj.get_per_type()
                 if _pertype in [ PERTYPE['NW'], PERTYPE['RE'] ]:
                     if convert2minutes(dur_hr,dur_min) > MAX_VOLUNTEER_MINUTES:
                         #if duration of work activity is over xxx hours, recode person as a part time worker and emp category as part time
-                        self.per_obj.recode_emp_category(NewEmpCategory['PARTTIME'],
+                        self.per_obj.recode_emp_category(EMPLOYMENT['PARTTIME'],
                             "found work or work-related activity (PLANO={}, PNAME={}) for Pertype={}; reset EMP_CAT to PARTTIME".format(old_place_no, old_place_name, _pertype))
                         self.per_obj.recode_per_type(PERTYPE['PW'], 
                             "found work or work-related activity (PLANO={}, PNAME={}) for Pertype={}; reset PERSONTYPE to PW".format(old_place_no, old_place_name, _pertype))
@@ -447,6 +448,9 @@ class Trip:
         ESCORT_TYPE = self.constants.get('ESCORT_TYPE')
         SURVEY_DO_PURP_CODE = self.constants.get('SURVEY_DO_PURP_CODE')
         COMPUTE_TRIP_DIST = self.constants.get('COMPUTE_TRIP_DIST')
+
+        TRIP_MODE_KEY = {v:k for k,v in TRIP_MODE.items()}
+        TRANS_MODES = {k: v for k,v in TRIP_MODE.items() if any([a for a in ['WALK-', 'PNR-', 'KNR-'] if a in k])}
 
         #trip origin: 1st place on trip
         self.fields['ORIG_PLACENO'] = df['PLANO'].iloc[0]              
@@ -503,14 +507,23 @@ class Trip:
         
         #if a driver for any segment of the trip
         _new_mode = [k for k, v in TRIP_MODE.items() if any(df['MODE'].isin([v]))]
+        _any_transit = [x for x in _new_mode if any([a for a in ['WALK-', 'PNR-', 'KNR-'] if a in x])]
 
         if 'HOV3+' in _new_mode:
             _new_mode = ['HOV3+']
-        elif 'HOV2' in _new_mode:
+        if 'HOV2' in _new_mode:
             _new_mode = ['HOV2']
+        # If transit part of tour
+        if _any_transit:
+            _new_mode = _any_transit
+
+        # If still multiple modes, choose longest. If tie, choose first
+        if len(_new_mode) > 1:
+            _new_mode = df[df.DISTANCE == df.DISTANCE.max()].iloc[0].MODE
+            _new_mode = [k for k, v in TRIP_MODE.items() if v == _new_mode]
 
         assert len(_new_mode) == 1, 'Multiple matching modes!'
-        _new_mode = _new_mode[0]
+        _new_mode = _new_mode[0] #Unlist
 
         _toll_paid     = (df['TOLL_NO'] == TOLL['TOLL']).any()
         _min_tottr     = df['TOTTR'].min()
@@ -519,24 +532,24 @@ class Trip:
         _is_passenger  = (df['DRIVER'] == DRIVER['PASSENGER']).any()      #if a passenger for any segment of the trip
         #_is_carpool    = np.any(df['MODE']==MODE['CAR/VANPOOL'])    #if car/van pool for any segment of the trip
 
-        # FIXME Hardcoded values are going to be a future issue.
-        # FIXME Delete ?
-        # _is_sov        = any(df['MODE'] == MODE['SOV'])
-        # _is_hov2       = any(df['MODE'] == MODE['HOV2'])
-        # _is_hov3       = any(df['MODE'] == MODE['HOV3+'])
+        # # FIXME Hardcoded values are going to be a future issue?
+        # _is_sov        = any(df['MODE'] == TRIP_MODE['SOV'])
+        # _is_hov2       = any(df['MODE'] == TRIP_MODE['HOV2'])
+        # _is_hov3       = any(df['MODE'] == TRIP_MODE['HOV3+'])
         # _is_auto       = any([_is_sov, _is_hov2, _is_hov3])
-        # _is_bus        = any(df['MODE'] == MODE['TRANSIT-BUS'])
-        # _is_lr         = any((df['MODE'] ==MODE['WALK-LR'])|(df['MODE'] ==MODE['PNR-LR'])|(df['MODE'] ==MODE['KNR-LR']))
-        # _is_cr         = any((df['MODE'] ==MODE['WALK-CR'])|(df['MODE'] ==MODE['PNR-CR'])|(df['MODE'] ==MODE['KNR-CR']))
-        # _is_transit    = 1 if ((_is_lb==1)|(_is_eb==1)|(_is_lr==1)|(_is_cr==1)) else 0        #if any segment of the trip used transit
-        # _is_tr_pnr     = any((df['MODE'] ==MODE['PNR-LB'])|(df['MODE'] ==MODE['PNR-EB'])|(df['MODE'] ==MODE['PNR-LR'])|(df['MODE'] ==MODE['PNR-CR']))
-        # _is_tr_knr     = any((df['MODE'] ==MODE['KNR-LB'])|(df['MODE'] ==MODE['KNR-EB'])|(df['MODE'] ==MODE['KNR-LR'])|(df['MODE'] ==MODE['KNR-CR']))
+        # _is_bus        = any([x for x in df.MODE if x in [v for k, v in TRANS_MODES.items() if 'BUS' in k]])
+        # _is_metro      = any([x for x in df.MODE if x in [v for k, v in TRANS_MODES.items() if 'METRO' in k]])
+        # # _is_lr         = any((df['MODE'] == TRIP_MODE['WALK-LR'])|(df['MODE'] ==TRIP_MODE['PNR-LR'])|(df['MODE'] ==TRIP_MODE['KNR-LR']))
+        # # _is_cr         = any((df['MODE'] ==TRIP_MODE['WALK-CR'])|(df['MODE'] ==TRIP_MODE['PNR-CR'])|(df['MODE'] ==TRIP_MODE['KNR-CR']))
+        # _is_transit    = any([x for x in df.MODE if x in TRANS_MODES.values()])       #if any segment of the trip used transit
+        # _is_tr_pnr     = any((df['MODE'] ==TRIP_MODE['PNR-LB'])|(df['MODE'] ==TRIP_MODE['PNR-EB'])|(df['MODE'] ==TRIP_MODE['PNR-LR'])|(df['MODE'] ==TRIP_MODE['PNR-CR']))
+        # _is_tr_knr     = any((df['MODE'] ==TRIP_MODE['KNR-LB'])|(df['MODE'] ==TRIP_MODE['KNR-EB'])|(df['MODE'] ==TRIP_MODE['KNR-LR'])|(df['MODE'] ==TRIP_MODE['KNR-CR']))
         # _is_auto_dr    = 1 if ((_is_auto==1) & (_is_driver==1)) else 0    #if auto driver for any segment
         # _is_auto_ps    = 1 if ((_is_auto==1) & (_is_passenger==1)) else 0   #if auto passanger for any segment
-        # _is_sch_bus    = any(df['MODE'] ==MODE['SCHOOLBUS'])      #if any segment of the trip used school bus
-        # _is_bike        = any(df['MODE'] ==MODE['BIKE'])          #if any segment of the trip used bike
-        # _is_walk        = any(df['MODE'] ==MODE['WALK'])          #if any segment of the trip used walk
-        # _is_taxi        = any(df['MODE'] ==MODE['TAXI'])          #if any segment of the trip used txi
+        # _is_sch_bus    = any(df['MODE'] ==TRIP_MODE['SCHOOLBUS'])      #if any segment of the trip used school bus
+        # _is_bike        = any(df['MODE'] ==TRIP_MODE['BIKE'])          #if any segment of the trip used bike
+        # _is_walk        = any(df['MODE'] ==TRIP_MODE['WALK'])          #if any segment of the trip used walk
+        # _is_taxi        = any(df['MODE'] ==TRIP_MODE['TAXI'])          #if any segment of the trip used txi
         # _auto_occ      = 0 #initialize to 0
         # _new_mode      = 0
         # if _is_transit:
@@ -560,32 +573,32 @@ class Trip:
         #
         #     if _access_mode==TRANSIT_ACCESS['PNR']:
         #         if _is_lb:
-        #             _new_mode = NewTripMode['PNR-LB']
+        #             _new_mode = TRIP_MODE['PNR-LB']
         #         elif _is_eb:
-        #             _new_mode = NewTripMode['PNR-EB']
+        #             _new_mode = TRIP_MODE['PNR-EB']
         #         elif _is_lr:
-        #             _new_mode = NewTripMode['PNR-LR']
+        #             _new_mode = TRIP_MODE['PNR-LR']
         #         else:
-        #             _new_mode = NewTripMode['PNR-CR']
+        #             _new_mode = TRIP_MODE['PNR-CR']
         #     elif _access_mode==TRANSIT_ACCESS['KNR']:
         #         if _is_lb:
-        #             _new_mode = NewTripMode['KNR-LB']
+        #             _new_mode = TRIP_MODE['KNR-LB']
         #         elif _is_eb:
-        #             _new_mode = NewTripMode['KNR-EB']
+        #             _new_mode = TRIP_MODE['KNR-EB']
         #         elif _is_lr:
-        #             _new_mode = NewTripMode['KNR-LR']
+        #             _new_mode = TRIP_MODE['KNR-LR']
         #         else:
-        #             _new_mode = NewTripMode['KNR-CR']
+        #             _new_mode = TRIP_MODE['KNR-CR']
         #     else:
         #         # all other access modes are assigned as WALK access
         #         if _is_lb:
-        #             _new_mode = NewTripMode['WALK-LB']
+        #             _new_mode = TRIP_MODE['WALK-LB']
         #         elif _is_eb:
-        #             _new_mode = NewTripMode['WALK-EB']
+        #             _new_mode = TRIP_MODE['WALK-EB']
         #         elif _is_lr:
-        #             _new_mode = NewTripMode['WALK-LR']
+        #             _new_mode = TRIP_MODE['WALK-LR']
         #         else:
-        #             _new_mode = NewTripMode['WALK-CR']
+        #             _new_mode = TRIP_MODE['WALK-CR']
         #
         # elif (_is_auto):
         #     #This is an auto trip
@@ -619,7 +632,6 @@ class Trip:
         #     _new_mode = NewTripMode['WALK']
         # elif _is_taxi:
         #     _new_mode = NewTripMode['TAXI']
-        #
         # else:
         #     _new_mode = NewTripMode['OTHER']
         
@@ -699,16 +711,14 @@ class Trip:
     def log_recode(self, msg):
         self.per_obj.log_recode("TRIP_ID={} \t".format(self.trip_id)+msg)
         
-    def print_header(self, fp):
-        TripCol2Name = self.constants.get('TripCol2Name')
-
+    def print_header(fp, TripCol2Name):
         _header=[]
         for _col_num, _col_name in sorted(TripCol2Name.items()):    #TODO: save a sorted copy of the dict to avoid repeated sorting 
             _header.append(_col_name)            
         fp.write(','.join(['%s' %name for name in _header])+'\n')
         
     def print_vals(self, fp):
-        TripCol2Name = self.constants.get('TripCol2Name')
+        TripCol2Name = self.constants.get('trip_columns')
 
         if 'ERROR' in self.fields:
             self.fields['ERROR'] = add_quote_char(self.fields['ERROR'])

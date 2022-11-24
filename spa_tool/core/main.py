@@ -4,6 +4,7 @@ import argparse
 
 from core import functions
 
+
 def add_run_args(parser):
     """Run command args"""
     parser.add_argument(
@@ -83,8 +84,13 @@ class SPATool:
 
         else:
             results = {}
+
+            # Find which step to start from
+            skip = True
             for class_name, params in self.settings.get('PROCESSING_STEPS').items():
-                if params.get('skip'):
+                if class_name == self.settings.get('START_FROM'):
+                    skip = False
+                if params.get('skip') or skip:
                     continue
                 module_name = '.'.join(['tools', params.get('module')]).replace('.py', '')
                 class_args = {
@@ -96,7 +102,6 @@ class SPATool:
                 class_obj = getattr(module_obj, class_name)
 
                 results[params.get('output_name', class_name)] = class_obj(args, **class_args).run()
-
 
 
 if __name__ == "__main__":

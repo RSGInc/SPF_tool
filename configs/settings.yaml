@@ -1,4 +1,5 @@
 # Declare the custom processing steps to run here
+START_FROM: LegacySPA
 PROCESSING_STEPS:
     GetDBData:
         module: accessdb
@@ -6,7 +7,14 @@ PROCESSING_STEPS:
         categories_file: preprocess_specs/codebook_categories.csv
         database_file: 'RP_2014_141218.accdb'
         output_name: raw
-        skip: True
+#        skip: True
+#    TripsToPlace:
+#        module: trips_to_place
+#        data_directory: 'raw'
+#        from_pipeline: False # Read directly from pipeline, or pull from directory
+#        dest_zone_col: dest_zone_id
+#        output_name: preprocessed
+#        skip: False
     ExpressionPreProcess:
         module: expressions
         mapping_file: preprocess_specs/preprocess_mapping.csv
@@ -17,7 +25,7 @@ PROCESSING_STEPS:
          # - household
         from_pipeline: False # Read directly from pipeline, or pull from directory
         output_name: preprocessed
-        skip: True
+#        skip: True
     LegacySPA:
         module: legacy_spa
         data_directory: preprocessed

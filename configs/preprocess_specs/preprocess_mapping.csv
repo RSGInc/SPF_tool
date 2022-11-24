@@ -6,6 +6,8 @@ household,HH_WEIGHT,REAL,continuous,weight to expand data at household level,,,
 household,HH_SIZE,INT,continuous,Number of people in the household,,,"person.merge(household, on='household_id', how='right').groupby('household_id').size()"
 household,HH_VEH,INT ,continuous,Number of vehicles in the household,,,household.hh_veh
 household,HH_WORKERS,INT,continuous,Number of workers in the household,,,"person[person.occ.isin([1, 2])].merge(household, on='household_id', how='right').groupby('household_id').size()"
+household,HXCORD,INT,continuous,Home X Coordinate (longitude),,,"self.get_XYCORD('LON', household.latlon)"
+household,HYCORD,INT,continuous,Home Y Coordinate (latitude),,,"self.get_XYCORD('LAT', household.latlon)"
 person,person_id,INT,continuous,dataframe index,,,"pd.Series(person.index, index=person.index)"
 person,SAMPN,INT,continuous,Household ID,,,person.household_id
 person,PERNO,INT,continuous,Person ID,,,person.person_num
@@ -40,7 +42,9 @@ person,EMPLY_LOC_TYPE,INT,categorical,Employment location type,0,Not a worker,"~
 trip,trip_id,INT,continuous,dataframe index,,,"pd.Series(trip.index, index=trip.index)"
 trip,SAMPN,INT,continuous,Household ID,,,trip.household_id
 trip,PERNO,INT,continuous,Person ID,,,trip.person_num
-trip,PLANO,INT,continuous,Place Number per person,,,trip.trip_num
+trip,TRPNO,INT,continuous,Place Number per person,,,trip.trip_num
+trip,DAYNO,INT,continuous,Day Number per person,,,"trip.reset_index().merge(day.set_index('person_id').sort_values('day_date').groupby(level=0).day_date.rank().astype(int), on='person_id', how='left').set_index('trip_id').day_date"
+trip,PNAME,INT,continuous,Place name,,,"trip.reset_index().merge(zone[['OLDZONE', 'NAME']], left_on='dest_zone_id', right_on='OLDZONE', how='left').set_index('trip_id').NAME"
 trip,TRIP_WEIGHT,REAL,continuous,Weight to expand data at trip level,,,trip.person_weight
 trip,TAZ,INT,continuous,Destination TAZ,,,trip.dest_zone_id
 trip,TPURP,INT,categorical,Trip Purpose,0,Home,trip.trip_purp.isin([8])
@@ -92,15 +96,12 @@ trip,PER3,INT,continuous,Person ID of third additional household member on trip,
 trip,PER4,INT,continuous,Person ID of fourth additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(3).astype(str).reindex(trip.index)
 trip,PER5,INT,continuous,Person ID of fifth additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(4).astype(str).reindex(trip.index)
 trip,PER6,INT,continuous,Person ID of sixth additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(5).astype(str).reindex(trip.index)
-trip,XCORD,INT,continuous,X Coordinate (longitude),,,"self.get_XYCORD('LON', trip)"
-trip,YCORD,INT,continuous,Y Coordinate (latitude),,,"self.get_XYCORD('LAT', trip)"
+trip,XCORD,INT,continuous,X Coordinate (longitude),,,"self.get_XYCORD('LON', trip.dest_latlon)"
+trip,YCORD,INT,continuous,Y Coordinate (latitude),,,"self.get_XYCORD('LAT', trip.dest_latlon)"
 trip,WXCORD,INT,continuous,Work X Coordinate (longitude),,,"self.get_WXYCORD('LON', trip)"
 trip,WYCORD,INT,continuous,Work Y Coordinate (latitude),,,"self.get_WXYCORD('LAT', trip)"
-trip,PLANO,INT,continuous,Place Number per person,,,trip.trip_num
-trip,DAYNO,INT,continuous,Day Number per person,,,"trip.reset_index().merge(day.set_index('person_id').sort_values('day_date').groupby(level=0).day_date.rank().astype(int), on='person_id', how='left').set_index('trip_id').day_date"
-trip,PNAME,INT,continuous,Place name,,,"trip.reset_index().merge(zone[['OLDZONE', 'NAME']], left_on='dest_zone_id', right_on='OLDZONE', how='left').set_index('trip_id').NAME"
 trip,DISTANCE,REAL,continuous,Trip distance in km,,,"trip.trip_dist_km + trip.trip_dist_m/1000"
-trip,BUFFER_DIST,REAL,continuous,Trip distance in km,,,"self.get_buffer_dist(trip)"
+# trip,BUFFER_DIST,REAL,continuous,Trip distance in km,,,"self.get_buffer_dist(trip)"
 # place,place_id,INT,continuous,dataframe index,,,"pd.Series(trip.index, index=trip.index)"
 # place,SAMPN,INT,continuous,Household ID,,,trip.household_id
 # place,PERNO,INT,continuous,Person ID,,,trip.person_num

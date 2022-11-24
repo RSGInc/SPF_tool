@@ -1,32 +1,42 @@
 import pandas as pd
 from spa_tool.core.functions import distance_on_unit_sphere
 
-def get_XYCORD(coord, trip):
-    coord = [coord.upper()] if isinstance(coord, str) else [x.upper() for x in coord]
+def get_XYCORD(coord_type, coord):
+    coord_type = [coord_type.upper()] if isinstance(coord_type, str) else [x.upper() for x in coord_type]
 
-    assert all([True if x in ['LAT', 'LON'] else False for x in coord]), \
+    assert all([True if x in ['LAT', 'LON'] else False for x in coord_type]), \
         'invalid coordinate type, must be LAT/LON or [LAT, LON]'
 
     # Split string to coord pair
-    xy = trip.dest_latlon.str.split(',', expand=True).rename(columns={0: 'LAT', 1: 'LON'})
+    xy = coord.str.split(',', expand=True).rename(columns={0: 'LAT', 1: 'LON'})
+    xy = xy[['LAT', 'LON']]
 
-    # Strip invalid characters from ends of string and fix weird case where latitude had 25.25.194185
-    # xy[xy.apply(lambda x: x.str.count('\.')>1).any(axis=1)]
-    xy = xy.apply(lambda x: x.str.replace('25\.25\.', '25.').str.strip('. \t \xad').astype(float))
+    # Truncate string to 6 decimal places
+    def trunc_cord(cord):
+        # Fix weird "25.25." typo and remote certain unwanted characters
+        cord = cord.str.replace('25\.25\.', '25.', regex=False).str.strip('. \t \xad')
 
-    return xy[coord].squeeze()
+        # Remove non numeric characters, except decimal
+        cord = cord.str.replace(r'[^\d.]', '', regex=True)
+
+        cord_split = cord.str.split('.', expand=True)
+        return (cord_split[0] + '.' + cord_split[1].str.slice(0, 6)).astype(float)
+
+    xy = xy.apply(lambda x: trunc_cord(x))
+
+    return xy[coord_type].squeeze()
 
 
-def get_WXYCORD(coord, trip):
+def get_WXYCORD(coord_type, trip):
     # Get fixed work locations
     worktrips = trip[trip.trip_purp.isin([1])]
     fixed_work_trips_idx = worktrips[worktrips.groupby('person_id').dest_latlon.transform('count') == 1].index
-    fixed_coords = get_XYCORD(coord, trip).loc[fixed_work_trips_idx]
+    fixed_coords = get_XYCORD(coord_type, trip.dest_latlon).loc[fixed_work_trips_idx]
 
     # return pd.concat([trip, fixed_coords], axis=1)[coord_id].fillna(0)
     # Pull in person_id and assign work location for all 'trip' rows for each person
     person_trips = trip[['person_id']].merge(fixed_coords, on='trip_id')
-    person_trips_xy = trip.reset_index().merge(person_trips, on='person_id', how='left').set_index('trip_id')[coord]
+    person_trips_xy = trip.reset_index().merge(person_trips, on='person_id', how='left').set_index('trip_id')[coord_type]
     return person_trips_xy.squeeze()
 
 
@@ -39,7 +49,7 @@ def get_TOTTR_NEXT(trip, trip_hhcompanions_pnum):
 
 def get_buffer_dist(trip):
     work_latlon = get_WXYCORD(['LAT', 'LON'], trip).rename(columns={'LAT': 'WLAT', 'LON': 'WLON'})
-    trip_latlon = get_XYCORD(['LON', 'LAT'], trip)
+    trip_latlon = get_XYCORD(['LON', 'LAT'], trip.dest_latlon)
     latlon = pd.concat([trip_latlon, work_latlon], axis=1)
 
     dist = distance_on_unit_sphere(lat1=latlon.LAT, long1=latlon.LON, lat2=latlon.WLAT, long2=latlon.WLON)

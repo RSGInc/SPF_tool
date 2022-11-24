@@ -34,9 +34,13 @@ def read_config(file_path):
 
     # Setup default values for any missing
     defaults = {
-                'PROCESSING_STEPS': None
+                'PROCESSING_STEPS': None,
+                'START_FROM': None
                 }
-    config = {k: config.setdefault(k, v) for k, v in defaults.items()}
+
+    for k, v in config.items():
+        config[k] = config.setdefault(k, v)
+    # config = {k: config.setdefault(k, v) for k, v in defaults.items()}
 
     return config
 

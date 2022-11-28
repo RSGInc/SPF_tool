@@ -321,7 +321,6 @@ class LegacySPA():
                                                                      lat2=place.WYCORD, long2=place.WXCORD)
         return place
 
-
     def add_place_distance(self, route_file, place_file, out_file):
         # read in ROUTE records into a data frame object
         df_route = pd.read_csv(self.constants.get('IN_DIR') + route_file, quotechar='"', encoding='ISO-8859-1')

@@ -4,7 +4,7 @@ import math
 import numpy as np
 import yaml
 from collections import defaultdict
-
+import pandas_weighting
 
 def read_mappings(**file_paths):
     def get_defaultdict(map):
@@ -40,7 +40,6 @@ def read_config(file_path):
 
     for k, v in config.items():
         config[k] = config.setdefault(k, v)
-    # config = {k: config.setdefault(k, v) for k, v in defaults.items()}
 
     return config
 
@@ -125,3 +124,34 @@ def convert2minutes(hours, minutes):
 
 def add_quote_char(string):
     return '"'+string+'"'
+
+def summarize(table, stat_codebook, weight_col=None):
+    pd.DataFrame.weight = pandas_weighting.weight
+
+    # codebook must have field_name and stat_type fields
+    cat_filt = stat_codebook.field_name.isin(table.columns) & stat_codebook.stat_type.isin(['Categorical'])
+    cat_cols = stat_codebook[cat_filt].field_name.drop_duplicates()
+
+    num_filt = stat_codebook.field_name.isin(table.columns) & stat_codebook.stat_type.isin(['Numeric'])
+    num_cols = stat_codebook[num_filt].field_name.drop_duplicates()
+
+    if weight_col:
+        num_cols = [x for x in num_cols if x != weight_col]
+    else:
+        table['wt'] = 1
+        weight_col = 'wt'
+
+    # Summary stats of numeric and categorical variables
+    stats = {}
+    if len(num_cols) > 0:
+        stats['Numeric'] = table[num_cols].weight(table[weight_col]).describe()
+
+    if len(cat_cols) > 0:
+        cat_stats = {c: table.groupby(c)[weight_col].sum() for c in cat_cols}
+        # Update index to match
+        for c, v in cat_stats.items():
+            cat_stats[c].index = v.index.astype(int)
+        # Concatenate to dataframe
+        stats['Categorical'] = pd.concat(cat_stats, axis=1).sort_index().reset_index().rename(columns={'index': 'Category'})
+
+    return stats

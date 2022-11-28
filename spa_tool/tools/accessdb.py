@@ -92,8 +92,9 @@ class GetDBData:
         formatted['vehicle'].loc[formatted['vehicle'].veh_ownership.isin([-1]), 'person_id'] = -1
         formatted['vehicle'].person_id = formatted['vehicle'].person_id.astype(int)
 
-
         formatted = {k: self.clean_dtypes(k, df) for k, df in formatted.items()}
+
+        formatted = self.calc_weights(formatted)
         self.raw_data_formatted = {**formatted, **self.many2many_df(formatted)}
 
         return
@@ -141,76 +142,78 @@ class GetDBData:
 
         return df
 
+    def calc_weights(self, tables):
+        # Add in weights. There are some persons with missing weights?
+        wt_cols = ['household_id', 'person_id', 'person_weight']
+        weights = tables['day'][wt_cols].drop_duplicates().reset_index(drop=True)
+
+        weighted_tables = {}
+        for table_name, table in tables.items():
+            # If household table, calculate the mean weight
+            if 'person_weight' in table.columns:
+                table_weighted = table
+            elif table_name == 'household':
+                hh_weights = weights.groupby('household_id').person_weight.mean()
+                table_weighted = table.merge(hh_weights, on='household_id', how='outer')
+            else:
+                table_weighted = table.merge(weights, on=['household_id', 'person_id'], how='outer')
+
+            # Rename weight column
+            table_weighted = table_weighted.rename(columns={'person_weight': table_name + '_weight'})
+
+            # Find missing
+            missing = table_weighted[table_weighted[table_name + '_weight'].isnull()]
+            table_weighted = table_weighted[~table_weighted[table_name + '_weight'].isnull()]
+
+            weighted_tables[table_name] = table_weighted
+            if not missing.empty:
+                weighted_tables['missing_weights_' + table_name] = missing
+
+        return weighted_tables
+
     def summary_stats(self, output_dir):
         pd.DataFrame.weight = weight
 
         if not os.path.isdir(output_dir):
             output_dir = os.path.join(self.namespace.output, output_dir)
 
-        def summarize(table, weight_col=None):
-            codes = self.codebook
+        # Add hhsize
+        tables = self.raw_data_formatted
+        tables['household']['hh_size'] = tables['household'][['hh_under6yr','hh_over6yr']].sum(axis=1)
 
-            # cat_filt = codes.Shortname.isin(table.columns) & codes['Unit type'].isin(['cat', 'bool'])
-            cat_filt = codes.Shortname.isin(table.columns) & codes.Summarize.isin(['Categorical'])
-            cat_cols = codes[cat_filt].Shortname.drop_duplicates()
+        # Setup codebook
+        summarize_codebook = self.codebook[['Table', 'Shortname', 'Summarize']].rename(
+            columns={'Table': 'table',
+                     'Shortname': 'field_name',
+                     'Summarize': 'stat_type'})
 
-            # num_filt = codes.Shortname.isin(table.columns) & codes['Unit type'].isin(['int', 'float'])
-            num_filt = codes.Shortname.isin(table.columns) & codes.Summarize.isin(['Numeric'])
-            num_cols = self.codebook[num_filt].Shortname.drop_duplicates()
+        # Add in this one off
+        summarize_codebook = pd.concat(
+            [summarize_codebook,
+             pd.DataFrame({'table': ['household'], 'field_name': ['hh_size'], 'stat_type': ['Categorical']})],
+        axis=0)
 
-            if weight_col:
-                num_cols = [x for x in num_cols if x != weight_col]
-            else:
-                table['wt'] = 1
-                weight_col = 'wt'
+        # Produce summaries
+        for table_name, table in tables.items():
 
-            # Summary stats of numeric and categorical variables
-            stats = {}
-            if len(num_cols) > 0:
-                stats['Numeric'] = table[num_cols].weight(table[weight_col]).describe()
-
-            if len(cat_cols) > 0:
-                cat_stats = {c: table.groupby(c)[weight_col].sum() for c in cat_cols}
-                # Update index to match
-                for c, v in cat_stats.items():
-                    cat_stats[c].index = v.index.astype(int)
-                # Concatenate to dataframe
-                stats['Categorical'] = pd.concat(cat_stats, axis=1).sort_index().reset_index().rename(columns={'index': 'Category'})
-
-            return stats
-
-
-        for table_name, table in self.raw_data_formatted.items():
-
-            if table_name not in self.codebook.Table.unique():
+            if table_name not in summarize_codebook.table.unique():
                 continue
 
-            # Add in weights. There are some persons with missing weights?
-            wt_cols = ['household_id', 'person_id', 'person_weight']
-            weights = self.raw_data_formatted['day'][wt_cols].drop_duplicates().reset_index(drop=True)
+            # Cleanup the data before summarizing
+            table = table.replace(-1, None)
 
-            # Get unweighted values, initialize dummy item
             results = {
-                'unweighted': summarize(table),
+                # Get unweighted values, initialize dummy item
+                'unweighted': functions.summarize(table, summarize_codebook),
+                # Add weighted results where applicable
+                'weighted': functions.summarize(table, summarize_codebook, weight_col=table_name + '_weight')
             }
 
-            if table_name not in ['household', 'day', 'trip']:
-                table_weighted = table.merge(weights, on=['household_id', 'person_id'], how='outer')
-
-                # Find missing
-                missing = table_weighted[table_weighted.person_weight.isnull()]
-                table_weighted = table_weighted[~table_weighted.person_weight.isnull()]
-                missing.to_csv(os.path.join(output_dir, table_name + '_missing_weights.csv'))
-                # Add weighted results where applicable
-                results['weighted'] = summarize(table_weighted, weight_col='person_weight')
-
             # Save to excel
-            with pd.ExcelWriter(os.path.join(output_dir, table_name + '.xlsx'), mode='w') as writer:
+            with pd.ExcelWriter(os.path.join(output_dir, 'stats_' + table_name + '.xlsx'), mode='w') as writer:
                 for weight_type, table_results in results.items():
                     for stat_type, df in table_results.items():
                         df.to_excel(writer, sheet_name='{} ({})'.format(stat_type, weight_type))
-                    # res['numeric'].to_excel(writer, sheet_name='Numeric ({})'.format(weight_type))
-                    # res['categorical'].to_excel(writer, sheet_name='Categorical ({})'.format(weight_type))
 
     def save_tables(self, output_dir):
         if not os.path.isdir(output_dir):
@@ -245,7 +248,7 @@ if __name__ == '__main__':
 
     # Fetch data from the database
     DBData = GetDBData(args)
-    DBData.get_tables()
+    DBData.read_accessdb()
 
     DBData.summary_stats('raw/stats')
     DBData.save_tables('raw')

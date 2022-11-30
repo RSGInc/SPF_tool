@@ -131,7 +131,7 @@ if __name__ == '__main__':
     # DBData.get_tables()
     # DBData.data
 
-    PP = ExpressionPreProcess(args, input_tables='../../data/raw')
+    PP = ExpressionPreProcess(args)
     PP.run_expressions()
 
     for table_name, table in PP.output_tables.items():

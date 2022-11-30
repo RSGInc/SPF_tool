@@ -13,7 +13,7 @@ person,SAMPN,INT,continuous,Household ID,,,person.household_id
 person,PERNO,INT,continuous,Person ID,,,person.person_num
 person,STAZ,INT,continuous,School TAZ (-9 if not a student),,,"person.reset_index().merge(trip[trip.trip_purp.isin([3])].groupby('person_id')['dest_zone_id'].first().reset_index(), how='left').set_index('person_id').dest_zone_id.fillna('-9').astype(int)"
 person,WTAZ,INT,continuous,Work TAZ (-9 if not a worker),,,"person.reset_index().merge(trip[trip.trip_purp.isin([1])].groupby('person_id')['dest_zone_id'].first().reset_index(), how='left').set_index('person_id').dest_zone_id.fillna('-9').astype(int)"
-person,PER_WEIGHT,REAL,continuous,Weight to expand data at person level,,,"person.reset_index().merge(trip[['person_id','person_weight']].drop_duplicates(), how='left').set_index('person_id').person_weight.fillna(1)"
+person,PER_WEIGHT,REAL,continuous,Weight to expand data at person level,,,"person.person_weight"
 person,STUDE,INT,categorical,Student Category,1,School,person.occ.isin([5])
 person,STUDE,INT,categorical,Student Category,2,University,"person.occ.isin([3,4])"
 person,STUDE,INT,categorical,Student Category,3,Non-student,"~person.occ.isin([3,4,5])"
@@ -45,7 +45,7 @@ trip,PERNO,INT,continuous,Person ID,,,trip.person_num
 trip,TRPNO,INT,continuous,Place Number per person,,,trip.trip_num
 trip,DAYNO,INT,continuous,Day Number per person,,,"trip.reset_index().merge(day.set_index('person_id').sort_values('day_date').groupby(level=0).day_date.rank().astype(int), on='person_id', how='left').set_index('trip_id').day_date"
 trip,PNAME,INT,continuous,Place name,,,"trip.reset_index().merge(zone[['OLDZONE', 'NAME']], left_on='dest_zone_id', right_on='OLDZONE', how='left').set_index('trip_id').NAME"
-trip,TRIP_WEIGHT,REAL,continuous,Weight to expand data at trip level,,,trip.person_weight
+trip,TRIP_WEIGHT,REAL,continuous,Weight to expand data at trip level,,,trip.trip_weight
 trip,TAZ,INT,continuous,Destination TAZ,,,trip.dest_zone_id
 trip,TPURP,INT,categorical,Trip Purpose,0,Home,trip.trip_purp.isin([8])
 trip,TPURP,INT,categorical,Trip Purpose,1,Work,"trip.trip_purp.isin([1,2])"

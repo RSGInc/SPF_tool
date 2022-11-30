@@ -8,21 +8,25 @@ import os
 import sys
 import importlib.util
 from core import functions
+from core import modules
 
-class ExpressionPreProcess():
+class ExpressionPreProcess(modules.SPAModelBase):
     def __init__(self, namespace, **kwargs):
-        self.namespace = namespace
-        self.kwargs = self.update_kwargs(**kwargs)
-        self.expressions = pd.read_csv(self.kwargs['mapping_file'], dtype=str)
-        self.input_tables = functions.load_pipeline_tables(self.namespace, self.kwargs)
+        super().__init__(namespace, **kwargs)
+        self.init_long_expressions()
 
-        # Inherit long expressions if exist
-        if self.kwargs.get('long_expressions'):
-            module_file = self.kwargs.get('long_expressions')
+    def run(self):
+        self.run_expressions()
+        return self.output_tables
+
+    def init_long_expressions(self):
+        self.expressions = pd.read_csv(self.kwargs.get('configs').get('mapping_file'), dtype=str)
+        module_file = self.kwargs.get('configs').get('long_expressions')
+        if module_file:
             module_name = os.path.splitext(module_file)[0]
 
             if not os.path.isabs(module_file):
-                module_file = os.path.join(namespace.config, module_file)
+                module_file = os.path.join(self.namespace.config, module_file)
 
             assert os.path.exists(module_file), "Can't find long expression module"
 
@@ -37,27 +41,6 @@ class ExpressionPreProcess():
             for func in method_list:
                 self.__setattr__(func, LongExpressions.__getattribute__(func))
 
-    def run(self):
-        self.run_expressions()
-        return self.output_tables
-
-    def set_global_tables(self):
-        # This function can be used to create local variables as table names for debugging and script testing
-        # e.g., ExpressionPreProcess(input_tables="..//folder...").set_locals()
-        for k, df in self.input_tables.items():
-            globals()[k] = df
-
-    def update_kwargs(self, **kwargs):
-        if not kwargs.get('module'):
-            settings_file = os.path.join(self.namespace.config, 'settings.yaml')
-            kwargs = {**kwargs, **functions.read_config(settings_file).get('PROCESSING_STEPS').get('ExpressionPreProcess')}
-
-        if not os.path.isabs(kwargs.get('mapping_file')):
-            kwargs['mapping_file'] = os.path.join(self.namespace.config, kwargs.get('mapping_file'))
-
-        assert kwargs.get('mapping_file') and kwargs.get('data_directory')
-
-        return kwargs
 
     def run_expressions(self):
         self.output_tables = {}
@@ -139,7 +122,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # manually inject args
-    args.config='C:\gitclones\Dubai_survey_processing\configs'
+    args.configs = 'C:\gitclones\Dubai_survey_processing\configs'
     args.data = 'C:\gitclones\Dubai_survey_processing\data'
 
     # Fetch data from the database

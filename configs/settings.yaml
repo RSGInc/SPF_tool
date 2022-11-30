@@ -3,35 +3,80 @@ START_FROM: LegacySPA
 PROCESSING_STEPS:
     GetDBData:
         module: accessdb
-        dictionary_file: preprocess_specs/codebook_dictionary.csv
-        categories_file: preprocess_specs/codebook_categories.csv
-        database_file: 'RP_2014_141218.accdb'
-        output_name: raw
-#        skip: True
-#    TripsToPlace:
-#        module: trips_to_place
-#        data_directory: 'raw'
-#        from_pipeline: False # Read directly from pipeline, or pull from directory
-#        dest_zone_col: dest_zone_id
-#        output_name: preprocessed
-#        skip: False
+        output_dir: raw
+        data:
+            database:
+                file: 'RP_2014_141218.accdb'
+                read_csv: False
+        configs:
+            dictionary_file: preprocess_specs/codebook_dictionary.csv
+            categories_file: preprocess_specs/codebook_categories.csv
     ExpressionPreProcess:
+        #        skip: True
         module: expressions
-        mapping_file: preprocess_specs/preprocess_mapping.csv
-        long_expressions: preprocess_specs/long_expressions.py # Can define more complex functions to run in a python file.
-        data_directory: 'raw'
-        # tables:   # can specify this, or else all files will be loaded from folder
-         # - person
-         # - household
         from_pipeline: False # Read directly from pipeline, or pull from directory
-        output_name: preprocessed
-#        skip: True
+        output_dir: preprocessed
+        data:
+            household:
+                file: raw/household.csv
+                index: household_id
+            person:
+                file: raw/person.csv
+                index: person_id
+            trip:
+                file: raw/trip.csv
+                index: trip_id
+            day:
+                file: raw/day.csv
+                index: day_id
+            vehicle:
+                file: raw/vehicle.csv
+                index: vehicle_id
+            car_salikgates:
+                file: raw/car_salikgates.csv
+                index: car_salikgates_id
+            trip_hhcompanions_pnum:
+                file: raw/trip_hhcompanions_pnum.csv
+                index: trip_hhcompanions_pnum_id
+            zone:
+                file: raw/zone.csv
+                index: zone_id
+        configs:
+            mapping_file: preprocess_specs/preprocess_mapping.csv
+            long_expressions: preprocess_specs/long_expressions.py # Can define more complex functions to run in a python file.
+    TripsToPlace:
+        module: trips_to_place
+        from_pipeline: False # Read directly from pipeline, or pull from directory
+        output_dir: preprocessed
+        data:
+            household:
+                file: preprocessed/household.csv
+                index: household_id
+            person:
+                file: preprocessed/person.csv
+                index: person_id
+            trip:
+                file: preprocessed/trip.csv
+                index: trip_id
+
     LegacySPA:
         module: legacy_spa
-        data_directory: preprocessed
         from_pipeline: False
-        output_name: final_data
-        specs:
+        output_dir: final_data
+        data:
+            household:
+                file: preprocessed/household.csv
+                index: household_id
+            person:
+                file: preprocessed/person.csv
+                index: person_id
+            trip:
+                file: preprocessed/trip.csv
+                index: trip_id
+            place:
+                file: preprocessed/place.csv
+                index: place_id
+        configs:
             # These are variable key mappings for the variables aggregated in the SPA tool.
             trip_columns: spa_specs/trip_columns.csv
             tour_columns: spa_specs/tour_columns.csv

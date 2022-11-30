@@ -45,37 +45,30 @@ def read_config(file_path):
 
 
 def load_pipeline_tables(namespace, kwargs):
+    input_tables = {}
+
     if kwargs.get('from_pipeline'):
         assert kwargs.get('pipeline').get(kwargs.get('data_directory')),\
             f"{kwargs.get('data_directory')} not found in pipeline."
         input_tables = kwargs.get('pipeline').get(kwargs.get('data_directory'))
-    else:
-        folder = kwargs.get('data_directory')
-        tables = kwargs.get('tables')
 
-        # Get file list
-        if not os.path.isabs(folder):
-            sources = [namespace.data] if not isinstance(namespace.data, list) else namespace.data
-            full_path = [os.path.join(src, folder) for src in sources if os.path.isdir(os.path.join(src, folder))]
-        else:
-            full_path = folder
+    if not kwargs.get('data'):
+        return {}
 
-        assert len(full_path) == 1, f'{len(full_path)} files found for "{folder}" input!'\
-                                    'If >1, check for multiple files in data folders.'\
-                                    'If 0, check if correct folder specified, or is empty!'
+    for table_name, table_params in kwargs.get('data').items():
+        if not table_params.get('read_csv', True):
+            continue
 
-        full_path = full_path[0]
+        table_dir = table_params.get('file')
+        index_col = table_params.get('index')
+        # Check if multiple found
+        if isinstance(table_dir, list):
+            assert len(table_dir) == 1, f'{len(table_dir)} files found for "{table_dir}" input!'\
+                                        'If >1, check for multiple files in data folders.'\
+                                        'If 0, check if correct folder specified, or is empty!'
+            table_dir = table_dir[0]
 
-        if tables:
-            file_list = [os.path.join(full_path, x + '.csv') for x in tables]
-        else:
-            file_list = [os.path.join(full_path, x) for x in os.listdir(full_path)
-                         if not os.path.isdir(x) and '.csv' in str(x)]
-
-        assert len(file_list) > 0, 'No input files found in this directory!'
-
-        csv_dict = {os.path.splitext(os.path.split(k)[-1])[0]: k for k in file_list}
-        input_tables = {k: pd.read_csv(path, index_col=f'{k}_id') for k, path in csv_dict.items()}
+        input_tables[table_name] = pd.read_csv(table_dir, index_col=index_col)
 
     return input_tables
 

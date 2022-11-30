@@ -8,8 +8,9 @@ import pyodbc
 import os
 
 from core import functions
+from core import modules
 
-class GetDBData:
+class GetDBData(modules.SPAModelBase):
     names_map = {
         'H': 'household',
         'H6': 'vehicle',
@@ -21,52 +22,20 @@ class GetDBData:
     }
 
     def __init__(self, namespace, **kwargs):
-        # if settings not passed, read from settings
-        inputs = ['dictionary_file', 'categories_file', 'database_file', 'output_name']
-        if any([True for x in inputs if x not in kwargs.keys()]):
-            settings_file = os.path.join(namespace.config, 'settings.yaml')
-            settings = functions.read_config(settings_file)
-            assert settings.get('PROCESSING_STEPS')
-            assert settings.get('PROCESSING_STEPS').get('GetDBData')
-            kwargs = {**kwargs, **settings.get('PROCESSING_STEPS').get('GetDBData')}
-
-        inputs_map = {
-            'dictionary_file': namespace.config,
-            'categories_file': namespace.config,
-            'database_file': namespace.data
-        }
-
-        for f, sources in inputs_map.items():
-            assert kwargs.get(f)
-            kwargs[f] = self.append_kwargs_sources(kwargs.get(f), sources)
-
-        self.namespace = namespace
-        self.kwargs = kwargs
-        self.database_path = self.kwargs.get('database_file')
-        self.codebook = pd.read_csv(self.kwargs.get('dictionary_file'))
-        self.codevalues = pd.read_csv(self.kwargs.get('categories_file'))
-
-    def append_kwargs_sources(self, file, sources):
-        if not os.path.isabs(file):
-            assert sources, f'Missing source for {file}'
-            if not isinstance(sources, list):
-                sources = [sources]
-            path = [os.path.join(dir, file) for dir in sources if
-                    os.path.isfile(os.path.join(dir, file))]
-            if len(path) != 1:
-                print(f'{len(path)} files found for "{file}" input! Expecting only 1.')
-            assert len(path) == 1
-
-            file = path[0]
-        return file
+        # This passes arguments to the base model
+        super().__init__(namespace, **kwargs)
+        self.codebook = pd.read_csv(self.kwargs.get('configs').get('dictionary_file'))
+        self.codevalues = pd.read_csv(self.kwargs.get('configs').get('categories_file'))
 
     def run(self):
         self.read_accessdb()
         return self.raw_data_formatted
 
     def read_accessdb(self):
+        database_path = self.kwargs.get('data').get('database').get('file')
+
         driver = '{Microsoft Access Driver (*.mdb, *.accdb)}'
-        conn_string = f'DRIVER={driver};DBQ={self.database_path}'
+        conn_string = f'DRIVER={driver};DBQ={database_path}'
 
         with pyodbc.connect(conn_string) as conn:
             cursor = conn.cursor()
@@ -154,9 +123,11 @@ class GetDBData:
                 table_weighted = table
             elif table_name == 'household':
                 hh_weights = weights.groupby('household_id').person_weight.mean()
-                table_weighted = table.merge(hh_weights, on='household_id', how='outer')
+                table_weighted = table.merge(hh_weights, on='household_id', how='left')
             else:
-                table_weighted = table.merge(weights, on=['household_id', 'person_id'], how='outer')
+                index_col = table.index.name
+                table_weighted = table.reset_index().merge(weights, on=['household_id', 'person_id'], how='left')
+                table_weighted = table_weighted.set_index(index_col)
 
             # Rename weight column
             table_weighted = table_weighted.rename(columns={'person_weight': table_name + '_weight'})
@@ -239,7 +210,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # manually inject args
-    args.config = 'C:\gitclones\Dubai_survey_processing\configs'
+    args.configs = 'C:\gitclones\Dubai_survey_processing\configs'
     args.data = [
         'C:\gitclones\Dubai_survey_processing\data',
         'C:\\Users\\nick.fournier\\Resource Systems Group, Inc\\Model Development - Dubai RTA ABM Development Project\\data\\fromIBI\\2014 Survey Data\\2014-12-20_SP_RP_Data_Aur'

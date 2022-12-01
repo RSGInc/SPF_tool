@@ -148,3 +148,15 @@ def summarize(table, stat_codebook, weight_col=None):
         stats['Categorical'] = pd.concat(cat_stats, axis=1).sort_index().reset_index().rename(columns={'index': 'Category'})
 
     return stats
+
+def find_source_root(file, sources):
+    if not os.path.isabs(file):
+        if not isinstance(sources, list):
+            sources = [sources]
+        path = [os.path.join(dir, file) for dir in sources if
+                os.path.isfile(os.path.join(dir, file))]
+
+        assert len(path) <= 1, f'{len(path)} files found for "{file}" input! Expecting only 1.'
+        if len(path) == 1:
+            file = path[0]
+    return file

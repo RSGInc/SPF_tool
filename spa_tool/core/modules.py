@@ -4,20 +4,14 @@
 # Author: Nicholas Fournier nick.fournier@rsginc.com, Oct, 2022
 ##################################################################
 
-import pandas as pd
-from copy import deepcopy
 import os
 from core import functions
 
 class SPAModelBase:
     def __init__(self, namespace, **kwargs):
-        self.namespace = self.check_namespace(namespace)
+        self.namespace = namespace
         self.kwargs = self.update_kwargs(**kwargs)
         self.input_tables = functions.load_pipeline_tables(self.namespace, self.kwargs)
-
-    def check_namespace(self, namespace):
-        assert 'configs' in namespace and 'data' in namespace
-        return namespace
 
     def set_global_tables(self):
         # This function can be used to create local variables as table names for debugging and script testing
@@ -44,24 +38,13 @@ class SPAModelBase:
                 continue
             for file_name, file_params in kwargs.get(spec).items():
                 if isinstance(file_params, dict):
-                    file_params['file'] = self.append_source_root(file_params['file'], namespace_map[spec])
+                    file_params['file'] = functions.find_source_root(file_params['file'], namespace_map[spec])
                 else:
-                    file_params = self.append_source_root(file_params, namespace_map[spec])
+                    file_params = functions.find_source_root(file_params, namespace_map[spec])
                 kwargs[spec][file_name] = file_params
 
         return kwargs
 
-    def append_source_root(self, file, sources):
-        if not os.path.isabs(file):
-            if not isinstance(sources, list):
-                sources = [sources]
-            path = [os.path.join(dir, file) for dir in sources if
-                    os.path.isfile(os.path.join(dir, file))]
-
-            assert len(path) <= 1, f'{len(path)} files found for "{file}" input! Expecting only 1.'
-            if len(path) == 1:
-                file = path[0]
-        return file
 
     # TODO Make generalizable
     # def save_tables(self, out_dir):

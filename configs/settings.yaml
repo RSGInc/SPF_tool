@@ -1,7 +1,7 @@
 # Declare the custom processing steps to run here
-START_FROM: LegacySPA
+START_FROM: SPAToolModule
 PROCESSING_STEPS:
-    GetDBData:
+    GetAccessDBData:
         module: accessdb
         output_dir: raw
         data:
@@ -9,8 +9,8 @@ PROCESSING_STEPS:
                 file: 'RP_2014_141218.accdb'
                 read_csv: False
         configs:
-            dictionary_file: preprocess_specs/codebook_dictionary.csv
-            categories_file: preprocess_specs/codebook_categories.csv
+            dictionary_file: dbdata_specs/codebook_dictionary.csv
+            categories_file: dbdata_specs/codebook_categories.csv
     ExpressionPreProcess:
         #        skip: True
         module: expressions
@@ -59,7 +59,7 @@ PROCESSING_STEPS:
                 file: preprocessed/trip.csv
                 index: trip_id
 
-    LegacySPA:
+    SPAToolModule:
         module: legacy_spa
         from_pipeline: False
         output_dir: final_data

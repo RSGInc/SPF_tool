@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+
 from core.functions import *
 
 
@@ -10,6 +12,7 @@ class Tour:
         self.tour_id = int(tour_id)
         self.is_AW_subtour = is_subtour
         self.trips = []
+
         if trips!=None:
             #this is a AW_subtour
             #re-set trips' tour_obj to the current tour & reset ID field
@@ -118,65 +121,34 @@ class Tour:
             self.fields['ERROR'] = self.fields['ERROR']+err_msg
     
     def _calc_tour_mode(self):
+        TRANSIT_MODES = self.constants.get('TRANSIT_MODES')
         TRIP_MODE = self.constants.get('TRIP_MODE')
         TOUR_MODE = self.constants.get('TOUR_MODE')
         TOUR_MODE = {k: v if isinstance(v, list) else [v] for k, v in TOUR_MODE.items()}
 
-        _mode = -1
-        #put the modes used on all trips in one list 
-        _modes_used = set()
-        for _trip in self.trips:
-            k = _trip.fields['TRIPMODE']
-            v = TRIP_MODE[k]
-            _modes_used.add(v)
+        TRIP_MODE_INVERSE = {v:k for k,v in TRIP_MODE.items()}
+        TRANSIT_MODE_NAMES = [TRIP_MODE_INVERSE[x] for x in TRANSIT_MODES]
 
-        _tour_mode = [k for k, v in TOUR_MODE.items() if _modes_used.intersection(v)]
+        _tour_mode = -1
+
+        #put the modes used on all trips in one list
+        trip_df = pd.DataFrame([{k: x.fields.get(k) for k in ['TRIPMODE','DIST']} for x in self.trips])
+        _modes_used = set(trip_df.TRIPMODE.to_list())
+
+        # If any of the modes are transit, it's a transit tour
+        if len(_modes_used.intersection(TRANSIT_MODE_NAMES)) > 0:
+            _modes_used = _modes_used.intersection(TRANSIT_MODE_NAMES)
+
+        # If still multiple modes, choose longest. If tie, choose first
+        if len(_modes_used) > 1:
+            _tour_mode = [trip_df[trip_df.DIST == trip_df.DIST.max()].iloc[0].TRIPMODE]
+            # _tour_mode = [k for k, v in TRIP_MODE.items() if v == _new_mode]
+        else:
+            _tour_mode = list(_modes_used)
 
         assert len(_tour_mode) == 1, 'Multiple matching modes!'
         _new_mode = _tour_mode[0]
 
-        # #determine the tour mode
-        # _pnr_modes = {NewTripMode['PNR-LB'],NewTripMode['PNR-EB'], NewTripMode['PNR-LR'],NewTripMode['PNR-CR']}
-        # _knr_modes = {NewTripMode['KNR-LB'],NewTripMode['KNR-EB'], NewTripMode['KNR-LR'],NewTripMode['KNR-CR']}
-        # _wt_modes  = {NewTripMode['WALK-LB'],NewTripMode['WALK-EB'], NewTripMode['WALK-LR'],NewTripMode['WALK-CR']}
-        # _hov3_modes = {NewTripMode['HOV3-FREE'],NewTripMode['HOV3-PAY']}
-        # _hov2_modes = {NewTripMode['HOV2-FREE'],NewTripMode['HOV2-PAY']}
-        # _sov_modes  = {NewTripMode['SOV-FREE'],NewTripMode['SOV-PAY']}
-        #
-        # #apply set intersection to check if the given modes are used
-        # if len(_pnr_modes&_modes_used)>0:
-        #     #If any trip on tour is PNR, tour mode is PNR
-        #     _mode = NewTourMode['PNR']
-        # elif len(_knr_modes&_modes_used)>0:
-        #     #else if any trip on tour is KNR, tour mode is KNR
-        #     _mode = NewTourMode['KNR']
-        # elif len(_wt_modes&_modes_used)>0:
-        #     #else if any trip on tour is Walk-Transit, tour mode is Walk-Transit
-        #     _mode = NewTourMode['WT']
-        # elif NewTripMode['SCHOOLBUS'] in _modes_used:
-        #     #else if any trip on tour is school bus, tour mode is school bus
-        #     _mode = NewTourMode['SCHOOLBUS']
-        # elif NewTripMode['BIKE'] in _modes_used:
-        #     #else if any trip on tour is bike/moped, tour mode is bike/moped
-        #     _mode = NewTourMode['BIKE']
-        # elif NewTripMode['TAXI'] in _modes_used:
-        #     #else if any trip on tour is taxi, tour mode is taxi
-        #     _mode = NewTourMode['TAXI']
-        # elif len(_hov3_modes&_modes_used)>0:
-        #     #else if any trip on tour is shared-3+, tour mode is shared-3+
-        #     _mode = NewTourMode['HOV3']
-        # elif len(_hov2_modes&_modes_used)>0:
-        #     #else if any trip on tour is shared-2, tour mode is shared-2
-        #     _mode = NewTourMode['HOV2']
-        # elif len(_sov_modes&_modes_used)>0:
-        #     #else if any trip on tour is SOV, tour mode is SOV
-        #     _mode = NewTourMode['SOV']
-        # elif NewTripMode['WALK'] in _modes_used:
-        #     #else if any trip on tour is walk, tour mode is walk
-        #     _mode = NewTourMode['WALK']
-        # else:
-        #     _mode = NewTourMode['OTHER']
-         
         return _tour_mode
         
     def _get_is_driver(self):
@@ -715,21 +687,22 @@ class Tour:
         return _prim_trip        
         
     def _find_prim_by_score(self):
-        NewPurp = self.constants.get('NewPurp')
+        PURPOSE = self.constants.get('PURPOSE')
 
+        # TODO. WHAT THE HECK IS THIS?
         d = [0,60,120,180,240,300,360,420,480]
-        score = {   NewPurp['WORK']:         [8,4,2,1.5,1.4,1.3,1.2,1.1,1],
-                    NewPurp['UNIVERSITY']:   [8,4,2,1.5,1.4,1.3,1.2,1.1,1],
-                    NewPurp['SCHOOL']:       [8,4,2,1.5,1.4,1.3,1.2,1.1,1],
-                    NewPurp['ESCORTING']:    [8,6,4,3.5,3.4,3.3,3.2,3.1,3],
-                    NewPurp['SHOPPING']:     [10,6,4,3.5,3.4,3.3,3.2,3.1,3],
-                    NewPurp['MAINTENANCE']:  [10,6,4,3.5,3.4,3.3,3.2,3.1,3],
-                    NewPurp['EAT OUT']:      [12,7,5,4.5,4.4,4.3,4.2,4.1,4],
-                    NewPurp['SOCIAL/VISIT']: [14,8,6,5.5,5.4,5.3,5.2,5.1,5],
-                    NewPurp['DISCRETIONARY']:[10,6,4,3.5,3.4,3.3,3.2,3.1,3],
-                    NewPurp['WORK-RELATED']: [8,4,2,1.5,1.4,1.3,1.2,1.1,1],
-                    NewPurp['LOOP']:         [20,10,7,6.5,6.4,6.3,6.2,6.1,6],
-                    NewPurp['OTHER']:        [20,10,7,6.5,6.4,6.3,6.2,6.1,6]
+        score = {   PURPOSE['WORK']:         [8,4,2,1.5,1.4,1.3,1.2,1.1,1],
+                    PURPOSE['UNIVERSITY']:   [8,4,2,1.5,1.4,1.3,1.2,1.1,1],
+                    PURPOSE['SCHOOL']:       [8,4,2,1.5,1.4,1.3,1.2,1.1,1],
+                    PURPOSE['ESCORTING']:    [8,6,4,3.5,3.4,3.3,3.2,3.1,3],
+                    PURPOSE['SHOPPING']:     [10,6,4,3.5,3.4,3.3,3.2,3.1,3],
+                    PURPOSE['MAINTENANCE']:  [10,6,4,3.5,3.4,3.3,3.2,3.1,3],
+                    PURPOSE['EAT OUT']:      [12,7,5,4.5,4.4,4.3,4.2,4.1,4],
+                    PURPOSE['SOCIAL/VISIT']: [14,8,6,5.5,5.4,5.3,5.2,5.1,5],
+                    PURPOSE['DISCRETIONARY']:[10,6,4,3.5,3.4,3.3,3.2,3.1,3],
+                    PURPOSE['WORK-RELATED']: [8,4,2,1.5,1.4,1.3,1.2,1.1,1],
+                    PURPOSE['LOOP']:         [20,10,7,6.5,6.4,6.3,6.2,6.1,6],
+                    PURPOSE['OTHER']:        [20,10,7,6.5,6.4,6.3,6.2,6.1,6]
                  }
         
         ### scan through all but the last trip in tour to identify primary activity/destination

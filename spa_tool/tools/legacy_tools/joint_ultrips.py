@@ -1,6 +1,6 @@
 import numpy as np
 import math
-from spa_tool.core import functions
+from core import functions
 
 class Joint_ultrip:
     """ Joint episode class """

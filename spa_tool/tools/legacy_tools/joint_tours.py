@@ -1,11 +1,13 @@
 class Joint_tour:
     """ Joint tour class """
     #upon creation of a joint tour, determine the joint tour purpose and pass it on to the constituting person tours 
-    def __init__(self, jtour_id, jtrips):
+    def __init__(self, jtour_id, jtrips, constants):
         self.jtour_id = jtour_id
         self.jtrips = jtrips    #list of Joint_trip objects
         self.error_msg = ""
         self.error_flag = False
+        self.constants = constants
+
         #find all the person tours associated with this fully joint tour
         self.person_tours = []
         for jt in jtrips[0]:
@@ -21,13 +23,15 @@ class Joint_tour:
         # this is intended to prevent joint tour purpose being coded as escorting. 
         purp_list= []
         joint_purp = None
+        PURPOSE = self.constants.get('PURPOSE')
+
         for tour in self.person_tours:
             purp = tour.get_purp()
-            if (not purp==NewPurp['ESCORTING']) & (not purp in purp_list):
+            if (not purp==PURPOSE['ESCORTING']) & (not purp in purp_list):
                 purp_list.append(purp)
         #in theory, there should be only 1 purpose
         if len(purp_list)==0:
-            joint_purp = NewPurp['ESCORTING']
+            joint_purp = PURPOSE['ESCORTING']
             #self.log_error("No valid joint purpose found")
         elif len(purp_list)>1:
             #self.log_error("More than 1 joint purposes found: "+','.join(['%s' %purp for purp in purp_list]))

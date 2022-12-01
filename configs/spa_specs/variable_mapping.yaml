@@ -70,7 +70,7 @@ TOLL:
     'TOLL': 1
     'NOTOLL': 2
     
-TRANSIT_MODES: [7, 8]
+TRANSIT_MODES: [7, 8, 9, 10, 11, 12]
 
 TRANSIT_TYPES:
     'BUS': 1

@@ -7,7 +7,6 @@ import pandas as pd
 import os
 import sys
 import importlib.util
-from core import functions
 from core import modules
 
 class ExpressionPreProcess(modules.SPAModelBase):

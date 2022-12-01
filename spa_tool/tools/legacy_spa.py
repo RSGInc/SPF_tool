@@ -1,12 +1,9 @@
 import os
-
-import numpy as np
+import time
 import pandas as pd
-from copy import deepcopy
 
 from core import functions
 from core.modules import SPAModelBase
-# from tools.trip_to_place import trip_to_place
 from tools.legacy_tools.households import Household
 from tools.legacy_tools.persons import Person
 from tools.legacy_tools.tours import Tour
@@ -14,7 +11,7 @@ from tools.legacy_tools.trips import Trip
 from tools.legacy_tools.joint_tours import Joint_tour
 from tools.legacy_tools.joint_ultrips import Joint_ultrip
 
-class LegacySPA(SPAModelBase):
+class SPAToolModule(SPAModelBase):
     def __init__(self, namespace, **kwargs):
         super().__init__(namespace, **kwargs)
         self.constants = self.default_constants()
@@ -58,18 +55,19 @@ class LegacySPA(SPAModelBase):
         # create the household, person, tour, and trip objects
         of_count = len(df_place.groupby(['SAMPN']))
         ct = 0
-
-        # FIXME DELETEME
-        # TESTING
-        # df_place = df_place.iloc[:100]
-
-        for (hhid), df_persons in df_place.groupby(['SAMPN']):
+        t0 = time.time()
+        for hhid, df_persons in df_place.groupby('SAMPN'):
             # create a new household object
             hh = Household(hhid, constants=self.constants)
             hh_list.append(hh)
+
+            # The progress bar
             ct += 1
-            if ct % 100 == 0:
-                print(f"Processed household {ct} of {of_count}, {round(100 * ct / of_count)}%", end='\r')
+            if ct % 10 == 0:
+                ti = time.time()
+                time_left = round((of_count - ct) * (ti - t0) / ct)
+                print(f"Processed household {ct} of {of_count}, {round(100 * ct / of_count)}%,"
+                      f" ({time_left} seconds left, {round(ti - t0)} seconds elapsed)", end='\r')
 
             # loop through each person
             for (hhid, pid), df_psn_places in df_persons.groupby(['SAMPN', 'PERNO']):
@@ -110,32 +108,31 @@ class LegacySPA(SPAModelBase):
 
                 # FIXME: CLEANUP, these seems weirdly hardcoded and not all of them used.
                 # scan through place records and find consecutive records that correspond to the same linked trip
-                count_trips_on_tour = 0
-                count_places_on_trip = 0
                 cur_row = 0
                 max_row = num_places_for_person - 1  # row index starts with 0 (not 1) and only need to scan up to the 2nd last row
-                cur_tour_start_row = 0  # points to the origin (HOME) of the current tour
                 cur_trip_start_row = 0  # points to the origin of the current trip
-                new_trip = True
                 cur_tourid = 0  # tour no. gets incremented whenever a new tour is encountered
                 cur_tripid = 0  # trip no. is incremented whenever a new trip is encountered
+                new_tour = True
+                tour = None
 
                 while (cur_row < max_row):
-                    # current PLACE marks the start of a new tour
-                    # create a new tour object for the person
-                    cur_tourid = cur_tourid + 1
-                    tour = Tour(hh, psn, self.constants, cur_tourid)
-                    psn.add_tour(tour)
-                    cur_tripid = 0
+                    if new_tour:
+                        #current PLACE marks the start of a new tour
+                        #create a new tour object for the person
+                        cur_tourid = cur_tourid + 1
+                        tour = Tour(hh, psn, self.constants, cur_tourid)
+                        psn.add_tour(tour)
+                        cur_tripid = 0
 
                     # true if next PLACE marks the start of a different tour
                     new_tour = (df_psn_places['TPURP'].iloc[cur_row + 1] == SurveyHomeCode)
-                    # TPURP codes 1,2 mean 'home'
-                    new_trip = (df_psn_places['TPURP'].iloc[cur_row + 1] != SurveyChangeModeCode) | \
-                               (
-                                (df_psn_places['TPURP'].iloc[cur_row + 1] == SurveyChangeModeCode) &
-                                (cur_row + 1 == max_row)
-                               )
+                    # TPURP codes 0 mean 'home'
+                    new_trip = (df_psn_places['TPURP'].iloc[cur_row + 1] != SurveyChangeModeCode) | (
+                            (df_psn_places['TPURP'].iloc[cur_row + 1] == SurveyChangeModeCode) &
+                            (cur_row + 1 == max_row)
+                    )
+
                     # true if next PLACE marks the start of a different trip, or if next SPLACE is change mode and last stop of the day
                     # TPURP codes 7 means 'change mode'
 
@@ -143,6 +140,7 @@ class LegacySPA(SPAModelBase):
                         # found last place before the destination of the current trip
                         # create a new trip object to represent the current linked trip
                         cur_tripid = cur_tripid + 1
+
                         trip = Trip(hh, psn, tour, self.constants, cur_tripid)
 
                         # process current linked trip, which is described by rows starting at cur_trip_start_row and ending at cur_row+1
@@ -156,7 +154,6 @@ class LegacySPA(SPAModelBase):
                             hh.add_joint_episodes(trip.get_joint_descriptions())
 
                         # reset counter/pointer for the next trip
-                        count_places_on_trip = 0
                         cur_trip_start_row = cur_row + 1
 
                     # update row pointer

@@ -5,7 +5,6 @@
 
 import pandas as pd
 from copy import deepcopy
-import os
 from core import functions
 from core.modules import SPAModelBase
 

@@ -1,6 +1,6 @@
 from core.functions import *
 import numpy as np
-from spa_tool.tools.legacy_tools.joint_ultrips import Joint_ultrip
+from tools.legacy_tools.joint_ultrips import Joint_ultrip
 
 class Trip:
     """ Trip class """
@@ -436,7 +436,7 @@ class Trip:
 
     def populate_attributes(self, df):
         """ determine trip attributes based on PLACE records in a DataFrame object"""
-
+        TRANSIT_MODES = self.constants.get('TRANSIT_MODES')
         TRIP_MODE = self.constants.get('TRIP_MODE')
         DRIVER = self.constants.get('DRIVER')
         PURPOSE = self.constants.get('PURPOSE')
@@ -449,8 +449,11 @@ class Trip:
         SURVEY_DO_PURP_CODE = self.constants.get('SURVEY_DO_PURP_CODE')
         COMPUTE_TRIP_DIST = self.constants.get('COMPUTE_TRIP_DIST')
 
-        TRIP_MODE_KEY = {v:k for k,v in TRIP_MODE.items()}
-        TRANS_MODES = {k: v for k,v in TRIP_MODE.items() if any([a for a in ['WALK-', 'PNR-', 'KNR-'] if a in k])}
+        TRIP_MODE_INVERSE = {v:k for k,v in TRIP_MODE.items()}
+        TRANSIT_MODE_NAMES = [TRIP_MODE_INVERSE[x] for x in TRANSIT_MODES]
+
+        # TRANS_MODES = {k: v for k,v in TRIP_MODE.items() if any([a for a in ['WALK-', 'PNR-', 'KNR-'] if a in k])}
+
 
         #trip origin: 1st place on trip
         self.fields['ORIG_PLACENO'] = df['PLANO'].iloc[0]              
@@ -507,13 +510,18 @@ class Trip:
         
         #if a driver for any segment of the trip
         _new_mode = [k for k, v in TRIP_MODE.items() if any(df['MODE'].isin([v]))]
-        _any_transit = [x for x in _new_mode if any([a for a in ['WALK-', 'PNR-', 'KNR-'] if a in x])]
+
+        # If any of the modes are transit
+        # _any_transit = [x for x in _new_mode if any([a for a in ['WALK-', 'PNR-', 'KNR-'] if a in x])]
+        _any_transit = [x for x in _new_mode if x in TRANSIT_MODE_NAMES]
+
+        # _any_transit = list(set(_new_mode).intersection(TRANSIT_MODES))
 
         if 'HOV3+' in _new_mode:
             _new_mode = ['HOV3+']
         if 'HOV2' in _new_mode:
             _new_mode = ['HOV2']
-        # If transit part of tour
+        # If transit
         if _any_transit:
             _new_mode = _any_transit
 

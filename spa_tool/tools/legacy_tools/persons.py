@@ -1,6 +1,5 @@
-import numpy as np
 from core.functions import *
-from spa_tool.tools.legacy_tools.tours import Tour
+from tools.legacy_tools.tours import Tour
 
 
 class Person:
@@ -361,7 +360,8 @@ class Person:
         _new_tour_id = 1 + self.tours[-1].get_id()
         #create tour object
         #_new_tour = Tour(self.hh_obj.get_id(), self.per_id, _new_tour_id, 1)
-        _new_tour = Tour(self.hh_obj, self, _new_tour_id, 1, trips, self.constants)
+        _new_tour = Tour(hh_obj=self.hh_obj, per_obj=self, constants=self.constants,
+                         tour_id=_new_tour_id, is_subtour=1, trips=trips)
         #add new tour to its list
         self.tours.append(_new_tour)
         

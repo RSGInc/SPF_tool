@@ -54,15 +54,24 @@ def add_run_args(parser):
     )
 
 
-class SPATool:
-    def __init__(self, args):
-        settings_file = os.path.join(args.config, 'settings.yaml')
+class SPAToolFramework:
+    def __init__(self, namespace_args):
+        self.nargs = self.check_namespace(namespace_args)
+
+        settings_file = functions.find_source_root('settings.yaml', namespace_args.configs)
         self.settings = functions.read_config(settings_file)
 
         self.run()
 
+    def check_namespace(self, namespace):
+        assert namespace.configs, 'Missing required argument "-c configs"'
+        assert namespace.data, 'Missing required argument "-d data"'
+        assert namespace.output, 'Missing required argument "-o output"'
+
+        return namespace
+
     def run(self):
-        if args.expression_testing:
+        if self.nargs.expression_testing:
             params = self.settings.get('PROCESSING_STEPS').get('ExpressionPreProcess')
             module_name = '.'.join(['tools', params.get('module')]).replace('.py', '')
             assert params['from_pipeline'] == False, 'Expression tester must run from flat files, not pipeline data.'
@@ -86,11 +95,18 @@ class SPATool:
             results = {}
 
             # Find which step to start from
+            steps = self.settings.get('PROCESSING_STEPS')
             skip = True
-            for class_name, params in self.settings.get('PROCESSING_STEPS').items():
+
+            assert self.settings.get('START_FROM') in self.settings.get('PROCESSING_STEPS').keys(), \
+                'Missing START_FROM step'
+
+            for class_name, params in steps.items():
+                print(f'Running {class_name} module...')
                 if class_name == self.settings.get('START_FROM'):
                     skip = False
                 if params.get('skip') or skip:
+                    print('Skip')
                     continue
                 module_name = '.'.join(['tools', params.get('module')]).replace('.py', '')
                 class_args = {
@@ -101,7 +117,7 @@ class SPATool:
                 module_obj = __import__(module_name, fromlist=['tools'])
                 class_obj = getattr(module_obj, class_name)
 
-                results[params.get('output_dir', class_name)] = class_obj(args, **class_args).run()
+                results[params.get('output_dir', class_name)] = class_obj(self.nargs, **class_args).run()
 
 
 if __name__ == "__main__":
@@ -120,4 +136,4 @@ if __name__ == "__main__":
 
     # args.expression_testing = True
     # Run
-    sys.exit(SPATool(args))
+    sys.exit(SPAToolFramework(args))

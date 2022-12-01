@@ -10,7 +10,7 @@ import os
 from core import functions
 from core import modules
 
-class GetDBData(modules.SPAModelBase):
+class GetAccessDBData(modules.SPAModelBase):
     names_map = {
         'H': 'household',
         'H6': 'vehicle',

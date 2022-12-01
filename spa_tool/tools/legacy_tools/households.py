@@ -119,7 +119,8 @@ class Household:
             _error_merge = False
 
             #
-            # Attempt to resolve inconsistency in reported departure times by merging trip entries departing within the error time buffer
+            # Attempt to resolve inconsistency in reported departure
+            # times by merging trip entries departing within the error time buffer
             # Assuming that reported number of participants are accurate
             #
             if self._error_num_joint_episodes(
@@ -144,7 +145,8 @@ class Household:
                         # check if the merged list has enough trip records
                         if not self._error_num_joint_episodes(_tmp_jt_list):
                             self.log_recode(
-                                "Inconsistent departure times: trips departing at {}:{} and {}:{} are assumed to be made together".format(
+                                "Inconsistent departure times: trips departing at {}:{} "
+                                "and {}:{} are assumed to be made together".format(
                                     _dep_time // 60,
                                     _dep_time % 60,
                                     _next_dep_time // 60,
@@ -168,17 +170,17 @@ class Household:
 
             if _error_merge:
                 # there are fewer joint trip entries than expected
-                msg = "Number of joint trips departing at {}:{} differs from at least one of the reported travel group size".format(
-                    _dep_time // 60, _dep_time % 60
+                msg = (
+                    f"Number of joint trips departing at {_dep_time // 60}:{_dep_time % 60} "
+                    f"differs from at least one of the reported travel group size"
                 )
                 # self.log_error()
                 for _jt in _jt_list:
                     _jt.log_error(msg)
                 continue
 
-            #
-            # Scan through the joint trips to identify any errors in reported number of hh members or reported travel participants
-            #
+            # Scan through the joint trips to identify any errors in reported
+            # number of hh members or reported travel participants
             _start_ix = int(0)
             _max_ix = len(_jt_list)
             _error_travel_party = False
@@ -207,14 +209,6 @@ class Household:
                 # Assuming that reported departure times and number of participants are accurate
                 if _error_travel_party & (not _error_number_hh):
 
-                    """
-                    ##remove the lines below before uncommenting
-                    msg = "Joint trips departing at {}:{} reported inconsistent participants".format(_dep_time//60,_dep_time%60)
-                    for _jt in _jt_list:
-                        _jt.log_error(msg)
-                    break
-
-                    """
                     # merge the travel party entries across all joint trips
                     # if the merged set has the same number of participants as reported in number_hh
                     # then use the merged set as the 'true' set to continue
@@ -248,12 +242,6 @@ class Household:
                 # Attempt to resolve inconsistency in reported number of participants
                 # Assuming that reported departure times and travel participants are accurate
                 if _error_number_hh & (not _error_travel_party):
-                    """
-                    msg = "Joint trips departing at {}:{} reported inconsistent number of participants".format(_dep_time//60,_dep_time%60)
-                    for _jt in _jt_list:
-                        _jt.log_error(msg)
-                    break
-                    """
                     # 'fix' the incorrect number_hh and continue
                     _number_travelers = len(_jt_list[_start_ix].travel_party)
                     for _i in range(_start_ix, _stop_ix):
@@ -262,8 +250,9 @@ class Household:
                 # inconsistencies found in both reported number of participants and reported travel participants
                 if _error_number_hh & _error_travel_party:
                     # log as an error and break from loop, for now
-                    msg = "Joint trips departing at {}:{} reported inconsistent info about participants & travel group sizes".format(
-                        _dep_time // 60, _dep_time % 60
+                    msg = (
+                        f"Joint trips departing at {_dep_time // 60}:{_dep_time % 60} "
+                        f"reported inconsistent info about participants & travel group sizes"
                     )
                     # self.log_error(msg)
                     for _jt in _jt_list:
@@ -306,7 +295,7 @@ class Household:
                     # joint ultrip id
                     _jt_list[_i].set_joint_ultrip_id(_joint_ultrip_id)
                     # chauffuer id
-                    if (_driver_ix != None) & (
+                    if (_driver_ix is not None) & (
                         _i != _driver_ix
                     ):  # skip the driver him/her-self
                         _jt_list[_i].set_chauffuer(_jt_list[_driver_ix].driver)
@@ -345,7 +334,8 @@ class Household:
         for _jt_group_idx, _cur_jt_group in enumerate(self.unique_jt_groups):
             # _cur_jt_group is a list of joint episodes that were made together by household members
 
-            # first check if the parent trips are all joint and grouped. if not, stop processing this group of joint travel
+            # first check if the parent trips are all joint and grouped.
+            # if not, stop processing this group of joint travel
             _all_grouped = True
             for _jt in _cur_jt_group:
                 if not (
@@ -378,7 +368,8 @@ class Household:
             ):
                 _start_jtour = _jt_group_idx
                 _num_seq_jtrips = 1
-            # necessary condition for a joint episode group to be part of the same joint tour as the previous joint episode:
+            # necessary condition for a joint episode group to be part
+            # of the same joint tour as the previous joint episode:
             # (1)count of sequential number of joint episode is greater than 0
             # (2)identical set of person id and tour id as the previous joint episode
             # (3)trip_id the same for all participants and all equal to the previous trip's id plus 1
@@ -473,7 +464,8 @@ class Household:
 
                 if _pick_up:
                     # if trip was for picking up, the person(s) being picked up is given by
-                    # the difference between the travel party at the origin and travel party at the destination of the current trip
+                    # the difference between the travel party at the origin and
+                    # travel party at the destination of the current trip
                     # note that the previous trip may not be a joint travel
                     _prev_set = set(_driver_jt.get_orig_travel_party())
                     _cur_set = set(_driver_jt.get_travel_party())

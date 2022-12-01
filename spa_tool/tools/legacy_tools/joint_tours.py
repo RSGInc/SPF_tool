@@ -23,12 +23,11 @@ class Joint_tour:
         """given the person tour associated with this fully joint tour, return the joint tour purpose"""
         # this is intended to prevent joint tour purpose being coded as escorting.
         purp_list = []
-        joint_purp = None
         PURPOSE = self.constants.get("PURPOSE")
 
         for tour in self.person_tours:
             purp = tour.get_purp()
-            if (not purp == PURPOSE["ESCORTING"]) & (not purp in purp_list):
+            if (purp is not PURPOSE["ESCORTING"]) & (purp not in purp_list):
                 purp_list.append(purp)
         # in theory, there should be only 1 purpose
         if len(purp_list) == 0:
@@ -59,7 +58,8 @@ class Joint_tour:
 
     def print_vals(self, fp):
         # write out hh id, joint tour id, and size of travel group
-        # use the 0'th joint trip in the 0'th joint trip group since all joint trips in the jtrips list contain the same information
+        # use the 0'th joint trip in the 0'th joint trip group
+        # since all joint trips in the jtrips list contain the same information
         _jt = self.jtrips[0][0]
         fp.write("{},{},{}".format(_jt.get_hh_id(), _jt.jtour_id, _jt.number_hh))
         # write out IDs of people in the travel party

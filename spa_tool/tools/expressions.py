@@ -13,16 +13,18 @@ from core import modules
 class ExpressionPreProcess(modules.SPAModelBase):
     def __init__(self, namespace, **kwargs):
         super().__init__(namespace, **kwargs)
+
+        self.expressions = pd.read_csv(
+            self.kwargs.get("configs").get("mapping_file"), dtype=str
+        )
         self.init_long_expressions()
+        self.output_tables = None
 
     def run(self):
         self.run_expressions()
         return self.output_tables
 
     def init_long_expressions(self):
-        self.expressions = pd.read_csv(
-            self.kwargs.get("configs").get("mapping_file"), dtype=str
-        )
         module_file = self.kwargs.get("configs").get("long_expressions")
         if module_file:
             module_name = os.path.splitext(module_file)[0]
@@ -55,10 +57,10 @@ class ExpressionPreProcess(modules.SPAModelBase):
 
         tables = {}
         # For each table
-        for table_name, table_expressions in self.expressions.groupby("Table"):
+        for exp_table_name, table_expressions in self.expressions.groupby("Table"):
             # For each categorical field, if not categorical, it skips to field value
             table_cols = {}
-            if table_name.strip()[0] == "#":
+            if exp_table_name.strip()[0] == "#":
                 continue
             for field, expr_df in table_expressions.groupby("Field"):
                 # For each field value expression
@@ -69,7 +71,7 @@ class ExpressionPreProcess(modules.SPAModelBase):
                             field_vals[val] = eval(expr_.Expression)
                         except:
                             print(
-                                f"Expression failed: {expr_.Expression} for field {field} in table {table_name}"
+                                f"Expression failed: {expr_.Expression} for field {field} in table {exp_table_name}"
                             )
                             field_vals[val] = eval(expr_.Expression)
 
@@ -79,19 +81,19 @@ class ExpressionPreProcess(modules.SPAModelBase):
 
                         if any(concat.sum(axis=1) > 1):
                             print(
-                                f"Some records have multiple values assigned in field {field} for {table_name}, check the field_mapping!"
+                                f"Some records have multiple values assigned in field {field} for {exp_table_name}, check the field_mapping!"
                             )
                             print(
-                                f"Multiple value records are for rows:\n {locals()[table_name].loc[concat.sum(axis=1) > 1].head()}"
+                                f"Multiple value records are for rows:\n {locals()[exp_table_name].loc[concat.sum(axis=1) > 1].head()}"
                             )
                             print(concat[concat.sum(axis=1) != 1].head())
 
                         if any(concat.sum(axis=1) < 1):
                             print(
-                                f"Some records have no values assigned in field {field} for {table_name}, check the field_mapping!"
+                                f"Some records have no values assigned in field {field} for {exp_table_name}, check the field_mapping!"
                             )
                             print(
-                                f"Missing records are for rows:\n {locals()[table_name].loc[concat.sum(axis=1) < 1].head()}"
+                                f"Missing records are for rows:\n {locals()[exp_table_name].loc[concat.sum(axis=1) < 1].head()}"
                             )
                             print(concat[concat.sum(axis=1) != 1].head())
 
@@ -147,15 +149,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # manually inject args
-    args.configs = "C:\gitclones\Dubai_survey_processing\configs"
-    args.data = "C:\gitclones\Dubai_survey_processing\data"
-
-    # Fetch data from the database
-    from accessdb import GetDBData
-
-    # DBData = GetDBData(db_path, configs_dir)
-    # DBData.get_tables()
-    # DBData.data
+    args.configs = "C:\\gitclones\\Dubai_survey_processing\\configs"
+    args.data = "C:\\gitclones\\Dubai_survey_processing\\data"
 
     PP = ExpressionPreProcess(args)
     PP.run_expressions()

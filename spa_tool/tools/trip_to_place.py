@@ -8,10 +8,13 @@ from copy import deepcopy
 from core import functions
 from core.modules import SPAModelBase
 
+
 # TODO Set this up so that it can be run as a workflow step
 class TripsToPlace(SPAModelBase):
     def __init__(self, namespace, **kwargs):
         super().__init__(namespace, **kwargs)
+
+        self.place = None
 
     def run(self):
         self.trip_to_place()
@@ -175,8 +178,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # manually inject args
-    args.configs = "C:\gitclones\Dubai_survey_processing\configs"
-    args.data = "C:\gitclones\Dubai_survey_processing\data"
+    args.configs = "C:\\gitclones\\Dubai_survey_processing\\configs"
+    args.data = "C:\\gitclones\\Dubai_survey_processing\\data"
 
     # Fetch data from the database
     T2P = TripsToPlace(args)

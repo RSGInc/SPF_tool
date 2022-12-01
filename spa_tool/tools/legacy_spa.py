@@ -90,10 +90,12 @@ class SPAToolModule(SPAModelBase):
                 num_places_for_person = len(df_psn_places)
                 # print(f"No. of place entries for person {pid} of household {hhid}: {num_places_for_person}")
 
-                # first make sure that the place entries are ordered by place number since they will be processed sequentially later
+                # first make sure that the place entries are ordered by place number
+                # since they will be processed sequentially later
                 df_psn_places = df_psn_places.sort_values("PLANO")
 
-                # recode TPURP from "work" or "other activities at work" to "work-related" if the PLACE is not the primary place of work
+                # recode TPURP from "work" or "other activities at work" to "work-related"
+                # if the PLACE is not the primary place of work
                 (wxcord, wycord) = (
                     df_psn_places["WXCORD"].dropna().drop_duplicates().to_list(),
                     df_psn_places["WXCORD"].dropna().drop_duplicates().to_list(),
@@ -116,7 +118,9 @@ class SPAToolModule(SPAModelBase):
                                     row_index, "TPURP"
                                 ] = SurveyWorkRelatedPurp
                                 psn.log_recode(
-                                    "work activity reported for PLANO={}, which is not the primary work location; recode activity as work-related".format(
+                                    "work activity reported for PLANO={}, "
+                                    "which is not the primary work location; "
+                                    "recode activity as work-related".format(
                                         row["PLANO"]
                                     )
                                 )
@@ -161,7 +165,8 @@ class SPAToolModule(SPAModelBase):
                         & (cur_row + 1 == max_row)
                     )
 
-                    # true if next PLACE marks the start of a different trip, or if next SPLACE is change mode and last stop of the day
+                    # true if next PLACE marks the start of a different trip,
+                    # or if next SPLACE is change mode and last stop of the day
                     # TPURP codes 7 means 'change mode'
 
                     if new_tour | new_trip:
@@ -171,7 +176,8 @@ class SPAToolModule(SPAModelBase):
 
                         trip = Trip(hh, psn, tour, self.constants, cur_tripid)
 
-                        # process current linked trip, which is described by rows starting at cur_trip_start_row and ending at cur_row+1
+                        # process current linked trip, which is described by rows starting
+                        # at cur_trip_start_row and ending at cur_row+1
                         is_joint = trip.populate_attributes(
                             df_psn_places[cur_trip_start_row : (cur_row + 2)]
                         )
@@ -197,7 +203,7 @@ class SPAToolModule(SPAModelBase):
                 # end - processing PLACE records for the person
 
                 # check if the first and last tours are partial tours
-                num_HB_tours = len(psn.tours)
+                num_hb_tours = len(psn.tours)
                 for i, tour in enumerate(psn.tours):
                     _partial_code = PARTIAL_TOUR["NOT_PARTIAL"]
                     if i == 0:  # 1st tour of the day - check orig of first trip
@@ -205,9 +211,10 @@ class SPAToolModule(SPAModelBase):
                             _partial_code = PARTIAL_TOUR["PARTIAL_START"]
                             psn.log_warning("Was not at home at the beginning of day")
 
-                    # note: need to use 'if' as opposed to 'elif' below because 'elif' would miss cases where a person can have only 1 tour that is PARTIAL_END
+                    # note: need to use 'if' as opposed to 'elif' below because
+                    # 'elif' would miss cases where a person can have only 1 tour that is PARTIAL_END
                     if i == (
-                        num_HB_tours - 1
+                        num_hb_tours - 1
                     ):  # last tour of the day - check dest of last trip
                         if not tour.trips[-1].is_dest_home():
                             _partial_code = PARTIAL_TOUR["PARTIAL_END"]
@@ -225,7 +232,8 @@ class SPAToolModule(SPAModelBase):
                     for trip in tour.trips:
                         trip.set_trip_direction()
 
-            # joint trips are processed after all tour/person level fields have been processed and inconsistencies identified
+            # joint trips are processed after all tour/person level
+            # fields have been processed and inconsistencies identified
 
             hh.process_joint_episodes()
             hh.process_escort_trips()
@@ -322,8 +330,9 @@ class SPAToolModule(SPAModelBase):
             hh.print_recode_tags(recode_log_file)
 
             # households with error tag go to one set of files
-            if hh.error_flag == True:
-                # household contains error: print error messages to one file; print trips/j-trips to a separate trip file
+            if hh.error_flag is True:
+                # household contains error: print error messages to one file;
+                # print trips/j-trips to a separate trip file
                 num_err_hh = num_err_hh + 1
                 hh.print_tags(err_log_file)
                 hh.print_vals(problem_hh_file)
@@ -402,7 +411,7 @@ class SPAToolModule(SPAModelBase):
             # print log of all recodes
             hh.print_recode_tags(recode_log_file)
 
-            if hh.error_flag == True:
+            if hh.error_flag is True:
                 num_err_hh = num_err_hh + 1
                 hh.print_tags(err_log_file)
 
@@ -413,7 +422,7 @@ class SPAToolModule(SPAModelBase):
             for psn in hh.persons:
                 count_persons = count_persons + 1
                 psn.print_vals(per_file)
-                if psn.error_flag == True:
+                if psn.error_flag is True:
                     num_err_perons = num_err_perons + 1
                 for tour in psn.tours:
                     count_tours = count_tours + 1

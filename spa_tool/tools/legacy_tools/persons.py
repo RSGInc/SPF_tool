@@ -134,7 +134,8 @@ class Person:
                 _stu = STUDENT["SCHOOL"]
                 self.recode_student_category(
                     _stu,
-                    "missing student status/grade info; assign STUDE=1, SCHOL=4, STU_CAT=1 (grade 9-12 student) based on age<=17",
+                    "missing student status/grade info;"
+                    " assign STUDE=1, SCHOL=4, STU_CAT=1 (grade 9-12 student) based on age<=17",
                 )
             else:
                 stude = 1  # TODO: define constant
@@ -142,7 +143,8 @@ class Person:
                 _stu = STUDENT["NON-STUDENT"]
                 self.recode_student_category(
                     _stu,
-                    "missing student status/grade info; assign STUDE=1, SCHOL=NA, STU_CAT=3 (non-student) based on age>=16",
+                    "missing student status/grade info; "
+                    "assign STUDE=1, SCHOL=NA, STU_CAT=3 (non-student) based on age>=16",
                 )
 
         self.fields["STUDE"] = stude

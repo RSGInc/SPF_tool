@@ -28,6 +28,12 @@ class GetAccessDBData(modules.SPAModelBase):
         self.codebook = pd.read_csv(self.kwargs.get("configs").get("dictionary_file"))
         self.codevalues = pd.read_csv(self.kwargs.get("configs").get("categories_file"))
 
+        # Initialize
+        self.raw_data = None
+        self.raw_data_formatted = None
+        self.coded_activities = None
+        self.coded_person_groups = None
+
     def run(self):
         self.read_accessdb()
         return self.raw_data_formatted
@@ -259,15 +265,17 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # manually inject args
-    args.configs = "C:\gitclones\Dubai_survey_processing\configs"
+    args.configs = "C:\\gitclones\\Dubai_survey_processing\\configs"
     args.data = [
-        "C:\gitclones\Dubai_survey_processing\data",
-        "C:\\Users\\nick.fournier\\Resource Systems Group, Inc\\Model Development - Dubai RTA ABM Development Project\\data\\fromIBI\\2014 Survey Data\\2014-12-20_SP_RP_Data_Aur",
+        "C:\\gitclones\\Dubai_survey_processing\\data",
+        "C:\\Users\\nick.fournier\\Resource Systems Group, Inc\\"
+        "Model Development - Dubai RTA ABM Development Project\\"
+        "data\\fromIBI\\2014 Survey Data\\2014-12-20_SP_RP_Data_Aur",
     ]
-    args.output = "C:\gitclones\Dubai_survey_processing\data"
+    args.output = "C:\\gitclones\\Dubai_survey_processing\\data"
 
     # Fetch data from the database
-    DBData = GetDBData(args)
+    DBData = GetAccessDBData(args)
     DBData.read_accessdb()
 
     DBData.summary_stats("raw/stats")

@@ -149,7 +149,7 @@ class Trip:
         elif _all_grouped:
             self.fields["JOINT"] = JOINT_CAT["JOINT-GROUPED"]
             self.fields["JTRIP_ID"] = add_quote_char(
-                ",".join(["%s" % id for id in _jt_ids])
+                ",".join(["%s" % _id for _id in _jt_ids])
             )
         else:
             self.fields["JOINT"] = JOINT_CAT["JOINT"]
@@ -230,7 +230,7 @@ class Trip:
         else:
             self.fields["DEST_IS_TOUR_DEST"] = 0
 
-        if self.trip_id == (num_trips):
+        if self.trip_id == num_trips:
             self.fields[
                 "DEST_IS_TOUR_ORIG"
             ] = 1  # 1 if trip destination is tour anchor/origin
@@ -262,7 +262,7 @@ class Trip:
             _access_mode.append(_mode)
             _cur_row = _cur_row + 1
             _mode = df["MODE"].iloc[_cur_row]
-            ### end while
+            # end while
 
         # if no access leg was found
         if len(_access_mode) == 0:
@@ -310,7 +310,7 @@ class Trip:
                 break
             else:  # look up next mode
                 _mode = df["MODE"].iloc[_cur_row]
-            ### end while
+            # end while
 
         # number of transfers is number of transit legs - 1
         _num_transfers = _transit_leg_count - 1
@@ -333,16 +333,16 @@ class Trip:
             _egress_mode.append(df["MODE"].iloc[_cur_row])
             # point to the next place entry
             _cur_row = _cur_row + 1
-            ### end while
+            # end while
 
         # if no egress leg was found
         if len(_egress_mode) == 0:
             # assume access was by walk
             _egress_mode.append(TRIP_MODE["WALK"])  # note: OHAS code for walk mode is 1
 
-        return (_access_mode, _egress_mode)
+        return _access_mode, _egress_mode
 
-    ###### end of _set_transit_attributes() ######
+    # end of _set_transit_attributes()
 
     def _find_best_transit_mode(self, df):
         _best_transit = "BUS"  # initialize to BUS
@@ -366,7 +366,10 @@ class Trip:
     def _set_parking_attributes(self, df):
         TRIP_MODE = self.constants.get("TRIP_MODE")
 
-        """ determine parking location and related attributes for auto trips ending with non-auto, access mode (most likely walk) """
+        """ 
+            determine parking location and related attributes
+            for auto trips ending with non-auto, access mode (most likely walk)
+         """
         _modes_col = df["MODE"].iloc[1:]  # note: skip row#0
         # locate the auto segments of the trip
         _auto_idx = np.where(
@@ -421,9 +424,11 @@ class Trip:
     def _calc_purpose(
         self, old_purp_code, old_place_no, old_place_name, dur_hr, dur_min
     ):
-        """derive the new purpose code from input data purpose code; resolve inconsistencies between activity purpose and person status"""
+        """
+        derive the new purpose code from input data purpose code;
+        resolve inconsistencies between activity purpose and person status
+        """
 
-        PURPOSE = self.constants.get("PURPOSE")
         SurveySchoolPurp = self.constants.get("SurveySchoolPurp")
         STUDENT = self.constants.get("STUDENT")
         PERTYPE = self.constants.get("PERTYPE")
@@ -448,9 +453,7 @@ class Trip:
                     # inconsistent with non-student status
                     self.per_obj.recode_student_category(
                         STUDENT["SCHOOL"],
-                        "found school activity (PLANO={}, PNAME={}) for non-student preschooler; reset STU_CAT to SCHOOL".format(
-                            old_place_no, old_place_name
-                        ),
+                        f"found school activity (PLANO={old_place_no}, PNAME={old_place_name}) for non-student preschooler; reset STU_CAT to SCHOOL",
                     )
 
             else:  # person types: FW, PW, NW, RE

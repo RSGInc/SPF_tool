@@ -40,13 +40,6 @@ class Joint_ultrip:
         self.error_flag = False  # initialize error flag to false
         self.error_msg = ""
         self.constants = constants
-        # print("adding joint trip person={}, depart={}, number_hh={}, party={}".format(self.parent_trip.get_per_id(), self.parent_trip.get_depart_time(), self.number_hh, self.travel_party))
-        # size of travel party consistent with number_hh?
-        # if len(self.travel_party)!=self.number_hh:
-        #    _dep_time = self.get_depart_time()
-        #    _msg = "Joint trip departing at {}:{} reported by person {}: {} hh members reported, but {} people listed".format(
-        #                                    _dep_time//60, _dep_time%60, self.parent_trip.get_per_id(), self.number_hh, len(self.travel_party))
-        #    self.parent_trip.hh_obj.log_error(_msg)
 
     def add_driver(self, per_id, tour_id, trip_id):
         self.driver = per_id
@@ -144,8 +137,6 @@ class Joint_ultrip:
     def log_error(self, err_msg=None):
         self.error_flag = True
         if err_msg:  # if there is an error message
-            # pt = self.parent_trip
-            # pt.hh_obj.log_error("\t Person#{} Tour#{} Trip#{}: ".format(pt.per_obj.get_id(), pt.tour_obj.get_id(), pt.trip_id)+err_msg)
             self.error_msg = self.error_msg + "E: " + err_msg
             self.parent_trip.log_error(err_msg)
 

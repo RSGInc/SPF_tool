@@ -1,6 +1,3 @@
-import numpy as np
-import pandas as pd
-
 from core.functions import *
 
 
@@ -14,7 +11,7 @@ class Tour:
         self.is_AW_subtour = is_subtour
         self.trips = []
 
-        if trips != None:
+        if trips is not None:
             # this is a AW_subtour
             # re-set trips' tour_obj to the current tour & reset ID field
             for _trip in trips:
@@ -360,7 +357,7 @@ class Tour:
             # extract at-work subtours from the current tour if the current tour is a WORK tour
             # this needs to be done before processing any outbound and inbound stops
             if _prim_purp == PURPOSE["WORK"]:
-                self._set_AW_subtours(_prim_i)
+                self._set_AW_subtours()
                 # TODO: trip id may have been changed when subtours are created
                 # quick-fix: re-calculate primary destination
                 _prim_i = (
@@ -500,7 +497,8 @@ class Tour:
 
         # classify a tour as one of the following:
         # (1) independent tours:        no trips are joint
-        # (2) fully-joint tours:        tour.get_is_fully_joint()==True (all trips are joint and made by the same group of people)
+        # (2) fully-joint tours:        tour.get_is_fully_joint()==True
+        #                               (all trips are joint and made by the same group of people)
         # (3) partially-joint tours:    at least 1 joint trip; all joint trips are properly grouped; but not fully joint
         # (4) joint, but problematic tours :    at least 1 problematic joint trip
         num_trips = self.get_num_trips()
@@ -579,7 +577,7 @@ class Tour:
                 else:
                     _out_chauffer_ptype = _out_chauffuer_per_Obj.fields["PERSONTYPE"]
                     for _ctour in _out_chauffuer_per_Obj.tours:
-                        if _ctour.contains_joint_trip(_out_jtripID) == True:
+                        if _ctour.contains_joint_trip(_out_jtripID) is True:
                             _out_chauffer_purp = _ctour.get_purp()
                             _ctour.set_escortee_purp(_out_jtripID, _purpose)
             # find chauffeur for inbound leg of the tour
@@ -595,7 +593,7 @@ class Tour:
                 else:
                     _inb_chauffer_ptype = _inb_chauffuer_per_Obj.fields["PERSONTYPE"]
                     for _ctour in _inb_chauffuer_per_Obj.tours:
-                        if _ctour.contains_joint_trip(_inb_jtripID) == True:
+                        if _ctour.contains_joint_trip(_inb_jtripID) is True:
                             _inb_chauffer_purp = _ctour.get_purp()
                             _ctour.set_escortee_purp(_inb_jtripID, _purpose)
         # code escort type on outbound and inbound leg of the tour
@@ -716,7 +714,7 @@ class Tour:
             # TODO: as many fields are set as needed, but only 5(?) persons will be written out
             self.fields["ESCORT_PERS_" + str(_i + 1)] = _escorted_list[_i]
 
-    def _set_AW_subtours(self, prim_i):
+    def _set_AW_subtours(self):
         PURPOSE = self.constants.get("PURPOSE")
         PARTIAL_TOUR = self.constants.get("PARTIAL_TOUR")
 
@@ -746,9 +744,8 @@ class Tour:
                 del _from_work[-1]
                 # remaining items in the _to_work and _from_work lists mark the start and end of a subtour
 
-                _trips_to_remove = (
-                    []
-                )  # list indices of trips that constitute at-work subtour(s) and need to be removed from the parent tour
+                _trips_to_remove = []
+                # list indices of trips that constitute at-work subtour(s) and need to be removed from the parent tour
                 for _start_i, _end_i in zip(
                     _from_work, _to_work
                 ):  # process each subtour
@@ -781,7 +778,8 @@ class Tour:
         elif self.fields["PARTIAL_TOUR"] == PARTIAL_TOUR["NOT_PARTIAL"]:
             self.log_error("to- and from-work trips not matching up")
 
-        # TODO: provide warning msg when there are not enough place holders for child tour id (currently table allows for 3)
+        # TODO: provide warning msg when there are not enough
+        #  place holders for child tour id (currently table allows for 3)
         # set field value
         self.fields["NUM_SUBTOURS"] = _num_subtours
 
@@ -819,7 +817,7 @@ class Tour:
             PURPOSE["OTHER"]: [20, 10, 7, 6.5, 6.4, 6.3, 6.2, 6.1, 6],
         }
 
-        ### scan through all but the last trip in tour to identify primary activity/destination
+        # scan through all but the last trip in tour to identify primary activity/destination
         # _prim_i = -1            #list item no. corresponding to the primary destination
         _prim_i = None  # list item no. corresponding to the primary destination
         _min_score = 99999999  # lowest score found so far

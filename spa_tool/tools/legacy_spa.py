@@ -2,7 +2,7 @@ import os
 import time
 import pandas as pd
 
-from core import functions
+from core.functions import read_mappings
 from core.modules import SPAModelBase
 from tools.legacy_tools.households import Household
 from tools.legacy_tools.persons import Person
@@ -19,7 +19,7 @@ class SPAToolModule(SPAModelBase):
 
     def default_constants(self):
         # FIXME Can put the value labels in here from the dictionary as default rather than have users hard code them
-        constants = functions.read_mappings(**self.kwargs.get("configs"))
+        constants = read_mappings(**self.kwargs.get("configs"))
 
         def default_map(vals):
             vals = sorted(vals)
@@ -179,7 +179,7 @@ class SPAToolModule(SPAModelBase):
                         # process current linked trip, which is described by rows starting
                         # at cur_trip_start_row and ending at cur_row+1
                         is_joint = trip.populate_attributes(
-                            df_psn_places[cur_trip_start_row : (cur_row + 2)]
+                            df_psn_places[cur_trip_start_row:(cur_row + 2)]
                         )
 
                         # add trip to the current tour object

@@ -1,5 +1,6 @@
-from core.functions import *
 import numpy as np
+import math
+from core.functions import add_quote_char, convert2minutes, calculate_duration
 from tools.legacy_tools.joint_ultrips import Joint_ultrip
 
 

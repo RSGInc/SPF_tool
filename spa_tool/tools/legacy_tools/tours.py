@@ -1,4 +1,7 @@
-from core.functions import *
+import pandas as pd
+import numpy as np
+import math
+from core.functions import calculate_duration, convert2minutes, add_quote_char
 
 
 class Tour:

@@ -184,15 +184,3 @@ The ExpressionPreProcess module is used to preprocess the raw data into the requ
 - --expression_testing, -e True
 
 This will initialize the SPA Tool 2.0 and load in the input tables, then pauses the runtime at the expression processing module step and allow users to test python expressions.
-
-### Future things
-
-Currently implemented is a module step for reading data from a Microsoft Access Database, but should be generalized to read data from a SQL server, specifically RSG's POPS database. 
-
-Future arguments to be implemented, but not yet working are
-- --working_dir, -w "path/to/working/directory/"
-- --settings_file, -s "path/to/settings.yaml"
-
-The working_dir flag is useful for setting the working directory's absolute path once, and the config, data, and output directories relative to that. The settings_file flag is useful for cases where a settings.yaml is located outside the configs folder.
-
-

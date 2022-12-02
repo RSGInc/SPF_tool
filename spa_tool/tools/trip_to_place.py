@@ -38,7 +38,7 @@ class TripsToPlace(SPAModelBase):
         trip_place = deepcopy(trip)
 
         # Setup Place Number
-        trip_place.rename(columns={"TRPNO": "PLANO"}, inplace=True)
+        trip_place["PLANO"] = trip_place.TRPNO
         trip_place.PLANO += 1
 
         # Trim columns
@@ -48,6 +48,7 @@ class TripsToPlace(SPAModelBase):
                 "SAMPN",
                 "PERNO",
                 "PLANO",
+                "TRPNO",
                 "DAYNO",
                 "TPURP",
                 "PNAME",
@@ -73,6 +74,7 @@ class TripsToPlace(SPAModelBase):
                 "TOLL_NO",
                 "DRIVER",
                 "DISTANCE",
+                "TRIP_WEIGHT",
             ]
         ]
 
@@ -155,6 +157,7 @@ class TripsToPlace(SPAModelBase):
                 long2=place.WXCORD,
             )
 
+        place = place.sort_values(['SAMPN', 'PERNO', 'PLANO']).reset_index(drop=True)
         place = place.reset_index().rename(columns={"index": "place_id"})
 
         self.place = place

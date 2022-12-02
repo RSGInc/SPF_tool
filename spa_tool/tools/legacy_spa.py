@@ -176,7 +176,8 @@ class SPAToolModule(SPAModelBase):
                         # create a new trip object to represent the current linked trip
                         cur_tripid = cur_tripid + 1
 
-                        trip = Trip(hh, psn, tour, self.constants, cur_tripid)
+                        # trip = Trip(hh, psn, tour, self.constants, cur_tripid)
+                        trip = Trip(hh, psn, tour, self.constants, df_psn_places.iloc[cur_tripid])
 
                         # process current linked trip, which is described by rows starting
                         # at cur_trip_start_row and ending at cur_row+1

@@ -12,14 +12,15 @@ TRIP_COLOUMNS = pd.read_csv(os.path.join(os.path.dirname(__file__), 'static/trip
 class Trip:
     """Trip class"""
 
-    def __init__(self, hh_obj, per_obj, tour_obj, constants, trip_id):
+    def __init__(self, hh_obj, per_obj, tour_obj, constants, trip):
         """instantiation of a Trip object"""
 
         self.constants = constants
         self.hh_obj = hh_obj
         self.per_obj = per_obj
         self.tour_obj = tour_obj
-        self.trip_id = trip_id
+        # self.trip_id = trip_id
+        self.trip_id = int(trip.TRPNO)
         self.joint_descriptors = []
         self.escort_pers = (
             []
@@ -29,6 +30,7 @@ class Trip:
             "PER_ID": self.get_per_id(),
             "TOUR_ID": self.get_tour_id(),
             "TRIP_ID": self.trip_id,
+            "TRIP_WEIGHT": trip.TRIP_WEIGHT,
         }
 
         self.error_flag = False

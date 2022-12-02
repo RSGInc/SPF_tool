@@ -1,18 +1,28 @@
+import os
+import numpy as np
+import pandas as pd
 from tools.legacy_tools.joint_tours import Joint_tour
 from collections import defaultdict
+from core.functions import add_quote_char
 
+HOUSEHOLD_COLUMNS = pd.read_csv(os.path.join(os.path.dirname(__file__), 'static/household_columns.csv'),
+                                index_col="key", names=["key", "name"], header=None).name.to_dict()
 
 class Household:
     """Household class"""
 
-    def __init__(self, hh_id, constants):
-        self.hh_id = hh_id
-        self.persons = (
-            []
-        )  # TODO: could use OrderedDict instead for possibly improved efficiency
-        self.joint_episodes = defaultdict(
-            list
-        )  # dict that allow multiple values for each key
+    def __init__(self, hh, constants):
+        self.fields = {'HH_ID': hh.SAMPN}
+        # self.hh_id = hh_id
+        # TODO: could use OrderedDict instead for possibly improved efficiency
+        self.persons = ([])
+
+        # Populate fields
+        for col in set(hh.index).intersection(HOUSEHOLD_COLUMNS.values()):
+            self.fields[col] = hh[col]
+
+        # dict that allow multiple values for each key
+        self.joint_episodes = defaultdict(list)
 
         # trip departure time (in minutes) is mapped to a list of Joint_trip objects
         self.unique_jt_groups = (
@@ -24,16 +34,40 @@ class Household:
         self.recode_tags = []
         self.constants = constants
 
+    # def print_header(fp):
+    #     _header = ["HH_ID", "NUM_PERS", "AREA"]
+    #     fp.write(",".join(["%s" % field for field in _header]) + "\n")
+    #
+    # def print_vals(self, fp):
+    #     _vals = [self.hh_id, len(self.persons)]
+    #     fp.write(",".join(["%s" % v for v in _vals]) + "\n")
+
+
     def print_header(fp):
-        _header = ["HH_ID", "NUM_PERS", "AREA"]
-        fp.write(",".join(["%s" % field for field in _header]) + "\n")
+        # fp.write(','.join(['%s' %field for field in self.fields.keys()])+'\n')
+        _header = []
+        # TODO: save a sorted copy of the dict to avoid repeated sorting
+        for _col_num, _col_name in sorted(HOUSEHOLD_COLUMNS.items()):
+            _header.append(_col_name)
+        fp.write(",".join(["%s" % name for name in _header]) + "\n")
 
     def print_vals(self, fp):
-        _vals = [self.hh_id, len(self.persons)]
-        fp.write(",".join(["%s" % v for v in _vals]) + "\n")
+        # fp.write(','.join(['%s' %value for value in self.fields.values()])+'\n')
+        self.fields['NUM_PERS'] = len(self.persons)
+
+        if "ERROR" in self.fields:
+            self.fields["ERROR"] = add_quote_char(self.fields["ERROR"])
+        _vals = []
+        for _col_num, _col_name in sorted(HOUSEHOLD_COLUMNS.items()):
+            if _col_name in self.fields:
+                _vals.append(self.fields[_col_name])
+            else:
+                _vals.append(np.NAN)
+        fp.write(",".join(["%s" % value for value in _vals]) + "\n")
+
 
     def get_id(self):
-        return self.hh_id
+        return self.fields['HH_ID']
 
     def add_person(self, person):
         self.persons.append(person)

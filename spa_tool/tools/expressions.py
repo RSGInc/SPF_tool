@@ -62,7 +62,10 @@ class ExpressionPreProcess(modules.SPAModelBase):
             table_cols = {}
             if exp_table_name.strip()[0] == "#":
                 continue
+
             for field, expr_df in table_expressions.groupby("Field"):
+                print(f"Pre-processing expression {exp_table_name}.{field}")
+
                 # For each field value expression
                 field_vals = {}
                 for val, expr_ in expr_df.set_index("Values").iterrows():
@@ -120,7 +123,7 @@ class ExpressionPreProcess(modules.SPAModelBase):
             )
 
             if len(table_cols) > 0:
-                tables[table_name] = pd.concat(table_cols, axis=1).reindex(
+                tables[exp_table_name] = pd.concat(table_cols, axis=1).reindex(
                     table_expressions.Field.unique(), axis=1
                 )
 

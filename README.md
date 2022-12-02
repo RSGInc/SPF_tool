@@ -138,8 +138,7 @@ PROCESSING_STEPS:
                 index: place_id
         configs:
             # These are variable key mappings for the variables aggregated in the SPA tool.
-            trip_columns: spa_specs/trip_columns.csv
-            tour_columns: spa_specs/tour_columns.csv
+            # Future work to clean this up...
             spa_mapping:  spa_specs/variable_mapping.yaml
           
 ```
@@ -178,6 +177,9 @@ class CustomModule(modules.SPAModelBase):
 
 
 ### ExpressionPreProcess
+
+...TODO...
+
 
 The ExpressionPreProcess module is used to preprocess the raw data into the required SPA Tool input format. Similar to preprocessing files in ActivitySim, a comma separated value (CSV) file is used to specify the python expression used to create each SPA input field. To aid in writing these expressions, a temporary "expression testing environment" can be run by setting the boolean argument to true:
 

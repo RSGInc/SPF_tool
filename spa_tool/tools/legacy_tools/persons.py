@@ -1,6 +1,11 @@
+import pandas as pd
 import numpy as np
+import os
 from core.functions import defaultdict, add_quote_char
 from tools.legacy_tools.tours import Tour
+
+PERSON_COLUMNS = pd.read_csv(os.path.join(os.path.dirname(__file__), 'static/person_columns.csv'),
+                             index_col="key", names=["key", "name"], header=None).name.to_dict()
 
 
 class Person:
@@ -12,48 +17,75 @@ class Person:
         self.hh_obj.add_person(self)  # can start logging errors/warning
         self.per_id = per_id
         self.fields = {"HH_ID": hh.get_id(), "PER_ID": per_id}
+
+        # Populate fields
+        for col in set(df.columns).intersection(PERSON_COLUMNS.values()):
+            self.fields[col] = df[col].values[0]
+
         self.set_per_type(self._calc_per_type(df))  # errors are logged to the hh obj
         self.tours = []
         self.error_flag = False
 
+    # def print_header(fp):
+    #     _header = [
+    #         "HH_ID",
+    #         "PER_ID",
+    #         "PERSONTYPE",
+    #         "AGE_CAT",
+    #         "EMPLY",
+    #         "HOURS_CAT",
+    #         "EMP_CAT",
+    #         "STUDE",
+    #         "SCHOL",
+    #         "STU_CAT",
+    #         "PERSONTYPE0",
+    #         "EMP_CAT0",
+    #         "STU_CAT0",
+    #         "ERROR",
+    #     ]
+    #     fp.write(",".join(["%s" % field for field in _header]) + "\n")
+    #
+    # def print_vals(self, fp):
+    #     _fields = defaultdict(lambda: "", self.fields)
+    #     _vals = [
+    #         _fields["HH_ID"],
+    #         _fields["PER_ID"],
+    #         _fields["PERSONTYPE"],
+    #         _fields["AGE_CAT"],
+    #         _fields["EMPLY"],
+    #         _fields["HOURS_CAT"],
+    #         _fields["EMP_CAT"],
+    #         _fields["STUDE"],
+    #         _fields["SCHOL"],
+    #         _fields["STU_CAT"],
+    #         _fields["PERSONTYPE0"],
+    #         _fields["EMP_CAT0"],
+    #         _fields["STU_CAT0"],
+    #         add_quote_char(_fields["ERROR"]),
+    #     ]
+    #     fp.write(",".join(["%s" % v for v in _vals]) + "\n")
+
+
     def print_header(fp):
-        _header = [
-            "HH_ID",
-            "PER_ID",
-            "PERSONTYPE",
-            "AGE_CAT",
-            "EMPLY",
-            "HOURS_CAT",
-            "EMP_CAT",
-            "STUDE",
-            "SCHOL",
-            "STU_CAT",
-            "PERSONTYPE0",
-            "EMP_CAT0",
-            "STU_CAT0",
-            "ERROR",
-        ]
-        fp.write(",".join(["%s" % field for field in _header]) + "\n")
+        # fp.write(','.join(['%s' %field for field in self.fields.keys()])+'\n')
+        _header = []
+        # TODO: save a sorted copy of the dict to avoid repeated sorting
+        for _col_num, _col_name in sorted(PERSON_COLUMNS.items()):
+            _header.append(_col_name)
+        fp.write(",".join(["%s" % name for name in _header]) + "\n")
 
     def print_vals(self, fp):
+        # fp.write(','.join(['%s' %value for value in self.fields.values()])+'\n')
         _fields = defaultdict(lambda: "", self.fields)
-        _vals = [
-            _fields["HH_ID"],
-            _fields["PER_ID"],
-            _fields["PERSONTYPE"],
-            _fields["AGE_CAT"],
-            _fields["EMPLY"],
-            _fields["HOURS_CAT"],
-            _fields["EMP_CAT"],
-            _fields["STUDE"],
-            _fields["SCHOL"],
-            _fields["STU_CAT"],
-            _fields["PERSONTYPE0"],
-            _fields["EMP_CAT0"],
-            _fields["STU_CAT0"],
-            add_quote_char(_fields["ERROR"]),
-        ]
-        fp.write(",".join(["%s" % v for v in _vals]) + "\n")
+        if "ERROR" in _fields:
+            self.fields["ERROR"] = add_quote_char(self.fields["ERROR"])
+        _vals = []
+        for _col_num, _col_name in sorted(PERSON_COLUMNS.items()):
+            if _col_name in self.fields:
+                _vals.append(self.fields[_col_name])
+            else:
+                _vals.append(np.NAN)
+        fp.write(",".join(["%s" % value for value in _vals]) + "\n")
 
     def _calc_emp_cat(self, age, emply, hours):
         EMPLOYMENT = self.constants.get("EMPLOYMENT")

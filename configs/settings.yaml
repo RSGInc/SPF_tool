@@ -78,8 +78,6 @@ PROCESSING_STEPS:
                 index: place_id
         configs:
             # These are variable key mappings for the variables aggregated in the SPA tool.
-            trip_columns: spa_specs/trip_columns.csv
-            tour_columns: spa_specs/tour_columns.csv
             spa_mapping:  spa_specs/variable_mapping.yaml
              
             

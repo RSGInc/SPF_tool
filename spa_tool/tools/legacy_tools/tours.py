@@ -1,8 +1,11 @@
 import pandas as pd
 import numpy as np
 import math
+import os
 from core.functions import calculate_duration, convert2minutes, add_quote_char
 
+TOUR_COLUMNS = pd.read_csv(os.path.join(os.path.dirname(__file__), 'static/tour_columns.csv'),
+                                index_col="key", names=["key", "name"], header=None).name.to_dict()
 
 class Tour:
     """Tour class"""
@@ -13,6 +16,7 @@ class Tour:
         self.tour_id = int(tour_id)
         self.is_AW_subtour = is_subtour
         self.trips = []
+
 
         if trips is not None:
             # this is a AW_subtour
@@ -32,6 +36,7 @@ class Tour:
             "IS_SUBTOUR": self.is_AW_subtour,
             "FULLY_JOINT": 0,
         }
+
         self.error_flag = False
         self.constants = constants
 
@@ -871,22 +876,20 @@ class Tour:
         return _prim_i               
     """
 
-    def print_header(fp, TourCol2Name):
+    def print_header(fp):
         # fp.write(','.join(['%s' %field for field in self.fields.keys()])+'\n')
         _header = []
         # TODO: save a sorted copy of the dict to avoid repeated sorting
-        for _col_num, _col_name in sorted(TourCol2Name.items()):
+        for _col_num, _col_name in sorted(TOUR_COLUMNS.items()):
             _header.append(_col_name)
         fp.write(",".join(["%s" % name for name in _header]) + "\n")
 
     def print_vals(self, fp):
-        TourCol2Name = self.constants.get("tour_columns")
-
         # fp.write(','.join(['%s' %value for value in self.fields.values()])+'\n')
         if "ERROR" in self.fields:
             self.fields["ERROR"] = add_quote_char(self.fields["ERROR"])
         _vals = []
-        for _col_num, _col_name in sorted(TourCol2Name.items()):
+        for _col_num, _col_name in sorted(TOUR_COLUMNS.items()):
             if _col_name in self.fields:
                 _vals.append(self.fields[_col_name])
             else:

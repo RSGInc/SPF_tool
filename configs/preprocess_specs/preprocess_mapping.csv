@@ -8,6 +8,7 @@ household,HH_VEH,INT ,continuous,Number of vehicles in the household,,,household
 household,HH_WORKERS,INT,continuous,Number of workers in the household,,,"person[person.occ.isin([1, 2])].merge(household, on='household_id', how='right').groupby('household_id').size()"
 household,HXCORD,INT,continuous,Home X Coordinate (longitude),,,"self.get_XYCORD('LON', household.latlon)"
 household,HYCORD,INT,continuous,Home Y Coordinate (latitude),,,"self.get_XYCORD('LAT', household.latlon)"
+household,HH_WEIGHT,REAL,continuous,Weight to expand data at person level,,,"household.household_weight"
 person,person_id,INT,continuous,dataframe index,,,"pd.Series(person.index, index=person.index)"
 person,SAMPN,INT,continuous,Household ID,,,person.household_id
 person,PERNO,INT,continuous,Person ID,,,person.person_num

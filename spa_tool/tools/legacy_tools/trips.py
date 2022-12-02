@@ -1,14 +1,20 @@
+import pandas as pd
 import numpy as np
 import math
+import os
 from core.functions import add_quote_char, convert2minutes, calculate_duration
 from tools.legacy_tools.joint_ultrips import Joint_ultrip
 
+
+TRIP_COLOUMNS = pd.read_csv(os.path.join(os.path.dirname(__file__), 'static/trip_columns.csv'),
+                            index_col="key", names=["key", "name"], header=None).name.to_dict()
 
 class Trip:
     """Trip class"""
 
     def __init__(self, hh_obj, per_obj, tour_obj, constants, trip_id):
         """instantiation of a Trip object"""
+
         self.constants = constants
         self.hh_obj = hh_obj
         self.per_obj = per_obj
@@ -24,6 +30,7 @@ class Trip:
             "TOUR_ID": self.get_tour_id(),
             "TRIP_ID": self.trip_id,
         }
+
         self.error_flag = False
         self.arr_times = []
         self.dep_times = []
@@ -864,22 +871,20 @@ class Trip:
     def log_recode(self, msg):
         self.per_obj.log_recode("TRIP_ID={} \t".format(self.trip_id) + msg)
 
-    def print_header(fp, TripCol2Name):
+    def print_header(fp):
         _header = []
         for _col_num, _col_name in sorted(
-            TripCol2Name.items()
+            TRIP_COLOUMNS.items()
         ):  # TODO: save a sorted copy of the dict to avoid repeated sorting
             _header.append(_col_name)
         fp.write(",".join(["%s" % name for name in _header]) + "\n")
 
     def print_vals(self, fp):
-        TripCol2Name = self.constants.get("trip_columns")
-
         if "ERROR" in self.fields:
             self.fields["ERROR"] = add_quote_char(self.fields["ERROR"])
 
         _vals = []
-        for _col_num, _col_name in sorted(TripCol2Name.items()):
+        for _col_num, _col_name in sorted(TRIP_COLOUMNS.items()):
             if _col_name in self.fields:
                 _vals.append(self.fields[_col_name])
             else:

@@ -34,6 +34,7 @@ class SPAToolModule(SPAModelBase):
 
     def run(self):
         # Legacy Constants
+        self.t_start = time.time()
         OUT_DIR = self.namespace.output
         SurveyWorkPurp = self.constants.get("SurveyWorkPurp")
         SurveyWorkRelatedPurp = self.constants.get("SurveyWorkRelatedPurp")
@@ -48,6 +49,7 @@ class SPAToolModule(SPAModelBase):
             assert self.input_tables.get(k) is not None, f"Missing {k} in data"
 
         # Extract the tables
+        df_hh = self.input_tables.get('household')
         df_per = self.input_tables.get("person")
         df_place = self.input_tables.get("place")
 
@@ -62,12 +64,12 @@ class SPAToolModule(SPAModelBase):
         t0 = time.time()
         for hhid, df_persons in df_place.groupby("SAMPN"):
             # create a new household object
-            hh = Household(hhid, constants=self.constants)
+            hh = Household(df_hh.loc[hhid], constants=self.constants)
             hh_list.append(hh)
 
             # The progress bar
             ct += 1
-            if ct % 10 == 0:
+            if ct % 10 == 0 or ct == of_count:
                 ti = time.time()
                 time_left = round((of_count - ct) * (ti - t0) / ct)
                 print(
@@ -381,6 +383,7 @@ class SPAToolModule(SPAModelBase):
     def print_in_same_files(self, hh_list, out_dir):
         """print problematic records (relating to joint travel) in the same files as the 'clean' records"""
         # specify output files
+        print('Saving SPA Tool results...')
         hh_file = open(os.path.join(out_dir, "households.csv"), "w")
         per_file = open(os.path.join(out_dir, "persons.csv"), "w")
         trip_file = open(os.path.join(out_dir, "trips.csv"), "w")
@@ -393,10 +396,10 @@ class SPAToolModule(SPAModelBase):
         recode_log_file = open(os.path.join(out_dir, "recode_log.txt"), "w")
 
         # print column headers in tables
-        Trip.print_header(trip_file, self.constants.get("trip_columns"))
+        Trip.print_header(trip_file)
         Joint_ultrip.print_header(joint_trip_file)
         Joint_ultrip.print_header_unique(unique_jtrip_file)
-        Tour.print_header(tour_file, self.constants.get("tour_columns"))
+        Tour.print_header(tour_file)
         Joint_tour.print_header(unique_jtour_file)
         Person.print_header(per_file)
         Household.print_header(hh_file)
@@ -441,10 +444,10 @@ class SPAToolModule(SPAModelBase):
         err_log_file.close()
         recode_log_file.close()
 
+        t_end = time.time()
         print(
-            "Processed {} households, {} individuals, {} person-trips, {} person-tours.".format(
-                len(hh_list), count_persons, count_trips, count_tours
-            )
+            f"Processed {len(hh_list)} households, {count_persons} individuals,"
+            f" {count_trips} person-trips, {count_tours} person-tours in {round(t_end - self.t_start)} seconds"
         )
         print("{} households contain error.".format(num_err_hh))
         print("{} persons contain error.".format(num_err_perons))

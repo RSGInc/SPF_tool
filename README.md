@@ -34,11 +34,14 @@ The easiest installation is to clone this repo and create your spa_tool conda en
 
 The SPA Tool 2.0 is now a command line program with flagged arguments specifying necessary directory locations, following a usage structure similar to ActivitySim and PopulationSim. The command line provides a single point of entry to the SPA Tool "pipeline":
 
-`python spa_tool -c configs -d data -o output`
+`python spa_tool -c configs -d data`
 
-It has three mandatory arguments:
+It has two mandatory arguments:
 - --configs, -c "path/to/config"
 - --data, -d "path/to/data"
+
+And one optional output flag. The reason is that you may want to treat your data folder as a "working data" directory in which all data are written to/from. Otherwise, if you specify an output folder, data will be saved to that folder and may not be found by downstream models.
+
 - --output, -o "path/to/output"
 
 These arguments point to the directories of all required files. Typically, these might be housed in an SPA Tool 2.0 project folder. For example:
@@ -164,21 +167,24 @@ Custom modules can be written by first inheriting the SPAModelBase
 from spa_tool.core.modules import SPAModelBase
 
 class CustomModule(modules.SPAModelBase):
-    def __init__(self, namespace, **kwargs):
-        # This passes arguments to the base model
+    # Required: This passes arguments to the base model
+    def __init__(self, namespace, **kwargs):        
         super().__init__(namespace, **kwargs)
     
+    # Required: The SPA framework calls .run()
     def run(self):
         self.do_something()
         return self.raw_data_formatted
-
+    
+    # Have fun
     def do_something(self):
+        ....
 ```
 
 
 ### ExpressionPreProcess
 
-...TODO...
+...TODO add some documentation here...
 
 
 The ExpressionPreProcess module is used to preprocess the raw data into the required SPA Tool input format. Similar to preprocessing files in ActivitySim, a comma separated value (CSV) file is used to specify the python expression used to create each SPA input field. To aid in writing these expressions, a temporary "expression testing environment" can be run by setting the boolean argument to true:
@@ -186,3 +192,8 @@ The ExpressionPreProcess module is used to preprocess the raw data into the requ
 - --expression_testing, -e True
 
 This will initialize the SPA Tool 2.0 and load in the input tables, then pauses the runtime at the expression processing module step and allow users to test python expressions.
+
+
+### Visualizer
+
+Not yet working...

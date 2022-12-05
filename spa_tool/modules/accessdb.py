@@ -8,10 +8,10 @@ import pyodbc
 import os
 
 from core import functions
-from core import modules
+from core import base
 
 
-class GetAccessDBData(modules.SPAModelBase):
+class GetAccessDBData(base.SPAModelBase):
     names_map = {
         "H": "household",
         "H6": "vehicle",
@@ -36,6 +36,11 @@ class GetAccessDBData(modules.SPAModelBase):
 
     def run(self):
         self.read_accessdb()
+        self.save_tables(
+            output_dict=self.raw_data_formatted,
+            output_dir=self.kwargs.get('output_dir'),
+            index=True
+        )
         return self.raw_data_formatted
 
     def read_accessdb(self):
@@ -241,19 +246,6 @@ class GetAccessDBData(modules.SPAModelBase):
                             writer, sheet_name="{} ({})".format(stat_type, weight_type)
                         )
 
-    def save_tables(self, output_dir):
-        if not os.path.isdir(output_dir):
-            output_dir = os.path.join(self.namespace.output, output_dir)
-
-        if self.raw_data_formatted is None:
-            print("Data not loaded yet, run .get_tables() on GetDBData class")
-            return
-        else:
-            for k, df in self.raw_data_formatted.items():
-                df.to_csv(f"{output_dir}/{k}.csv", index=True)
-
-        return
-
 
 if __name__ == "__main__":
     import argparse
@@ -279,4 +271,4 @@ if __name__ == "__main__":
     DBData.read_accessdb()
 
     DBData.summary_stats("raw/stats")
-    DBData.save_tables("raw")
+    # DBData.save_tables("raw")

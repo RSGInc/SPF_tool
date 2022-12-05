@@ -60,6 +60,11 @@ class SPAToolFramework:
     def check_namespace(self, namespace):
         assert namespace.configs, 'Missing required argument "-c configs"'
         assert namespace.data, 'Missing required argument "-d data"'
+
+        if namespace.output is None:
+            print('No output directory specified, using "data" directory as shared data IO directory')
+            namespace.output = namespace.data
+
         assert namespace.output, 'Missing required argument "-o output"'
 
         return namespace
@@ -67,11 +72,11 @@ class SPAToolFramework:
     def run(self):
         if self.nargs.expression_testing:
             params = self.settings.get("PROCESSING_STEPS").get("ExpressionPreProcess")
-            module_name = ".".join(["tools", params.get("module")]).replace(".py", "")
-            assert (
-                params["from_pipeline"] == False
-            ), "Expression tester must run from flat files, not pipeline data."
-            module_obj = __import__(module_name, fromlist=["tools"])
+            module_name = ".".join(["modules", params.get("module")]).replace(".py", "")
+            # assert (
+            #     params["from_pipeline"] == False
+            # ), "Expression tester must run from flat files, not pipeline data."
+            module_obj = __import__(module_name, fromlist=["modules"])
             class_obj = getattr(module_obj, "ExpressionPreProcess")
 
             ExpressionClass = class_obj(args, **params)
@@ -108,12 +113,12 @@ class SPAToolFramework:
                 if params.get("skip") or skip:
                     print("Skip")
                     continue
-                module_name = ".".join(["tools", params.get("module")]).replace(
+                module_name = ".".join(["modules", params.get("module")]).replace(
                     ".py", ""
                 )
                 class_args = {**params, **{"pipeline": results}}
 
-                module_obj = __import__(module_name, fromlist=["tools"])
+                module_obj = __import__(module_name, fromlist=["modules"])
                 class_obj = getattr(module_obj, class_name)
 
                 results[params.get("output_dir", class_name)] = class_obj(
@@ -133,7 +138,7 @@ if __name__ == "__main__":
         "C:\gitclones\Dubai_survey_processing\data",
         "C:\\Users\\nick.fournier\\Resource Systems Group, Inc\\Model Development - Dubai RTA ABM Development Project\\data\\fromIBI\\2014 Survey Data\\2014-12-20_SP_RP_Data_Aur",
     ]
-    args.output = "C:\\gitclones\\Dubai_survey_processing\\output"
+    args.output = "C:\\gitclones\\Dubai_survey_processing\\data"
 
     # args.expression_testing = True
     # Run

@@ -7,10 +7,10 @@ import pandas as pd
 import os
 import sys
 import importlib.util
-from core import modules
+from core import base
 
 
-class ExpressionPreProcess(modules.SPAModelBase):
+class ExpressionPreProcess(base.SPAModelBase):
     def __init__(self, namespace, **kwargs):
         super().__init__(namespace, **kwargs)
 
@@ -22,6 +22,11 @@ class ExpressionPreProcess(modules.SPAModelBase):
 
     def run(self):
         self.run_expressions()
+        self.save_tables(
+            output_dict=self.output_tables,
+            output_dir=self.kwargs.get('output_dir'),
+            index=True
+        )
         return self.output_tables
 
     def init_long_expressions(self):
@@ -30,7 +35,7 @@ class ExpressionPreProcess(modules.SPAModelBase):
             module_name = os.path.splitext(module_file)[0]
 
             if not os.path.isabs(module_file):
-                module_file = os.path.join(self.namespace.config, module_file)
+                module_file = os.path.join(self.namespace.configs, module_file)
 
             assert os.path.exists(module_file), "Can't find long expression module"
 
@@ -127,19 +132,10 @@ class ExpressionPreProcess(modules.SPAModelBase):
                     table_expressions.Field.unique(), axis=1
                 )
 
+        print(f"Done pre-processing expressions")
+
         self.output_tables = tables
 
-    def save_tables(self, out_dir):
-        if self.output_tables is None:
-            print(
-                "Data not loaded yet, run .run_expressions() on ExpressionPreProcess class"
-            )
-            return
-        else:
-            for k, df in self.output_tables.items():
-                df.to_csv(f"{out_dir}/{k}.csv", index=False)
-
-        return
 
 
 if __name__ == "__main__":
@@ -163,5 +159,3 @@ if __name__ == "__main__":
         table.describe().to_csv(
             os.path.join("../../data/preprocessed/stats", table_name + ".csv")
         )
-
-    PP.save_tables(out_dir="../../data/preprocessed")

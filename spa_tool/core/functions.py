@@ -45,34 +45,36 @@ def read_config(file_path):
     return config
 
 
-def load_pipeline_tables(namespace, kwargs):
+def load_pipeline_tables(kwargs):
     input_tables = {}
 
-    if kwargs.get("from_pipeline"):
+    if not kwargs.get("data"):
+        return input_tables
+
+    if kwargs.get("from_pipeline", True) and kwargs.get("pipeline").get(kwargs.get("data_directory")) is not None:
         assert kwargs.get("pipeline").get(
             kwargs.get("data_directory")
         ), f"{kwargs.get('data_directory')} not found in pipeline."
+
         input_tables = kwargs.get("pipeline").get(kwargs.get("data_directory"))
 
-    if not kwargs.get("data"):
-        return {}
+    else:
+        for table_name, table_params in kwargs.get("data").items():
+            if not table_params.get("read_csv", True):
+                continue
 
-    for table_name, table_params in kwargs.get("data").items():
-        if not table_params.get("read_csv", True):
-            continue
+            table_dir = table_params.get("file")
+            index_col = table_params.get("index")
+            # Check if multiple found
+            if isinstance(table_dir, list):
+                assert len(table_dir) == 1, (
+                    f'{len(table_dir)} files found for "{table_dir}" input!'
+                    "If >1, check for multiple files in data folders."
+                    "If 0, check if correct folder specified, or is empty!"
+                )
+                table_dir = table_dir[0]
 
-        table_dir = table_params.get("file")
-        index_col = table_params.get("index")
-        # Check if multiple found
-        if isinstance(table_dir, list):
-            assert len(table_dir) == 1, (
-                f'{len(table_dir)} files found for "{table_dir}" input!'
-                "If >1, check for multiple files in data folders."
-                "If 0, check if correct folder specified, or is empty!"
-            )
-            table_dir = table_dir[0]
-
-        input_tables[table_name] = pd.read_csv(table_dir, index_col=index_col)
+            input_tables[table_name] = pd.read_csv(table_dir, index_col=index_col)
 
     return input_tables
 

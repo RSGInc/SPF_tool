@@ -3,16 +3,11 @@ import time
 import pandas as pd
 
 from core.functions import read_mappings
-from core.modules import SPAModelBase
-from tools.legacy_tools.households import Household
-from tools.legacy_tools.persons import Person
-from tools.legacy_tools.tours import Tour
-from tools.legacy_tools.trips import Trip
-from tools.legacy_tools.joint_tours import Joint_tour
-from tools.legacy_tools.joint_ultrips import Joint_ultrip
+from core import base
+from modules.legacy_tools import households, persons, tours, trips, joint_tours, joint_ultrips
 
 
-class SPAToolModule(SPAModelBase):
+class SPAToolModule(base.SPAModelBase):
     def __init__(self, namespace, **kwargs):
         super().__init__(namespace, **kwargs)
         self.constants = self.default_constants()
@@ -33,9 +28,12 @@ class SPAToolModule(SPAModelBase):
         return constants
 
     def run(self):
+        self.legacyspa_run()
+
+    def legacyspa_run(self):
         # Legacy Constants
         self.t_start = time.time()
-        OUT_DIR = self.namespace.output
+        OUT_DIR = self.kwargs.get('output_dir')
         SurveyWorkPurp = self.constants.get("SurveyWorkPurp")
         SurveyWorkRelatedPurp = self.constants.get("SurveyWorkRelatedPurp")
         SurveyHomeCode = self.constants.get("SurveyHomeCode")
@@ -64,7 +62,7 @@ class SPAToolModule(SPAModelBase):
         t0 = time.time()
         for hhid, df_persons in df_place.groupby("SAMPN"):
             # create a new household object
-            hh = Household(df_hh.loc[hhid], constants=self.constants)
+            hh = households.Household(df_hh.loc[hhid], constants=self.constants)
             hh_list.append(hh)
 
             # The progress bar
@@ -87,7 +85,7 @@ class SPAToolModule(SPAModelBase):
                 ]
 
                 # create a new person object
-                psn = Person(hh, pid, df_cur_per, self.constants)
+                psn = persons.Person(hh, pid, df_cur_per, self.constants)
 
                 num_places_for_person = len(df_psn_places)
                 # print(f"No. of place entries for person {pid} of household {hhid}: {num_places_for_person}")
@@ -148,7 +146,7 @@ class SPAToolModule(SPAModelBase):
                         # current PLACE marks the start of a new tour
                         # create a new tour object for the person
                         cur_tourid = cur_tourid + 1
-                        tour = Tour(hh, psn, self.constants, cur_tourid)
+                        tour = tours.Tour(hh, psn, self.constants, cur_tourid)
                         psn.add_tour(tour)
                         cur_tripid = 0
 
@@ -177,7 +175,7 @@ class SPAToolModule(SPAModelBase):
                         cur_tripid = cur_tripid + 1
 
                         # trip = Trip(hh, psn, tour, self.constants, cur_tripid)
-                        trip = Trip(hh, psn, tour, self.constants, df_psn_places.iloc[cur_tripid])
+                        trip = trips.Trip(hh, psn, tour, self.constants, df_psn_places.iloc[cur_tripid])
 
                         # process current linked trip, which is described by rows starting
                         # at cur_trip_start_row and ending at cur_row+1
@@ -311,21 +309,21 @@ class SPAToolModule(SPAModelBase):
         recode_log_file = open(out_dir + "recode_log.txt", "w")
 
         # print column headers in tables
-        Household.print_header(hh_file)
-        Person.print_header(per_file)
-        Trip.print_header(trip_file)
-        Tour.print_header(tour_file)
-        Joint_ultrip.print_header(joint_trip_file)
-        Joint_ultrip.print_header_unique(unique_jtrip_file)
-        Joint_tour.print_header(unique_jtour_file)
+        households.Household.print_header(hh_file)
+        persons.Person.print_header(per_file)
+        trips.Trip.print_header(trip_file)
+        tours.Tour.print_header(tour_file)
+        joint_ultrips.Joint_ultrip.print_header(joint_trip_file)
+        joint_ultrips.Joint_ultrip.print_header_unique(unique_jtrip_file)
+        joint_tours.Joint_tour.print_header(unique_jtour_file)
 
-        Household.print_header(problem_hh_file)
-        Person.print_header(problem_per_file)
-        Trip.print_header(problem_trip_file)
-        Tour.print_header(problem_tour_file)
-        Joint_ultrip.print_header(problem_joint_trip_file)
-        Joint_ultrip.print_header_unique(problem_unique_jtrip_file)
-        Joint_tour.print_header(problem_unique_jtour_file)
+        households.Household.print_header(problem_hh_file)
+        persons.Person.print_header(problem_per_file)
+        trips.Trip.print_header(problem_trip_file)
+        tours.Tour.print_header(problem_tour_file)
+        joint_ultrips.Joint_ultrip.print_header(problem_joint_trip_file)
+        joint_ultrips.Joint_ultrip.print_header_unique(problem_unique_jtrip_file)
+        joint_tours.Joint_tour.print_header(problem_unique_jtour_file)
 
         num_err_hh = 0
         for hh in hh_list:
@@ -397,13 +395,13 @@ class SPAToolModule(SPAModelBase):
         recode_log_file = open(os.path.join(out_dir, "recode_log.txt"), "w")
 
         # print column headers in tables
-        Trip.print_header(trip_file)
-        Joint_ultrip.print_header(joint_trip_file)
-        Joint_ultrip.print_header_unique(unique_jtrip_file)
-        Tour.print_header(tour_file)
-        Joint_tour.print_header(unique_jtour_file)
-        Person.print_header(per_file)
-        Household.print_header(hh_file)
+        trips.Trip.print_header(trip_file)
+        joint_ultrips.Joint_ultrip.print_header(joint_trip_file)
+        joint_ultrips.Joint_ultrip.print_header_unique(unique_jtrip_file)
+        tours.Tour.print_header(tour_file)
+        joint_tours.Joint_tour.print_header(unique_jtour_file)
+        persons.Person.print_header(per_file)
+        households.Household.print_header(hh_file)
 
         num_err_perons = 0
         num_err_hh = 0

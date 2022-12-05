@@ -12,11 +12,10 @@ class SPAModelBase:
     def __init__(self, namespace, **kwargs):
         self.namespace = namespace
         self.kwargs = self.update_kwargs(**kwargs)
-        self.input_tables = functions.load_pipeline_tables(self.namespace, self.kwargs)
+        self.input_tables = functions.load_pipeline_tables(self.kwargs)
 
     def set_global_tables(self):
         # This function can be used to create local variables as table names for debugging and script testing
-        # e.g., ExpressionPreProcess(input_tables="..//folder...").set_locals()
         for k, df in self.input_tables.items():
             globals()[k] = df
 
@@ -32,6 +31,10 @@ class SPAModelBase:
             }
 
         # Append file paths
+        kwargs['output_dir'] = os.path.join(self.namespace.output,
+                                            kwargs.get('output_dir', kwargs.get('module'))
+                                            )
+
         namespace_map = {"configs": self.namespace.configs, "data": self.namespace.data}
         for spec in ["configs", "data"]:
             if not kwargs.get(spec):
@@ -49,11 +52,13 @@ class SPAModelBase:
 
         return kwargs
 
-    # TODO Make generalizable
-    # def save_tables(self, out_dir):
-    #     if self.place is None:
-    #         print('Data not loaded yet, run .run_expressions() on ExpressionPreProcess class')
-    #         return
-    #     else:
-    #         self.place.to_csv(f'{out_dir}.csv', index=False)
-    #     return
+    def save_tables(self, output_dict, output_dir, index=False):
+        if output_dict is None:
+            print(
+                f"Data not loaded yet, need to run {self.__class__.__name__} module"
+            )
+            return
+        else:
+            for k, df in output_dict.items():
+                df.to_csv(os.path.join(output_dir, k + ".csv"), index=index)
+        return

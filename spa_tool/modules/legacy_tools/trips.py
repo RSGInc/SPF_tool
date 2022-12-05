@@ -3,7 +3,7 @@ import numpy as np
 import math
 import os
 from core.functions import add_quote_char, convert2minutes, calculate_duration
-from tools.legacy_tools.joint_ultrips import Joint_ultrip
+from modules.legacy_tools.joint_ultrips import Joint_ultrip
 
 
 TRIP_COLOUMNS = pd.read_csv(os.path.join(os.path.dirname(__file__), 'static/trip_columns.csv'),

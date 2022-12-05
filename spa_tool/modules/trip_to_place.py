@@ -6,11 +6,11 @@
 import pandas as pd
 from copy import deepcopy
 from core import functions
-from core.modules import SPAModelBase
+from core import base
 
 
 # TODO Set this up so that it can be run as a workflow step
-class TripsToPlace(SPAModelBase):
+class TripsToPlace(base.SPAModelBase):
     def __init__(self, namespace, **kwargs):
         super().__init__(namespace, **kwargs)
 
@@ -18,6 +18,11 @@ class TripsToPlace(SPAModelBase):
 
     def run(self):
         self.trip_to_place()
+        self.save_tables(
+            output_dict={'place': self.place},
+            output_dir=self.kwargs.get('output_dir'),
+            index=True
+        )
         return self.place
 
     def trip_to_place(self):
@@ -162,14 +167,6 @@ class TripsToPlace(SPAModelBase):
 
         self.place = place
 
-    def save_tables(self, out_dir):
-        if self.place is None:
-            print("Data not loaded yet, run .run() on TripToPlace class")
-            return
-        else:
-            self.place.to_csv(f"{out_dir}/place.csv", index=False)
-        return
-
 
 if __name__ == "__main__":
     import argparse
@@ -187,4 +184,3 @@ if __name__ == "__main__":
     # Fetch data from the database
     T2P = TripsToPlace(args)
     T2P.run()
-    T2P.save_tables(out_dir="../../data/preprocessed")

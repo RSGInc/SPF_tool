@@ -1,5 +1,5 @@
 # Declare the custom processing steps to run here
-START_FROM: SPAToolModule
+START_FROM: GetAccessDBData
 PROCESSING_STEPS:
     GetAccessDBData:
         module: accessdb
@@ -45,7 +45,7 @@ PROCESSING_STEPS:
             mapping_file: preprocess_specs/preprocess_mapping.csv
             long_expressions: preprocess_specs/long_expressions.py # Can define more complex functions to run in a python file.
     TripsToPlace:
-        module: trips_to_place
+        module: trip_to_place
         from_pipeline: False # Read directly from pipeline, or pull from directory
         output_dir: preprocessed
         data:
@@ -62,7 +62,7 @@ PROCESSING_STEPS:
     SPAToolModule:
         module: legacy_spa
         from_pipeline: False
-        output_dir: final_data
+        output_dir: spa_output
         data:
             household:
                 file: preprocessed/household.csv

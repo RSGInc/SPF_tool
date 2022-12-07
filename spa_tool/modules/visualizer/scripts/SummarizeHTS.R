@@ -15,6 +15,8 @@ library(plyr)
 library(weights)
 library(reshape)
 library(data.table)
+library(stringr)
+
 
 ## User Inputs
 ###############
@@ -27,49 +29,51 @@ library(data.table)
 # WeightsDir: Weights
 # xwalkDir: XWalk folder
 
-WD                   <- "C:\\Users\\andrew.rohne\\OneDrive - Resource Systems Group, Inc\\SANDAG_Viz\\visualizer\\data\\build_hts"
-Survey_Dir           <- "C:\\Models\\sandag\\SPA_Inputs_220929"
-Survey_Processed_Dir <- "C:\\Models\\sandag\\SPA_Processed"
-skims_dir              <- "C:\\Users\\andrew.rohne\\OneDrive - Resource Systems Group, Inc\\SANDAG_Viz\\visualizer\\data\\skims"
-SHP_Dir              <- "C:\\Users\\andrew.rohne\\OneDrive - Resource Systems Group, Inc\\SANDAG_Viz\\visualizer\\data\\SHP"
-WeightsDir           <- "C:\\Models\\sandag\\weights"
-xwalkDir             <- "C:\\Users\\andrew.rohne\\OneDrive - Resource Systems Group, Inc\\SANDAG_Viz\\visualizer\\data\\SHP"
-skims_filename = "skims.omx"
+WD                   <- "C:\\gitclones\\Dubai_survey_processing"
+RawSurvey_Dir        <- "data\\raw"
+Survey_Dir           <- "data\\preprocessed"
+Survey_Processed_Dir <- "data\\spa_output"
+WeightsDir           <- "data\\weights"
+outdir               <- "data\\visualizer\\summaries"
+setwd(WD)
+
+# skims_dir            <- "C:\\Users\\andrew.rohne\\OneDrive - Resource Systems Group, Inc\\SANDAG_Viz\\visualizer\\data\\skims"
+# SHP_Dir              <- "C:\\Users\\andrew.rohne\\OneDrive - Resource Systems Group, Inc\\SANDAG_Viz\\visualizer\\data\\SHP"
+# xwalkDir             <- "C:\\Users\\andrew.rohne\\OneDrive - Resource Systems Group, Inc\\SANDAG_Viz\\visualizer\\data\\SHP"
+# skims_filename = "skims.omx"
+
 ## Read Data
-xwalk                <- read.csv(paste(xwalkDir, "TAZ_Dist_xwalk.csv", sep = "/"), as.is = T)
-colnames(xwalk) = c("TAZ", "pmsa")
-districtList         <- sort(unique(xwalk$pmsa))
-hh                   <- read.csv(paste(Survey_Dir, "HH_SPA_INPUT.csv", sep = "/"), as.is = T)
-per                  <- read.csv(paste(Survey_Dir, "PER_SPA_INPUT.csv", sep = "/"), as.is = T)
-#day                  <- read.csv(paste(Survey_Dir, "day.csv", sep = "/"), as.is = T)
+# xwalk                <- read.csv(paste(xwalkDir, "TAZ_Dist_xwalk.csv", sep = "/"), as.is = T)
+# colnames(xwalk) = c("TAZ", "pmsa")
+# districtList         <- sort(unique(xwalk$pmsa))
+hh      = fread(file.path(Survey_Dir, "household.csv"))
+per     = fread(file.path(Survey_Dir, "person.csv"))
+day     = fread(file.path(RawSurvey_Dir, "day.csv"))
+place   = fread(file.path(Survey_Dir, "place.csv"))
 
-# Weight updates - ASR
-multiDayWeights      <- read.csv(paste(WeightsDir, "export_day_weights.csv", sep = "/"), as.is = T)
-hhWeights      <- read.csv(paste(WeightsDir, "export_hh_weights.csv", sep = "/"), as.is = T)
-perWeights = read.csv(paste(WeightsDir, "export_person_weights.csv", sep = "/"), as.is = T)
-#tripWeights = read.csv(paste(WeightsDir, "export_trip_weights.csv", sep = "/"), as.is = T)
+tours   = fread(file.path(Survey_Processed_Dir, "tours.csv"))
+trips   = fread(file.path(Survey_Processed_Dir, "trips.csv"))
+jtours  = fread(file.path(Survey_Processed_Dir, "unique_joint_tours.csv"))
+jutrips = fread(file.path(Survey_Processed_Dir, "unique_joint_ultrips.csv"))
 
 
-# ASR 9/22
-# day data - the day data for the 2022 data was problematic, so read from SPA outs
-dayno                <- 1
-dayDir               <- paste(Survey_Processed_Dir, "/day", as.character(dayno), sep = "")
-perday = read.csv(paste(dayDir, "persons.csv", sep = "/"), as.is = T)
-perday$day_num          <- dayno
+zones = fread(file.path(RawSurvey_Dir, 'zone.csv'))
+raw_trips = fread(file.path(RawSurvey_Dir, 'trip.csv'))
 
-for (i in 2:4) {
-  dayno  <- i
-  dayDir <- paste(Survey_Processed_Dir, "/day", as.character(dayno), sep = "")
-  p1     <- read.csv(paste(dayDir, "persons.csv", sep = "/"), as.is = T)
-  
-  if(nrow(p1)>0){
-    p1$day_num <- dayno
-    perday <- rbind(perday, p1)
-  }
-}
 
-colnames(perday)[which(colnames(perday) == "HH_ID")] = "hh_id"
-colnames(perday)[which(colnames(perday) == "PER_ID")] = "person_num"
+# Create faux xwalk
+zones[ , NAME_GROUP := tstrsplit(NAME,'_\\(')[1]]
+xwalk = zones[ , .(zone_id, OLDZONE, NEWZONE, NAME, NAME_GROUP)]
+
+#### ####
+
+# colnames(perday)[which(colnames(perday) == "HH_ID")] = "hh_id"
+# colnames(perday)[which(colnames(perday) == "PER_ID")] = "person_num"
+perday = day
+setnames(perday, 'household_id', 'hh_id')
+perday$day_num = 1
+
+
 # Filter records to use only completed households and persons on weekdays
 #day = day[day$hh_day_complete == 1 & day$travel_dow >= 1 & day$travel_dow <= 5,]
 #day <- day[day$day_iscomplete==1 & day$day_hhcomplete==1 & day$travel_dow>=1 & day$travel_dow<=5,]
@@ -83,33 +87,17 @@ colnames(perday)[which(colnames(perday) == "PER_ID")] = "person_num"
 hhday <- unique(perday[,c("hh_id", "day_num")])
 hhday <- cbind(hhday, hh[match(hhday$hh_id, hh$SAMPN), -which(names(hhday) %in% c("hh_id"))])
 
-# hh_day_wts = as.data.frame(table(hhday$hh_id), stringsAsFactors = F)
-# colnames(hh_day_wts)[which(colnames(hh_day_wts) == "Var1")] = "hh_id"
-# hh_day_wts$hh_id = as.integer(hh_day_wts$hh_id)
-# 
-# hh_day_wts$HHEXPFAC = 0
-# hh_day_wts$HHEXPFAC = hh$HHEXPFAC[match(hh_day_wts$hh_id, hh$SAMPN)]
-# hh_day_wts$HHEXPFAC[is.na(hh_day_wts$HHEXPFAC)] = 0
-# hh_day_wts$day_weight = hh_day_wts$HHEXPFAC / hh_day_wts$Freq
-#hhday$multiday_weight_456x = hh_day_wts$day_weight[match(hhday$hh_id, hh$SAMPN)]
-# 
-# per_day_wts = aggregate(day_num ~ hh_id + person_num, data = perday, length)
-# colnames(per_day_wts)[which(colnames(per_day_wts) == "day_num")] = "days"
-# per_day_wts$PEREXPFAC = per$PEREXPFAC[match(paste(per_day_wts$hh_id, per_day_wts$person_num, sep = "-"),
-#                                             paste(per$SAMPN, per$PERNO, sep = "-"))]
-# per_day_wts$PEREXPFAC[is.na(per_day_wts$PEREXPFAC)] = 0
-# per_day_wts$per_day_wt = per_day_wts$PEREXPFAC / per_day_wts$days
 
-hh$HHEXPFAC = hhWeights$hh_weight[match(hh$SAMPN, hhWeights$hh_id)]
-per$PEREXPFAC = perWeights$person_weight[match(per$SAMPN * 100 + per$PERNO, perWeights$person_id)]
+hh$HHEXPFAC = hh$HH_WEIGHT
+per$PEREXPFAC = per$PER_WEIGHT
 #ASR: hh and person weights good here
 
 perday$puid <- paste(perday$hh_id, perday$person_num, perday$day_num, sep = "-")
 perday$uid <- paste(perday$hh_id, perday$day_num, sep = "-")
 perday$day_id = paste(10000 * perday$hh_id + 100 * perday$person_num + perday$day_num)
+perday[per, on = .(person_id), per_weight := i.PER_WEIGHT]
 
-perday$day_weight = multiDayWeights$day_weight[match(perday$day_id, multiDayWeights$day_id)]
-perday$per_weight = perWeights$person_weight[match(perday$hh_id * 100 + perday$person_num, perWeights$person_id)]
+
 
 per_day_wts = aggregate(day_num ~ hh_id + person_num, data = perday, length)
 colnames(per_day_wts)[which(colnames(per_day_wts) == "day_num")] = "days"
@@ -125,35 +113,22 @@ colnames(hh_day_wts)[which(colnames(hh_day_wts) == "day_num")] = "days"
 
 hhday$obs_days = hh_day_wts$days[match(hhday$hh_id, hh_day_wts$hh_id)]
 
-hhday$HHEXPFAC = hhWeights$hh_weight[match(hhday$hh_id, hhWeights$hh_id)]
+
+hhday[hh, on=.(hh_id=household_id), HHEXPFAC := i.HHEXPFAC]
 hhday$finalweight = hhday$HHEXPFAC / hhday$obs_days
 
-place <- read.csv(paste(Survey_Dir, "place_1.csv", sep = "/"), as.is = T)
+
 place$puid <- paste(place$SAMPN, place$PERNO, "1", sep = "-")
-# include only records in perday
-place <- place[place$puid %in% perday$puid,]
-place$DAY_NUM = 1
-for (i in 2:4) {
-  placeFile  <- paste("place_", as.character(i), ".csv", sep = "")
-  temp       <- read.csv(paste(Survey_Dir, placeFile, sep = "/"), as.is = T)
-  temp$puid   <- paste(temp$SAMPN, temp$PERNO, i, sep = "-")
-  temp       <- temp[temp$puid %in% perday$puid,]
-  temp$DAY_NUM = i
-  place      <- rbind(place, temp)
-}
+place[ , DAY_NUM := DAYNO]
+
 
 # day 1 data
 dayno                <- 1
-dayDir               <- paste(Survey_Processed_Dir, "/day", as.character(dayno), sep = "")
-tours                <- read.csv(paste(dayDir, "tours.csv", sep = "/"), as.is = T)
-trips                <- read.csv(paste(dayDir, "trips.csv", sep = "/"), as.is = T)
-jtours               <- read.csv(paste(dayDir, "unique_joint_tours.csv", sep = "/"), as.is = T)
-jutrips              <- read.csv(paste(dayDir, "unique_joint_ultrips.csv", sep = "/"), as.is = T)
-
 tours$DAYNO          <- dayno
 trips$DAYNO          <- dayno
 jtours$DAYNO         <- dayno
 jutrips$DAYNO         <- dayno
+
 
 # puid
 tours$puid           <- paste(tours$HH_ID, tours$PER_ID, tours$DAYNO, sep = "-")
@@ -170,89 +145,39 @@ jutrips <- jutrips[jutrips$uid %in% unique(perday$uid), ]
 
 print(paste("Retained", nrow(tours), "tours and ", nrow(trips), "trips for day 1"))
 
-for (i in 2:4) {
-  dayno  <- i
-  dayDir <- paste(Survey_Processed_Dir, "/day", as.character(dayno), sep = "")
-  t1     <- read.csv(paste(dayDir, "tours.csv", sep = "/"), as.is = T)
-  t2     <- read.csv(paste(dayDir, "trips.csv", sep = "/"), as.is = T)
-  t3     <- read.csv(paste(dayDir, "unique_joint_tours.csv", sep = "/"), as.is = T)
-  t4     <- read.csv(paste(dayDir, "unique_joint_ultrips.csv", sep = "/"), as.is = T)
-  t5     <- read.csv(paste(dayDir, "persons.csv", sep = "/"), as.is = T)
-  
-  if(nrow(t2)>0){
-    t1$DAYNO <- dayno
-    t2$DAYNO <- dayno
-    t3$DAYNO <- dayno
-    t4$DAYNO <- dayno
-    
-    # puid
-    t1$puid <- paste(t1$HH_ID, t1$PER_ID, t1$DAYNO, sep = "-")
-    t2$puid <- paste(t2$HH_ID, t2$PER_ID, t2$DAYNO, sep = "-")
-    t3$uid <- paste(t3$HH_ID, t3$DAYNO, sep = "-")
-    t4$uid <- paste(t4$HH_ID, t4$DAYNO, sep = "-")
-    print(paste("Read", nrow(t1), "tours and ", nrow(t2), "trips for day", dayno))
-    
-    # filter
-    t1 <- t1[t1$puid %in% perday$puid,]
-    t2 <- t2[t2$puid %in% perday$puid,]
-    t3 <- t3[t3$uid %in% unique(perday$uid), ]
-    t4 <- t4[t4$uid %in% unique(perday$uid), ]
-    print(paste("Retained", nrow(t1), "tours and ", nrow(t2), "trips for day", dayno))
-    
-    tours <- rbind(tours, t1)
-    trips <- rbind(trips, t2)
-    jtours <- rbind(jtours, t3)
-    jutrips <- rbind(jutrips, t4)
-  }
-}
 
 # replace all "nan" in Python outputs with 0
-tours[tours=="nan"] <- 0
-trips[trips=="nan"] <- 0
-jtours[jtours=="nan"] <- 0
-jutrips[jutrips=="nan"] <- 0
+tours = tours[, lapply(.SD, function(x) ifelse(x=='nan',0,x))]
+trips = trips[, lapply(.SD, function(x) ifelse(x=='nan',0,x))]
+jtours = jtours[, lapply(.SD, function(x) ifelse(x=='nan',0,x))]
+jutrips = jutrips[, lapply(.SD, function(x) ifelse(x=='nan',0,x))]
+
+
 trips$JTRIP_ID <- as.numeric(trips$JTRIP_ID)
 trips$OMAZ = 0
 trips$DMAZ = 0
 tours$OMAZ = 0
 tours$DMAZ = 0
 
-# TOUR MODE UPDATES ####
+
+#### TOUR MODE UPDATES ####
 #tours$TOURMODE[tours$TOURMODE>=1 & tours$TOURMODE<=2] <- 1
 #tours$TOURMODE[tours$TOURMODE>=3 & tours$TOURMODE<=4] <- 2
 #tours$TOURMODE[tours$TOURMODE>=5 & tours$TOURMODE<=6] <- 3
 #tours$TOURMODE[tours$TOURMODE==7] <- 4
 #tours$TOURMODE[tours$TOURMODE==8] <- 5
-tours$TOURMODE[tours$TOURMODE>=6 & tours$TOURMODE<=8] <- 6 # Walk Transit
-tours$TOURMODE[tours$TOURMODE>=9 & tours$TOURMODE<=11] <- 7 #PNR Transit
-tours$TOURMODE[tours$TOURMODE>=12 & tours$TOURMODE<=14] <- 8 #KNR Transit
-tours$TOURMODE[tours$TOURMODE>=15 & tours$TOURMODE<=17] <- 9 #TNC Transit
-tours$TOURMODE[tours$TOURMODE == 20] <- 10 # Taxi
-tours$TOURMODE[tours$TOURMODE == 18] <- 11 # TNC-Single
-tours$TOURMODE[tours$TOURMODE == 18] <- 12 # TNC-Shared
-tours$TOURMODE[tours$TOURMODE>=21] <- 13
+# tours$TOURMODE[tours$TOURMODE>=6 & tours$TOURMODE<=8] <- 6 # Walk Transit
+# tours$TOURMODE[tours$TOURMODE>=9 & tours$TOURMODE<=11] <- 7 #PNR Transit
+# tours$TOURMODE[tours$TOURMODE>=12 & tours$TOURMODE<=14] <- 8 #KNR Transit
+# tours$TOURMODE[tours$TOURMODE>=15 & tours$TOURMODE<=17] <- 9 #TNC Transit
+# tours$TOURMODE[tours$TOURMODE == 20] <- 10 # Taxi
+# tours$TOURMODE[tours$TOURMODE == 18] <- 11 # TNC-Single
+# tours$TOURMODE[tours$TOURMODE == 18] <- 12 # TNC-Shared
+# tours$TOURMODE[tours$TOURMODE>=21] <- 13
 
 # Compare person type across days
 # Person types are recoded by Python script based on activity purposes reported for each day
-processedPerson      <- read.csv(paste(Survey_Processed_Dir, "day1", "persons.csv", sep = "/"), as.is = T)
 
-for (i in 2:4) {
-  dayno                 <- i
-  dayDir                <- paste(Survey_Processed_Dir, "/day", as.character(dayno), sep = "")
-  per_nxt               <- read.csv(paste(dayDir, "persons.csv", sep = "/"), as.is = T)
-  # US
-  processedPerson$ptype <- per_nxt$PERSONTYPE[match(processedPerson$HH_ID*100+processedPerson$PER_ID,per_nxt$HH_ID*100+per_nxt$PER_ID)]
-  temp                  <- processedPerson[(processedPerson$PERSONTYPE %in% c(1,2,4,5)) & processedPerson$ptype==3,]
-  processedPerson       <- processedPerson[!((processedPerson$PERSONTYPE %in% c(1,2,4,5)) & processedPerson$ptype==3),]
-  processedPerson       <- processedPerson[,-which(names(processedPerson) %in% c("ptype"))]
-  processedPerson       <- rbind(processedPerson, per_nxt[match(temp$HH_ID*100+temp$PER_ID, per_nxt$HH_ID*100+per_nxt$PER_ID), ])
-  # PW
-  processedPerson$ptype <- per_nxt$PERSONTYPE[match(processedPerson$HH_ID*100+processedPerson$PER_ID,per_nxt$HH_ID*100+per_nxt$PER_ID)]
-  temp                  <- processedPerson[(processedPerson$PERSONTYPE %in% c(4,5)) & processedPerson$ptype==2,]
-  processedPerson       <- processedPerson[!((processedPerson$PERSONTYPE %in% c(4,5)) & processedPerson$ptype==2),]
-  #processedPerson       <- processedPerson[,-which(names(processedPerson) %in% c("ptype"))]
-  processedPerson       <- rbind(processedPerson, per_nxt[match(temp$HH_ID*100+temp$PER_ID, per_nxt$HH_ID*100+per_nxt$PER_ID), ])
-}
 
 trips$finalweight = place$TRIP_WEIGHT[match(paste(trips$HH_ID, trips$PER_ID, trips$DAYNO, trips$DEST_PLACENO, sep = "-"), 
                                             paste(place$SAMPN, place$PERNO, place$DAY_NUM, place$PLANO, sep = "-"))]
@@ -279,22 +204,20 @@ tours$finalweight[is.na(tours$finalweight)] = 0
 jtours$finalweight[is.na(jtours$finalweight)] = 0
 jutrips$finalweight[is.na(jutrips$finalweight)] = 0
 
-#### Debugging
+#### Debugging ####
 #hts_trips$puid <- paste(hts_trips$hhid, hts_trips$pernum, hts_trips$daynum, sep = "-")
 #write.csv(hts_trips, "hts_trips.csv", row.names = F)
 #write.csv(trips, "trips.csv", row.names = F)
 
-library(omxr)
-skim_file = file.path(skims_dir, skims_filename)
-print('Processing Distance Skim Matrix...')
-skimMat <- read_omx(skim_file, "MD_HOV2_L_DIST")
-DST_SKM <- reshape2::melt(skimMat)
-colnames(DST_SKM) <- c("o", "d", "dist")
 
 
 # Define other variables
 pertypeCodes <- data.frame(code = c(1,2,3,4,5,6,7,8,"All"), 
-                           name = c("FT Worker", "PT Worker", "Univ Stud", "Non Worker", "Retiree", "Driv Stud", "NonDriv Stud", "Pre-School", "All"))
+                           name = c("FT Worker", "PT Worker", "Univ Stud", "Non Worker", 
+                                    "Retiree", "Driv Stud", "NonDriv Stud", "Pre-School", "All"))
+
+
+
 
 # Fix trip and tour times
 tours$ANCHOR_DEPART_HOUR = tours$ANCHOR_DEPART_HOUR + 3
@@ -338,14 +261,8 @@ trips$DEST_DEP_HR[which(trips$DEST_DEP_HR >= 24)] = trips$DEST_DEP_HR[which(trip
 trips$DEST_DEP_BIN = trips$DEST_DEP_BIN + 6
 trips$DEST_DEP_BIN[which(trips$DEST_DEP_BIN > 48)] = trips$DEST_DEP_BIN[which(trips$DEST_DEP_BIN > 48)] - 48
 
-# Prepare files for computing summary statistics
-###################################################
-
-setwd(WD)
-
-# -----------------------------------------------------------------
-# rename variables in SANDAG HTS to standard format in this script
-# -----------------------------------------------------------------
+#### Prepare files for computing summary statistics ####
+## rename variables in SANDAG HTS to standard format in this script
 names(hh)[names(hh)=="HH_ZONE_ID"] <- 'HHTAZ'
 names(hhday)[names(hhday)=="HH_ZONE_ID"] <- 'HHTAZ'
 #names(hh)[names(hh)=="HOME_MAZ"] <- 'HHMAZ'
@@ -386,14 +303,14 @@ per$SMAZ[is.na(per$SMAZ)] <- 0
 perday$STAZ[is.na(perday$STAZ)] <- 0
 perday$SMAZ[is.na(perday$SMAZ)] <- 0
 
-names(processedPerson)[names(processedPerson)=="HH_ID"] <- "HHID"
-names(processedPerson)[names(processedPerson)=="PER_ID"] <- "PERID"
+# names(processedPerson)[names(processedPerson)=="HH_ID"] <- "HHID"
+# names(processedPerson)[names(processedPerson)=="PER_ID"] <- "PERID"
 
-hh$HHVEH[hh$HH_NUM_VEH == 0] <- 0
-hh$HHVEH[hh$HH_NUM_VEH == 1] <- 1
-hh$HHVEH[hh$HH_NUM_VEH == 2] <- 2
-hh$HHVEH[hh$HH_NUM_VEH == 3] <- 3
-hh$HHVEH[hh$HH_NUM_VEH >= 4] <- 4
+hh$HHVEH[hh$HH_VEH == 0] <- 0
+hh$HHVEH[hh$HH_VEH == 1] <- 1
+hh$HHVEH[hh$HH_VEH == 2] <- 2
+hh$HHVEH[hh$HH_VEH == 3] <- 3
+hh$HHVEH[hh$HH_VEH >= 4] <- 4
 
 hh$HHSIZE[hh$HH_SIZE == 1] <- 1
 hh$HHSIZE[hh$HH_SIZE == 2] <- 2
@@ -406,16 +323,19 @@ adults <- count(per[!is.na(per$AGE_CAT),], c("SAMPN"), "AGE_CAT>=4")
 hh$ADULTS <- adults$freq[match(hh$SAMPN, adults$SAMPN)]
 hh$ADULTS[is.na(hh$ADULTS)] <- 0
 
-# define Districts - PMSA for SANDAG
-hh$HDISTRICT <- xwalk$pmsa[match(hh$HHTAZ, xwalk$TAZ)]
+# define Districts
+hh[xwalk, on = .(HHTAZ=OLDZONE), HDISTRICT := i.NAME_GROUP]
 
 #per$PERTYPE <- processedPerson$ptype[match(per$SAMPN*100+per$PERNO, processedPerson$HHID*100+processedPerson$PERID)]
 per$HHTAZ <- hh$HHTAZ[match(per$SAMPN, hh$SAMPN)]
 per$HHAZ <- hh$HHMAZ[match(per$SAMPN, hh$SAMPN)]
 per$HDISTRICT <- hh$HDISTRICT[match(per$SAMPN, hh$SAMPN)]
-per$WDISTRICT <- xwalk$pmsa[match(per$WTAZ, xwalk$TAZ)]
-per$XCORD <- hh$home_lng[match(per$SAMPN, hh$SAMPN)]
-per$YCORD <- hh$home_lat[match(per$SAMPN, hh$SAMPN)]
+
+per[xwalk, on = .(WTAZ=OLDZONE), WDISTRICT := i.NAME_GROUP]
+
+
+per$XCORD <- hh$HXCORD[match(per$SAMPN, hh$SAMPN)]
+per$YCORD <- hh$HYCORD[match(per$SAMPN, hh$SAMPN)]
 #per$WHOME[is.na(per$WHOME)] <- 0
 
 ## copy attributes from per to perday and hh to hhday
@@ -443,7 +363,7 @@ perday$WDISTRICT <- per$WDISTRICT[match(perday$SAMPN*100+perday$PERNO, per$SAMPN
 
 # Auto ownership
 autoOwnership <- count(hh[!is.na(hh$HHVEH),], c("HHVEH"), "finalweight")
-write.csv(autoOwnership, "autoOwnership.csv", row.names = TRUE)
+write.csv(autoOwnership, file.path(outdir,"autoOwnership.csv"), row.names = TRUE)
 
 perday$PERTYPE = perday$PERSONTYPE
 pertypeDistbn <- count(perday, c("PERTYPE"), "finalweight")

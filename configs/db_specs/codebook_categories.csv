@@ -89,6 +89,30 @@ person,P,PQ9,Car availability,Code Value,1,Yes own use (as driver)
 person,P,PQ9,Car availability,Code Value,2,Yes shared use (as driver)
 person,P,PQ9,Car availability,Code Value,3,Yes shared use (as passenger)
 person,P,PQ9,Car availability,Code Value,4,No
+person,,,Person type,Code Value,1,Local_male
+person,,,Person type,Code Value,2,Local_female
+person,,,Person type,Code Value,3,Expatriate_male_High income
+person,,,Person type,Code Value,4,Expatriate_male_Car available_Medium income
+person,,,Person type,Code Value,5,Expatriate_male_Car available_Low income
+person,,,Person type,Code Value,6,Expatriate_male_No car available_Medium income
+person,,,Person type,Code Value,7,Expatriate_male_No car available_Low income
+person,,,Person type,Code Value,8,Expatriate_female_High income
+person,,,Person type,Code Value,9,Expatriate_female_Car available_Medium income
+person,,,Person type,Code Value,10,Expatriate_female_Car available_Low income
+person,,,Person type,Code Value,11,Expatriate_female_No car available_Medium income
+person,,,Person type,Code Value,12,Expatriate_female_No car available_Low income
+person,,,Person type,Code Value,13,Local Pupil 1 (Primary School)
+person,,,Person type,Code Value,14,Local Pupil 2 (Secondary School)
+person,,,Person type,Code Value,15,Expatriate Pupil 1 (Primary School)
+person,,,Person type,Code Value,16,Expatriate Pupil 2 (Secondary School)
+person,,,Person type,Code Value,17,Student
+person,,,Person type,Code Value,18,Retired Person
+person,,,Person type,Code Value,19,Labourer  (Construction)_Car available
+person,,,Person type,Code Value,20,Labourer  (Construction)_No car available
+person,,,Person type,Code Value,21,Labourer  (others)_Car available
+person,,,Person type,Code Value,22,Labourer  (others)_No car available
+person,,,Person type,Code Value,23,Visitors_Tourists
+person,,,Person type,Code Value,24,Visitors_Business
 day,T1,T1-C,Report day type,Code Value,1,Sunday
 day,T1,T1-C,Report day type,Code Value,2,Monday
 day,T1,T1-C,Report day type,Code Value,3,Tuesday

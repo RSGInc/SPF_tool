@@ -1,5 +1,5 @@
 import pandas as pd
-from spa_tool.core.functions import distance_on_unit_sphere
+from core.functions import distance_on_unit_sphere
 
 
 def get_XYCORD(coord_type, coord):

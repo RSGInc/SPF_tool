@@ -8,9 +8,7 @@ from copy import deepcopy
 from core import functions
 from core import base
 
-
-# TODO Set this up so that it can be run as a workflow step
-class TripsToPlace(base.SPAModelBase):
+class TripsToPlace(base.BaseModule):
     def __init__(self, namespace, **kwargs):
         super().__init__(namespace, **kwargs)
 
@@ -21,7 +19,7 @@ class TripsToPlace(base.SPAModelBase):
         self.save_tables(
             output_dict={'place': self.place},
             output_dir=self.kwargs.get('output_dir'),
-            index=True
+            index=False
         )
         return self.place
 

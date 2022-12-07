@@ -11,7 +11,7 @@ from core import functions
 from core import base
 
 
-class GetAccessDBData(base.SPAModelBase):
+class GetAccessDBData(base.BaseModule):
     names_map = {
         "H": "household",
         "H6": "vehicle",

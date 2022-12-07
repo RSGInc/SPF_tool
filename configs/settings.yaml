@@ -9,8 +9,8 @@ PROCESSING_STEPS:
                 file: 'RP_2014_141218.accdb'
                 read_csv: False
         configs:
-            dictionary_file: dbdata_specs/codebook_dictionary.csv
-            categories_file: dbdata_specs/codebook_categories.csv
+            dictionary_file: db_specs/codebook_dictionary.csv
+            categories_file: db_specs/codebook_categories.csv
     ExpressionPreProcess:
         #        skip: True
         module: expressions

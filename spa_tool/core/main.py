@@ -51,7 +51,7 @@ class SPAToolFramework:
         self.nargs = self.check_namespace(namespace_args)
 
         settings_file = functions.find_source_root(
-            "settings.yaml", namespace_args.configs
+            "settings.yaml", self.nargs.configs
         )
         self.settings = functions.read_config(settings_file)
 
@@ -66,6 +66,13 @@ class SPAToolFramework:
             namespace.output = namespace.data
 
         assert namespace.output, 'Missing required argument "-o output"'
+        assert isinstance(namespace.output, str), 'Only one output directory can be specified, check your "-d data" flag'
+
+        for k, v in namespace._get_kwargs():
+            if v:
+                v = [v] if not isinstance(v, list) else v
+                for argpath in v:
+                    assert os.path.exists(argpath), f'Could not find the "-c {k}" directory'
 
         return namespace
 
@@ -79,7 +86,7 @@ class SPAToolFramework:
             module_obj = __import__(module_name, fromlist=["modules"])
             class_obj = getattr(module_obj, "ExpressionPreProcess")
 
-            ExpressionClass = class_obj(args, **params)
+            ExpressionClass = class_obj(self.nargs, **params)
 
             # Setup tables in local env
             expressions = ExpressionClass.expressions
@@ -92,7 +99,11 @@ class SPAToolFramework:
                     "Loaded tables: " + ", ".join(ExpressionClass.input_tables.keys())
                 )
                 exp = input("Expression Environment, quit() to quit")
-                print(eval(exp))
+
+                try:
+                    print(eval(exp))
+                except Exception as e:
+                    print(repr(e))
 
         else:
             results = {}
@@ -133,13 +144,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # manually inject args
-    args.configs = "C:\gitclones\Dubai_survey_processing\configs"
+    args.configs = "../../configs"
     args.data = [
-        "C:\gitclones\Dubai_survey_processing\data",
+        "../../data",
         "C:\\Users\\nick.fournier\\Resource Systems Group, Inc\\Model Development - Dubai RTA ABM Development Project\\data\\fromIBI\\2014 Survey Data\\2014-12-20_SP_RP_Data_Aur",
     ]
-    args.output = "C:\\gitclones\\Dubai_survey_processing\\data"
+    args.output = "../../data"
 
-    # args.expression_testing = True
+    args.expression_testing = True
     # Run
     sys.exit(SPAToolFramework(args))

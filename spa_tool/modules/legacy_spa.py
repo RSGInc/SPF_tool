@@ -7,7 +7,7 @@ from core import base
 from modules.legacy_tools import households, persons, tours, trips, joint_tours, joint_ultrips
 
 
-class SPAToolModule(base.SPAModelBase):
+class SPAToolModule(base.BaseModule):
     def __init__(self, namespace, **kwargs):
         super().__init__(namespace, **kwargs)
         self.constants = self.default_constants()

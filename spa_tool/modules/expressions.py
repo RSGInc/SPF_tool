@@ -10,7 +10,7 @@ import importlib.util
 from core import base
 
 
-class ExpressionPreProcess(base.SPAModelBase):
+class ExpressionPreProcess(base.BaseModule):
     def __init__(self, namespace, **kwargs):
         super().__init__(namespace, **kwargs)
 
@@ -25,7 +25,7 @@ class ExpressionPreProcess(base.SPAModelBase):
         self.save_tables(
             output_dict=self.output_tables,
             output_dir=self.kwargs.get('output_dir'),
-            index=True
+            index=False
         )
         return self.output_tables
 
@@ -34,7 +34,7 @@ class ExpressionPreProcess(base.SPAModelBase):
         if module_file:
             module_name = os.path.splitext(module_file)[0]
 
-            if not os.path.isabs(module_file):
+            if not os.path.isabs(module_file) and not os.path.exists(module_file):
                 module_file = os.path.join(self.namespace.configs, module_file)
 
             assert os.path.exists(module_file), "Can't find long expression module"
@@ -150,12 +150,7 @@ if __name__ == "__main__":
     # manually inject args
     args.configs = "C:\\gitclones\\Dubai_survey_processing\\configs"
     args.data = "C:\\gitclones\\Dubai_survey_processing\\data"
+    # args.expression_testing = True
 
     PP = ExpressionPreProcess(args)
-    PP.run_expressions()
-
-    for table_name, table in PP.output_tables.items():
-        # Need to filter out for categorical
-        table.describe().to_csv(
-            os.path.join("../../data/preprocessed/stats", table_name + ".csv")
-        )
+    PP.run()

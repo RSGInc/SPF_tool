@@ -40,6 +40,7 @@ person,EMPLY_LOC_TYPE,INT,categorical,Employment location type,1,fixed,"person.o
 person,EMPLY_LOC_TYPE,INT,categorical,Employment location type,2,works from home,"person.occ.isin([1,2]) & person.reset_index().merge(trip[trip.trip_purp.isin([1])].groupby('person_id').dest_latlon.size().reset_index(), how='left').set_index('person_id').isnull().dest_latlon"
 person,EMPLY_LOC_TYPE,INT,categorical,Employment location type,3,varies,"person.occ.isin([1,2]) & person.reset_index().merge((trip[trip.trip_purp.isin([1])].groupby('person_id').dest_latlon.size()>1).reset_index(), how='left').set_index('person_id').fillna(False).dest_latlon"
 person,EMPLY_LOC_TYPE,INT,categorical,Employment location type,0,Not a worker,"~person.occ.isin([1,2])"
+person,PERTYPE,INT,continuous,Person type,,,"person.reset_index().merge(trip[['household_id','person_num','person_group']].drop_duplicates(), on=['household_id','person_num'], how='left').set_index('person_id').person_group.fillna(0).astype(int)"
 trip,trip_id,INT,continuous,dataframe index,,,"pd.Series(trip.index, index=trip.index)"
 trip,SAMPN,INT,continuous,Household ID,,,trip.household_id
 trip,PERNO,INT,continuous,Person ID,,,trip.person_num
@@ -112,3 +113,8 @@ trip,DISTANCE,REAL,continuous,Trip distance in km,,,"trip.trip_dist_km + trip.tr
 # place,YCORD,INT,continuous,Y Coordinate (latitude),,,"trip.dest_latlon.str.split(',', expand=True)[0]"
 # place,WXCORD,INT,continuous,Work X Coordinate (longitude),,,"self.get_WXYCORD('X', trip)"
 # place,WYCORD,INT,continuous,Work Y Coordinate (latitude),,,"self.get_WXYCORD('Y', trip)"
+# day,household_id
+# day,person_id
+# day,PERNO
+# day,DAY_NUM
+# day,DAY_WEIGHT

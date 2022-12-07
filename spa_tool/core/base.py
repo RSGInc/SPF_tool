@@ -8,12 +8,23 @@ import os
 from core import functions
 
 
-class SPAModelBase:
+class BaseModule:
     def __init__(self, namespace, **kwargs):
-        self.namespace = namespace
+        self.namespace = self.check_namespace(namespace)
         self.kwargs = self.update_kwargs(**kwargs)
         self.input_tables = functions.load_pipeline_tables(self.kwargs)
 
+    def check_namespace(self, namespace):
+        assert namespace.configs, 'Missing required argument "-c configs"'
+        assert namespace.data, 'Missing required argument "-d data"'
+
+        if namespace.output is None:
+            print('No output directory specified, using "data" directory as shared data IO directory')
+            namespace.output = namespace.data
+
+        assert namespace.output, 'Missing required argument "-o output"'
+
+        return namespace
     def set_global_tables(self):
         # This function can be used to create local variables as table names for debugging and script testing
         for k, df in self.input_tables.items():

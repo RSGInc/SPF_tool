@@ -2,6 +2,7 @@ import os
 import time
 import pandas as pd
 
+import sys
 from core.functions import read_mappings
 from core import base
 from modules.legacy_tools import households, persons, tours, trips, joint_tours, joint_ultrips
@@ -70,11 +71,10 @@ class SPAToolModule(base.BaseModule):
             if ct % 10 == 0 or ct == of_count:
                 ti = time.time()
                 time_left = round((of_count - ct) * (ti - t0) / ct)
-                print(
-                    f"Processed household {ct} of {of_count}, {round(100 * ct / of_count)}%,"
-                    f" ({time_left} seconds left, {round(ti - t0)} seconds elapsed)",
-                    end="\r",
-                )
+                msg = f"Processed household {ct} of {of_count}, {round(100 * ct / of_count)}%,"\
+                      f" ({time_left} seconds left, {round(ti - t0)} seconds elapsed)"
+                # print(msg, end="\r")
+                sys.stdout.write('\r' + msg)
 
             # loop through each person
             for (hhid, pid), df_psn_places in df_persons.groupby(["SAMPN", "PERNO"]):

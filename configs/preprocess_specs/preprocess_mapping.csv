@@ -100,8 +100,10 @@ trip,PER5,INT,continuous,Person ID of fifth additional household member on trip,
 trip,PER6,INT,continuous,Person ID of sixth additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(5).astype(str).reindex(trip.index)
 trip,XCORD,INT,continuous,X Coordinate (longitude),,,"self.get_XYCORD('LON', trip.dest_latlon)"
 trip,YCORD,INT,continuous,Y Coordinate (latitude),,,"self.get_XYCORD('LAT', trip.dest_latlon)"
-trip,WXCORD,INT,continuous,Work X Coordinate (longitude),,,"self.get_WXYCORD('LON', trip)"
-trip,WYCORD,INT,continuous,Work Y Coordinate (latitude),,,"self.get_WXYCORD('LAT', trip)"
+trip,WXCORD,INT,continuous,Work X Coordinate (longitude),,,"self.get_fixed_XYCORD('LON', trip, [1])"
+trip,WYCORD,INT,continuous,Work Y Coordinate (latitude),,,"self.get_fixed_XYCORD('LAT', trip, [1])"
+trip,SXCORD,INT,continuous,Work X Coordinate (longitude),,,"self.get_fixed_XYCORD('LON', trip, [3])"
+trip,SYCORD,INT,continuous,Work Y Coordinate (latitude),,,"self.get_fixed_XYCORD('LAT', trip, [3])"
 trip,DISTANCE,REAL,continuous,Trip distance in km,,,"trip.trip_dist_km + trip.trip_dist_m/1000"
 # trip,BUFFER_DIST,REAL,continuous,Trip distance in km,,,"self.get_buffer_dist(trip)"
 # place,place_id,INT,continuous,dataframe index,,,"pd.Series(trip.index, index=trip.index)"

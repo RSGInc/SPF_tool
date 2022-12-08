@@ -1,5 +1,5 @@
 # Declare the custom processing steps to run here
-START_FROM: GetAccessDBData
+START_FROM: SPAToolModule
 PROCESSING_STEPS:
     GetAccessDBData:
         module: accessdb

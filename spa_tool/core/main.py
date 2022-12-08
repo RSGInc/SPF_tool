@@ -151,6 +151,6 @@ if __name__ == "__main__":
     ]
     args.output = "../../data"
 
-    args.expression_testing = True
+    # args.expression_testing = True
     # Run
     sys.exit(SPAToolFramework(args))

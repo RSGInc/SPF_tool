@@ -52,6 +52,27 @@ def get_WXYCORD(coord_type, trip):
     return person_trips_xy.squeeze()
 
 
+def get_fixed_XYCORD(coord_type, trip, purposes):
+
+    purposes = purposes if isinstance(purposes, list) else [purposes]
+    # Get fixed work locations
+
+    fixedtrips = trip[trip.trip_purp.isin(purposes)]
+    fixed_trips_idx = fixedtrips[
+        fixedtrips.groupby("person_id").dest_latlon.transform("count") == 1
+    ].index
+    fixed_coords = get_XYCORD(coord_type, trip.dest_latlon).loc[fixed_trips_idx]
+
+    # return pd.concat([trip, fixed_coords], axis=1)[coord_id].fillna(0)
+    # Pull in person_id and assign work location for all 'trip' rows for each person
+    person_trips = trip[["person_id"]].merge(fixed_coords, on="trip_id")
+    person_trips_xy = (
+        trip.reset_index()
+        .merge(person_trips, on="person_id", how="left")
+        .set_index("trip_id")[coord_type]
+    )
+    return person_trips_xy.squeeze()
+
 def get_TOTTR_NEXT(trip, trip_hhcompanions_pnum):
     n_companions = pd.concat(
         [

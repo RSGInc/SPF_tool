@@ -279,6 +279,9 @@ class Tour:
             self.fields["DEST_PLACENO"] = self.trips[0].fields["ORIG_PLACENO"]
             self.fields["DEST_X"] = self.trips[0].fields["ORIG_X"]
             self.fields["DEST_Y"] = self.trips[0].fields["ORIG_Y"]
+            self.fields["DEST_TAZ"] = self.trips[0].fields['DEST_TAZ']
+            # self.fields["ORIG_TAZ"] = self.trips[0].fields['ORIG_TAZ']
+
             # self.fields['DEST_MODE']            = self.trips[0].fields['TRIPMODE']
 
             # self.fields['PRIMDEST_ARRIVE_HOUR'] = self.trips[_prim_i].fields['DEST_ARR_HR']
@@ -324,8 +327,10 @@ class Tour:
 
             # tour origin: origin of 1st trip on tour
             self.fields["ORIG_PLACENO"] = self.trips[0].fields["ORIG_PLACENO"]
+            self.fields["ORIG_TAZ"] = self.trips[0].fields['ORIG_TAZ']
             self.fields["ORIG_X"] = self.trips[0].fields["ORIG_X"]
             self.fields["ORIG_Y"] = self.trips[0].fields["ORIG_Y"]
+
             self.fields["ANCHOR_DEPART_HOUR"] = self.trips[0].fields["ORIG_DEP_HR"]
             self.fields["ANCHOR_DEPART_MIN"] = self.trips[0].fields["ORIG_DEP_MIN"]
             self.fields["ANCHOR_DEPART_BIN"] = self.trips[0].fields["ORIG_DEP_BIN"]
@@ -335,6 +340,7 @@ class Tour:
             self.fields["DEST_X"] = self.trips[-1].fields["DEST_X"]
             self.fields["DEST_Y"] = self.trips[-1].fields["DEST_Y"]
             self.fields["DEST_MODE"] = self.trips[-1].fields["TRIPMODE"]
+            self.fields["DEST_TAZ"] = self.trips[-1].fields['DEST_TAZ']
 
             self.fields["PRIMDEST_ARRIVE_HOUR"] = self.trips[-1].fields["DEST_ARR_HR"]
             self.fields["PRIMDEST_ARRIVE_MIN"] = self.trips[-1].fields["DEST_ARR_MIN"]
@@ -387,12 +393,14 @@ class Tour:
             self.fields["ANCHOR_DEPART_HOUR"] = self.trips[0].fields["ORIG_DEP_HR"]
             self.fields["ANCHOR_DEPART_MIN"] = self.trips[0].fields["ORIG_DEP_MIN"]
             self.fields["ANCHOR_DEPART_BIN"] = self.trips[0].fields["ORIG_DEP_BIN"]
+            self.fields["ORIG_TAZ"] = self.trips[0].fields['ORIG_TAZ']
 
             # tour destination: given by trips[_prim_i]
             self.fields["DEST_PLACENO"] = self.trips[_prim_i].fields["DEST_PLACENO"]
             self.fields["DEST_X"] = self.trips[_prim_i].fields["DEST_X"]
             self.fields["DEST_Y"] = self.trips[_prim_i].fields["DEST_Y"]
             self.fields["DEST_MODE"] = self.trips[_prim_i].fields["TRIPMODE"]
+            self.fields["DEST_TAZ"] = self.trips[_prim_i].fields['DEST_TAZ']
 
             self.fields["PRIMDEST_ARRIVE_HOUR"] = self.trips[_prim_i].fields[
                 "DEST_ARR_HR"

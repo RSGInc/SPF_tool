@@ -559,6 +559,7 @@ class Trip:
         self.fields["ORIG_ARR_MIN"] = df["ARR_MIN"].iloc[0]
         self.fields["ORIG_DEP_HR"] = df["DEP_HR"].iloc[0]
         self.fields["ORIG_DEP_MIN"] = df["DEP_MIN"].iloc[0]
+        self.fields["ORIG_TAZ"] = df['TAZ'].iloc[0]
 
         # trip destination: last place on trip
         _last_row = len(df) - 1
@@ -569,6 +570,7 @@ class Trip:
         self.fields["DEST_ARR_MIN"] = df["ARR_MIN"].iloc[_last_row]
         self.fields["DEST_DEP_HR"] = df["DEP_HR"].iloc[_last_row]
         self.fields["DEST_DEP_MIN"] = df["DEP_MIN"].iloc[_last_row]
+        self.fields["DEST_TAZ"] = df['TAZ'].iloc[_last_row]
 
         # arrival and departure time along all segments of the trip
         # calculate trip duration based on departure at origin and arrival at destination

@@ -25,6 +25,8 @@ While the SPA Tool 2.0 is a work in progress, and still heavily relies on the or
 - If the implementation is easy to explain, it may be a good idea.
 - Namespaces are one honking great idea – let's do more of those!
 
+Plus the Django principle to keep it DRY (Don't repeat yourself)!
+
 
 ### Installation
 The easiest installation is to clone this repo and create your spa_tool conda environment with this command: 
@@ -161,12 +163,25 @@ configs:         - Dictionary list of file names and path in the data folder.
 
 
 ### Creating new modules
-Custom modules can be written by first inheriting the SPAModelBase
+
+The fundamental purpose of this processing pipeline is enable flexibility to add or remove functionality, but under an organized framework and structure. If you need to add completely new functionality (e.g., create you want to make a module that generates a bunch of plots and tables), custom modules can be written.
+
+Pipeline modules have a few requirements:
+1. They must be under a class object
+2. They must have a `def run(self):` function as a single point of entry for the pipeline to call. 
+3. They must inherit the base module.
+4. They must pass the `namespace` and `**kwargs` (your parameters) to the base module with `super().__init__(namespace, **kwargs)`
+
+The class module structure ensures that objects are cleanly handled in the pipeline and a function in one module does not affect a function in another module. It also enables inheritance, which is a useful feature of Python. By inheriting the base module, you do not need to rewrite all the basic functions such as reading arguments, config files, and input data. Instead this is all provided by the base module so you can focus on your module, remember keep it DRY (Don't repeat yourself)!
+
+Strictly speaking, you technically don't need to inherit the base or pass the arguments, but then your module would be isolated and not interact with the processing pipeline. Which kind of defeeats the point of everything. 
+
+To create a new pipeline module, start by creating a new python file (e.g., new_module.py) in the `spa_tool/modules` folder and create your module's python class object and inherit the "BaseModule" into it. An example custom module could be something like this:
 
 ```
-from spa_tool.core.modules import SPAModelBase
+from spa_tool.core.base import BaseModule
 
-class CustomModule(modules.SPAModelBase):
+class CustomModuleTemplate(base.BaseModule):
     # Required: This passes arguments to the base model
     def __init__(self, namespace, **kwargs):        
         super().__init__(namespace, **kwargs)

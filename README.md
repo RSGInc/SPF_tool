@@ -164,7 +164,7 @@ configs:         - Dictionary list of file names and path in the data folder.
 
 ### Creating new modules
 
-The fundamental purpose of this processing pipeline is enable flexibility to add or remove functionality, but under an organized framework and structure. If you need to add completely new functionality (e.g., create you want to make a module that generates a bunch of plots and tables), custom modules can be written.
+The fundamental purpose of this processing pipeline is enable flexibility to add or remove functionality, but under an organized framework and structure. If you need to add completely new functionality (e.g., you want a module that generates a bunch of plots and tables), custom modules can be written.
 
 Pipeline modules have a few requirements:
 1. They must be under a class object

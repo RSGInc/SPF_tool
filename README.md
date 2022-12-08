@@ -181,6 +181,10 @@ class CustomModule(modules.SPAModelBase):
         ....
 ```
 
+### GetFromPOPS
+
+... TODO ... module that reads directly from RSG's POPS database rather than sending CSVs around.
+
 
 ### ExpressionPreProcess
 

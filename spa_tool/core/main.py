@@ -77,64 +77,35 @@ class SPAToolFramework:
         return namespace
 
     def run(self):
-        if self.nargs.expression_testing:
-            params = self.settings.get("PROCESSING_STEPS").get("ExpressionPreProcess")
-            module_name = ".".join(["modules", params.get("module")]).replace(".py", "")
-            # assert (
-            #     params["from_pipeline"] == False
-            # ), "Expression tester must run from flat files, not pipeline data."
+        results = {}
+
+        # Find which step to start from
+        steps = self.settings.get("PROCESSING_STEPS")
+        skip = True
+
+        assert (
+            self.settings.get("START_FROM")
+            in self.settings.get("PROCESSING_STEPS").keys()
+        ), "Missing START_FROM step"
+
+        for class_name, params in steps.items():
+            print(f"Running {class_name} module...")
+            if class_name == self.settings.get("START_FROM"):
+                skip = False
+            if params.get("skip") or skip:
+                print("Skip")
+                continue
+            module_name = ".".join(["modules", params.get("module")]).replace(
+                ".py", ""
+            )
+            class_args = {**params, **{"pipeline": results}}
+
             module_obj = __import__(module_name, fromlist=["modules"])
-            class_obj = getattr(module_obj, "ExpressionPreProcess")
+            class_obj = getattr(module_obj, class_name)
 
-            ExpressionClass = class_obj(self.nargs, **params)
-
-            # Setup tables in local env
-            expressions = ExpressionClass.expressions
-            for k, df in ExpressionClass.input_tables.items():
-                locals()[k] = df
-
-            exp = ""
-            while exp != "quit()":
-                print(
-                    "Loaded tables: " + ", ".join(ExpressionClass.input_tables.keys())
-                )
-                exp = input("Expression Environment, quit() to quit")
-
-                try:
-                    print(eval(exp))
-                except Exception as e:
-                    print(repr(e))
-
-        else:
-            results = {}
-
-            # Find which step to start from
-            steps = self.settings.get("PROCESSING_STEPS")
-            skip = True
-
-            assert (
-                self.settings.get("START_FROM")
-                in self.settings.get("PROCESSING_STEPS").keys()
-            ), "Missing START_FROM step"
-
-            for class_name, params in steps.items():
-                print(f"Running {class_name} module...")
-                if class_name == self.settings.get("START_FROM"):
-                    skip = False
-                if params.get("skip") or skip:
-                    print("Skip")
-                    continue
-                module_name = ".".join(["modules", params.get("module")]).replace(
-                    ".py", ""
-                )
-                class_args = {**params, **{"pipeline": results}}
-
-                module_obj = __import__(module_name, fromlist=["modules"])
-                class_obj = getattr(module_obj, class_name)
-
-                results[params.get("output_dir", class_name)] = class_obj(
-                    self.nargs, **class_args
-                ).run()
+            results[params.get("output_dir", class_name)] = class_obj(
+                self.nargs, **class_args
+            ).run()
 
 
 if __name__ == "__main__":

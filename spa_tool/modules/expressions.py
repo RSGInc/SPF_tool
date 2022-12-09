@@ -21,12 +21,28 @@ class ExpressionPreProcess(base.BaseModule):
         self.output_tables = None
 
     def run(self):
-        self.run_expressions()
-        self.save_tables(
-            output_dict=self.output_tables,
-            output_dir=self.kwargs.get('output_dir'),
-            index=False
-        )
+        if self.namespace.expression_testing:
+            for k, df in self.input_tables.items():
+                locals()[k] = df
+
+            exp = ""
+            while exp != "quit()":
+                print(
+                    "Loaded tables: " + ", ".join(self.input_tables.keys())
+                )
+                exp = input("Expression Environment, quit() to quit")
+
+                try:
+                    print(eval(exp))
+                except Exception as e:
+                    print(repr(e))
+        else:
+            self.run_expressions()
+            self.save_tables(
+                output_dict=self.output_tables,
+                output_dir=self.kwargs.get('output_dir'),
+                index=False
+            )
         return self.output_tables
 
     def init_long_expressions(self):

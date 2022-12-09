@@ -46,7 +46,7 @@ def add_run_args(parser):
     )
 
 
-class SPAToolFramework:
+class SPTFramework:
     def __init__(self, namespace_args):
         self.nargs = self.check_namespace(namespace_args)
 
@@ -124,4 +124,4 @@ if __name__ == "__main__":
 
     # args.expression_testing = True
     # Run
-    sys.exit(SPAToolFramework(args))
+    sys.exit(SPTFramework(args))

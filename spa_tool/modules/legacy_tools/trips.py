@@ -765,7 +765,7 @@ class Trip:
         #     _new_mode = NewTripMode['OTHER']
 
         # set the following fields for every trip, regardless of mode used
-        self.fields["TRIPMODE"] = _new_mode
+        self.fields["TRIPMODE"] = TRIP_MODE[_new_mode]
         # auto occupancy = travel party size if auto; 0 otherwise
         self.fields["AUTO_OCC"] = _max_tottr
         # driver status

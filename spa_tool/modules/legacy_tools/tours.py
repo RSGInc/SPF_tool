@@ -139,8 +139,10 @@ class Tour:
     def _calc_tour_mode(self):
         TRANSIT_MODES = self.constants.get("TRANSIT_MODES")
         TRIP_MODE = self.constants.get("TRIP_MODE")
+
+        # List is used for potential grouping implementation
         TOUR_MODE = self.constants.get("TOUR_MODE")
-        TOUR_MODE = {k: v if isinstance(v, list) else [v] for k, v in TOUR_MODE.items()}
+        # TOUR_MODE = {k: v if isinstance(v, list) else [v] for k, v in self.constants.get("TOUR_MODE").items()}
 
         TRIP_MODE_INVERSE = {v: k for k, v in TRIP_MODE.items()}
         TRANSIT_MODE_NAMES = [TRIP_MODE_INVERSE[x] for x in TRANSIT_MODES]
@@ -159,13 +161,14 @@ class Tour:
 
         # If still multiple modes, choose longest. If tie, choose first
         if len(_modes_used) > 1:
-            _tour_mode = [trip_df[trip_df.DIST == trip_df.DIST.max()].iloc[0].TRIPMODE]
+            _tour_mode = [trip_df[trip_df.DIST == trip_df.DIST.max()].iloc[0].TRIPMODE.astype(int)]
             # _tour_mode = [k for k, v in TRIP_MODE.items() if v == _new_mode]
         else:
             _tour_mode = list(_modes_used)
 
         assert len(_tour_mode) == 1, "Multiple matching modes!"
-        _new_mode = _tour_mode[0]
+
+        _tour_mode = _tour_mode[0]
 
         return _tour_mode
 

@@ -34,7 +34,7 @@ The easiest installation is to clone this repo and create your spa_tool conda en
 
 ### Usage
 
-The SPA Tool 2.0 is now a command line program with flagged arguments specifying necessary directory locations, following a usage structure similar to ActivitySim and PopulationSim. The command line provides a single point of entry to the SPA Tool "pipeline":
+The SPF is now a command line program with flagged arguments specifying necessary directory locations, following a usage structure similar to ActivitySim and PopulationSim. The command line provides a single point of entry to the SPA Tool "pipeline":
 
 `python spa_tool -c configs -d data`
 
@@ -69,7 +69,7 @@ SPATool_Project
 ### Architecture
 In the past, the SPA Tool was a standalone tool in which data must be pre- and post-processed as it enters and leaves the SPA Tool, typically using separate one-off processing scripts written in _R_. Another major obstacle is that the SPA Tool requires a "place" table, but travel surveys often only include a trips table. This introduced yet another pre-processing script to the workflow. 
 
-The SPA Tool 2.0 is structured around a basic stepped "module" workflow structure. In the settings file, users specify all required processing steps in a sequence. For example:  
+The SPF is structured around a basic stepped "module" workflow structure. In the settings file, users specify all required processing steps in a sequence. For example:  
 
 ```
 PROCESSING_STEPS:
@@ -148,7 +148,7 @@ PROCESSING_STEPS:
           
 ```
 
-This runs the ExpressionPreProcess step, then the TripsToPlace step, then finally runs the SPAToolModule. Each one of these steps, called "modules" are a python class which are based on the base module structure in `spa_tool/core/modules.SPAModelBase`. 
+This runs the ExpressionPreProcess step, then the TripsToPlace step, then finally runs the SPAToolModule. Each one of these steps, called "modules" are a python class which are based on the base module structure in `spa_tool/core/base.BaseModule` class. 
 
 Each module step has the following parameters:
 ```
@@ -172,13 +172,17 @@ Pipeline modules have a few requirements:
 3. They must inherit the base module.
 4. They must pass the `namespace` and `**kwargs` (your parameters) to the base module with `super().__init__(namespace, **kwargs)`
 
-The class module structure ensures that objects are cleanly handled in the pipeline and a function in one module does not affect a function in another module. It also enables inheritance, which is a useful feature of Python. By inheriting the base module, you do not need to rewrite all the basic functions such as reading arguments, config files, and input data. Instead this is all provided by the base module so you can focus on your module, remember keep it DRY (Don't repeat yourself)!
+The class module structure ensures that objects are cleanly handled in the pipeline and a function in one module does not affect a function in another module. It also enables inheritance, which is a useful feature of Python. By inheriting the base module, you do not need to rewrite all the basic functions such as reading arguments, config files, and input data. This is all provided by the base module, so you can focus on your module instead, remember keep it DRY (Don't repeat yourself)!
 
-Strictly speaking, you technically don't need to inherit the base or pass the arguments, but then your module would be isolated and not interact with the processing pipeline. Which kind of defeeats the point of everything. 
+Strictly speaking, you technically don't need to inherit the base or pass the arguments, but then your module would be isolated and not interact with the processing pipeline. Which kind of defeats the point of everything. 
 
-To create a new pipeline module, start by creating a new python file (e.g., new_module.py) in the `spa_tool/modules` folder and create your module's python class object and inherit the "BaseModule" into it. An example custom module could be something like this:
+To create a new pipeline module, start by creating a new module folder with requisite `__init__.py` python file and create your module in this folder (e.g., new_module.py) in the `spa_tool/modules` folder and create your module's python class object and inherit the "BaseModule" into it. An example custom module could be something like this:
 
 ```
+"""
+This module is located in framework/modules/new_module/new_module.py
+"""
+
 from spa_tool.core.base import BaseModule
 
 class CustomModuleTemplate(base.BaseModule):

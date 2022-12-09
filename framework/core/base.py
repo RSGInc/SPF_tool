@@ -5,14 +5,14 @@
 ##################################################################
 
 import os
-from core import functions
+from core import utils
 
 
 class BaseModule:
     def __init__(self, namespace, **kwargs):
         self.namespace = self.check_namespace(namespace)
         self.kwargs = self.update_kwargs(**kwargs)
-        self.input_tables = functions.load_pipeline_tables(self.kwargs)
+        self.input_tables = utils.load_pipeline_tables(self.kwargs)
 
     def check_namespace(self, namespace):
         assert namespace.configs, 'Missing required argument "-c configs"'
@@ -36,7 +36,7 @@ class BaseModule:
             settings_file = os.path.join(self.namespace.configs, "settings.yaml")
             kwargs = {
                 **kwargs,
-                **functions.read_config(settings_file)
+                **utils.read_config(settings_file)
                 .get("PROCESSING_STEPS")
                 .get(self.__class__.__name__),
             }
@@ -52,11 +52,11 @@ class BaseModule:
                 continue
             for file_name, file_params in kwargs.get(spec).items():
                 if isinstance(file_params, dict):
-                    file_params["file"] = functions.find_source_root(
+                    file_params["file"] = utils.find_source_root(
                         file_params["file"], namespace_map[spec]
                     )
                 else:
-                    file_params = functions.find_source_root(
+                    file_params = utils.find_source_root(
                         file_params, namespace_map[spec]
                     )
                 kwargs[spec][file_name] = file_params

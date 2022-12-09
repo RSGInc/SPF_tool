@@ -1,8 +1,8 @@
 import pandas as pd
 import numpy as np
 import os
-from core.functions import defaultdict, add_quote_char
-from modules.legacy_tools.tours import Tour
+from core.utils import defaultdict, add_quote_char
+from modules.legacy_spa.tours import Tour
 
 PERSON_COLUMNS = pd.read_csv(os.path.join(os.path.dirname(__file__), 'static/person_columns.csv'),
                              index_col="key", names=["key", "name"], header=None).name.to_dict()

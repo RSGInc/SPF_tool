@@ -382,7 +382,7 @@ perday$YCORD     <- per$YCORD[match(perday$SAMPN*100+perday$PERNO, per$SAMPN*100
 perday$HDISTRICT <- per$HDISTRICT[match(perday$SAMPN*100+perday$PERNO, per$SAMPN*100+per$PERNO)]
 perday$WDISTRICT <- per$WDISTRICT[match(perday$SAMPN*100+perday$PERNO, per$SAMPN*100+per$PERNO)]
 
-##### --------Compute Summary Statistics------- ####
+#### Compute Summary Statistics ####
 
 # Define other variables
 pertypeCodes = with(codebook_categories[grepl('Person type', Description)],
@@ -1032,6 +1032,7 @@ fwrite(stopFreqModel_summary, file.path(outdir, "stopFreqModel_summary.csv"), ro
 # end of the part added by nagendra.dhakar@rsginc.com
 
 #---------------------------------------------------------------------------------														  
+# tours[TOURPURP == 1 & IS_SUBTOUR == 0, .N, by=.(HH_ID, PER_ID, DAYNO)]
 
 workCounts <- count(tours, c( "HH_ID", "PER_ID", "DAYNO"), "TOURPURP == 1 & IS_SUBTOUR == 0") #[excluding at work subtours]. joint work tours should be considered individual mandatory tours
 atWorkCounts <- count(tours, c("HH_ID", "PER_ID", "DAYNO"), "(TOURPURP == 20 & IS_SUBTOUR == 1)") #include joint work-subtours as individual subtours
@@ -1755,28 +1756,28 @@ fwrite(tourDistProfile, file.path(outdir, "tourDistProfile.csv"))
 #
 
 tmode1_as0 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP==1 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==0],
-                       breaks = seq(1,14, by=1), freq = NULL, right=FALSE,
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE,
                        weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP==1 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==0])
 tmode2_as0 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP==2 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==0],
-                       breaks = seq(1,14, by=1), freq = NULL, right=FALSE, 
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE, 
                        weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP==2 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==0])
 tmode3_as0 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP==3 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==0],
-                       breaks = seq(1,14, by=1), freq = NULL, right=FALSE, 
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE, 
                        weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP==3 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==0])
 tmode4_as0 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP>=4 & tours$TOURPURP<=6 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==0],
-                       breaks = seq(1,14, by=1), freq = NULL, right=FALSE, 
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE, 
                        weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP>=4 & tours$TOURPURP<=6 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==0])
 tmode5_as0 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP>=7 & tours$TOURPURP<=9 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==0],
-                       breaks = seq(1,14, by=1), freq = NULL, right=FALSE, 
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE, 
                        weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP>=7 & tours$TOURPURP<=9 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==0])
 tmode6_as0 <- wtd.hist(jtours$TOURMODE[jtours$JOINT_PURP>=4 & jtours$JOINT_PURP<=6 & jtours$AUTOSUFF==0], 
-                       breaks = seq(1,14, by=1), freq = NULL, right=FALSE, 
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE, 
                        weight = jtours$finalweight[jtours$JOINT_PURP>=4 & jtours$JOINT_PURP<=6 & jtours$AUTOSUFF==0])
 tmode7_as0 <- wtd.hist(jtours$TOURMODE[jtours$JOINT_PURP>=7 & jtours$JOINT_PURP<=9 & jtours$AUTOSUFF==0],
-                       breaks = seq(1,14, by=1), freq = NULL, right=FALSE,
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE,
                        weight = jtours$finalweight[jtours$JOINT_PURP>=7 & jtours$JOINT_PURP<=9 & jtours$AUTOSUFF==0])
 tmode8_as0 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$IS_SUBTOUR==1 & tours$AUTOSUFF==0 & tours$FULLY_JOINT==0],
-                       breaks = seq(1,14, by=1), freq = NULL, right=FALSE,
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE,
                        weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$IS_SUBTOUR==1 & tours$AUTOSUFF==0 & tours$FULLY_JOINT==0])
 
 tmodeAS0Profile <- data.frame(tmode1_as0$counts, tmode2_as0$counts, tmode3_as0$counts, tmode4_as0$counts,
@@ -1804,14 +1805,30 @@ tmodeAS0Profile_vis <- tmodeAS0Profile_vis[tmodeAS0Profile_vis$id!="Sum",]
 tmodeAS0Profile_vis$purpose[tmodeAS0Profile_vis$purpose=="Sum"] <- "Total"
 
 
-tmode1_as1 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP==1 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==1], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP==1 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==1])
-tmode2_as1 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP==2 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==1], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP==2 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==1])
-tmode3_as1 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP==3 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==1], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP==3 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==1])
-tmode4_as1 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP>=4 & tours$TOURPURP<=6 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==1], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP>=4 & tours$TOURPURP<=6 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==1])
-tmode5_as1 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP>=7 & tours$TOURPURP<=9 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==1], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP>=7 & tours$TOURPURP<=9 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==1])
-tmode6_as1 <- wtd.hist(jtours$TOURMODE[jtours$JOINT_PURP>=4 & jtours$JOINT_PURP<=6 & jtours$AUTOSUFF==1], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = jtours$finalweight[jtours$JOINT_PURP>=4 & jtours$JOINT_PURP<=6 & jtours$AUTOSUFF==1])
-tmode7_as1 <- wtd.hist(jtours$TOURMODE[jtours$JOINT_PURP>=7 & jtours$JOINT_PURP<=9 & jtours$AUTOSUFF==1], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = jtours$finalweight[jtours$JOINT_PURP>=7 & jtours$JOINT_PURP<=9 & jtours$AUTOSUFF==1])
-tmode8_as1 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$IS_SUBTOUR==1 & tours$AUTOSUFF==1 & tours$FULLY_JOINT==0], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$IS_SUBTOUR==1 & tours$AUTOSUFF==1 & tours$FULLY_JOINT==0])
+tmode1_as1 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP==1 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==1],
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE, 
+                       weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP==1 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==1])
+tmode2_as1 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP==2 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==1],
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE, 
+                       weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP==2 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==1])
+tmode3_as1 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP==3 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==1],
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE, 
+                       weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP==3 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==1])
+tmode4_as1 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP>=4 & tours$TOURPURP<=6 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==1],
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE, 
+                       weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP>=4 & tours$TOURPURP<=6 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==1])
+tmode5_as1 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP>=7 & tours$TOURPURP<=9 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==1],
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE, 
+                       weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP>=7 & tours$TOURPURP<=9 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==1])
+tmode6_as1 <- wtd.hist(jtours$TOURMODE[jtours$JOINT_PURP>=4 & jtours$JOINT_PURP<=6 & jtours$AUTOSUFF==1],
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE, 
+                       weight = jtours$finalweight[jtours$JOINT_PURP>=4 & jtours$JOINT_PURP<=6 & jtours$AUTOSUFF==1])
+tmode7_as1 <- wtd.hist(jtours$TOURMODE[jtours$JOINT_PURP>=7 & jtours$JOINT_PURP<=9 & jtours$AUTOSUFF==1],
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE, 
+                       weight = jtours$finalweight[jtours$JOINT_PURP>=7 & jtours$JOINT_PURP<=9 & jtours$AUTOSUFF==1])
+tmode8_as1 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$IS_SUBTOUR==1 & tours$AUTOSUFF==1 & tours$FULLY_JOINT==0],
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE,
+                       weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$IS_SUBTOUR==1 & tours$AUTOSUFF==1 & tours$FULLY_JOINT==0])
 
 tmodeAS1Profile <- data.frame(tmode1_as1$counts, tmode2_as1$counts, tmode3_as1$counts, tmode4_as1$counts,
                               tmode5_as1$counts, tmode6_as1$counts, tmode7_as1$counts, tmode8_as1$counts)
@@ -1837,14 +1854,31 @@ tmodeAS1Profile_vis$purpose <- as.character(tmodeAS1Profile_vis$purpose)
 tmodeAS1Profile_vis <- tmodeAS1Profile_vis[tmodeAS1Profile_vis$id!="Sum",]
 tmodeAS1Profile_vis$purpose[tmodeAS1Profile_vis$purpose=="Sum"] <- "Total"
 
-tmode1_as2 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP==1 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==2], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP==1 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==2])
-tmode2_as2 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP==2 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==2], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP==2 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==2])
-tmode3_as2 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP==3 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==2], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP==3 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==2])
-tmode4_as2 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP>=4 & tours$TOURPURP<=6 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==2], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP>=4 & tours$TOURPURP<=6 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==2])
-tmode5_as2 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP>=7 & tours$TOURPURP<=9 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==2], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP>=7 & tours$TOURPURP<=9 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==2])
-tmode6_as2 <- wtd.hist(jtours$TOURMODE[jtours$JOINT_PURP>=4 & jtours$JOINT_PURP<=6 & jtours$AUTOSUFF==2], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = jtours$finalweight[jtours$JOINT_PURP>=4 & jtours$JOINT_PURP<=6 & jtours$AUTOSUFF==2])
-tmode7_as2 <- wtd.hist(jtours$TOURMODE[jtours$JOINT_PURP>=7 & jtours$JOINT_PURP<=9 & jtours$AUTOSUFF==2], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = jtours$finalweight[jtours$JOINT_PURP>=7 & jtours$JOINT_PURP<=9 & jtours$AUTOSUFF==2])
-tmode8_as2 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$IS_SUBTOUR==1 & tours$AUTOSUFF==2 & tours$FULLY_JOINT==0], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$IS_SUBTOUR==1 & tours$AUTOSUFF==2 & tours$FULLY_JOINT==0])
+
+tmode1_as2 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP==1 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==2],
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE,
+                       weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP==1 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==2])
+tmode2_as2 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP==2 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==2],
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE, 
+                       weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP==2 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==2])
+tmode3_as2 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP==3 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==2],
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE, 
+                       weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP==3 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==2])
+tmode4_as2 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP>=4 & tours$TOURPURP<=6 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==2],
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE, 
+                       weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP>=4 & tours$TOURPURP<=6 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==2])
+tmode5_as2 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$TOURPURP>=7 & tours$TOURPURP<=9 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==2], 
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE, 
+                       weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$TOURPURP>=7 & tours$TOURPURP<=9 & tours$FULLY_JOINT==0 & tours$AUTOSUFF==2])
+tmode6_as2 <- wtd.hist(jtours$TOURMODE[jtours$JOINT_PURP>=4 & jtours$JOINT_PURP<=6 & jtours$AUTOSUFF==2],
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE, 
+                       weight = jtours$finalweight[jtours$JOINT_PURP>=4 & jtours$JOINT_PURP<=6 & jtours$AUTOSUFF==2])
+tmode7_as2 <- wtd.hist(jtours$TOURMODE[jtours$JOINT_PURP>=7 & jtours$JOINT_PURP<=9 & jtours$AUTOSUFF==2],
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE, 
+                       weight = jtours$finalweight[jtours$JOINT_PURP>=7 & jtours$JOINT_PURP<=9 & jtours$AUTOSUFF==2])
+tmode8_as2 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$IS_SUBTOUR==1 & tours$AUTOSUFF==2 & tours$FULLY_JOINT==0],
+                       breaks = seq(1,15, by=1), freq = NULL, right=FALSE,
+                       weight = tours$finalweight[!is.na(tours$TOURMODE) & tours$IS_SUBTOUR==1 & tours$AUTOSUFF==2 & tours$FULLY_JOINT==0])
 
 tmodeAS2Profile <- data.frame(tmode1_as2$counts, tmode2_as2$counts, tmode3_as2$counts, tmode4_as2$counts,
                               tmode5_as2$counts, tmode6_as2$counts, tmode7_as2$counts, tmode8_as2$counts)
@@ -1872,14 +1906,17 @@ tmodeAS2Profile_vis$purpose[tmodeAS2Profile_vis$purpose=="Sum"] <- "Total"
 
 
 # Combine three AS groups
-tmodeProfile_vis <- data.frame(tmodeAS0Profile_vis, tmodeAS1Profile_vis$freq_as1, tmodeAS2Profile_vis$freq_as2)
+tmodeProfile_vis <- data.frame(tmodeAS0Profile_vis,
+                               tmodeAS1Profile_vis$freq_as1, 
+                               tmodeAS2Profile_vis$freq_as2)
+
+
 colnames(tmodeProfile_vis) <- c("id", "purpose", "freq_as0", "freq_as1", "freq_as2")
 tmodeProfile_vis$freq_all <- tmodeProfile_vis$freq_as0 + tmodeProfile_vis$freq_as1 + tmodeProfile_vis$freq_as2
 fwrite(tmodeProfile_vis, file.path(outdir, "tmodeProfile_vis.csv"), row.names = F)
 
 
-###########
-#tour mode by time period - for Wu, Sun
+#### tour mode by time period - for Wu, Sun ####
 #calculate time of day
 #tours$tod <- 5 # EA: 3 am - 6 am
 #tours$tod <- ifelse(tours$PRIMDEST_ARRIVE_BIN>=4 & tours$PRIMDEST_ARRIVE_BIN<=9, 1, tours$tod)   # AM: 6 am - 9 am
@@ -1961,17 +1998,21 @@ jtours_summary_op <- aggregate(num_tours~tod+JOINT_PURP+TOURMODE+AUTOSUFF, data=
 fwrite(itours_summary_op, file.path(outdir, "itours_tourmode_summary_op.csv"), row.names = F)
 fwrite(jtours_summary_op, file.path(outdir, "jtours_tourmode_summary_op.csv"), row.names = F)
 
-###########
-
-# Non-mandatory tour distance profile
-tourdist4 <- wtd.hist(tours$SKIMDIST[tours$TOURPURP==4 & tours$FULLY_JOINT==0], breaks = c(seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP==4 & tours$FULLY_JOINT==0])
+#### Non-mandatory tour distance profile ####
+# tourdist4 <- wtd.hist(tours$SKIMDIST[tours$TOURPURP==4 & tours$FULLY_JOINT==0], breaks = c(seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP==4 & tours$FULLY_JOINT==0])
 tourdisti56 <- wtd.hist(tours$SKIMDIST[tours$TOURPURP>=5 & tours$TOURPURP<=6 & tours$FULLY_JOINT==0], breaks = c(seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP>=5 & tours$TOURPURP<=6 & tours$FULLY_JOINT==0])
 tourdisti789 <- wtd.hist(tours$SKIMDIST[tours$TOURPURP>=7 & tours$TOURPURP<=9 & tours$FULLY_JOINT==0], breaks = c(seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP>=7 & tours$TOURPURP<=9 & tours$FULLY_JOINT==0])
 tourdistj56 <- wtd.hist(jtours$SKIMDIST[jtours$JOINT_PURP>=5 & jtours$JOINT_PURP<=6], breaks = c(seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = jtours$finalweight[jtours$JOINT_PURP>=5 & jtours$JOINT_PURP<=6])
 tourdistj789 <- wtd.hist(jtours$SKIMDIST[jtours$JOINT_PURP>=7 & jtours$JOINT_PURP<=9], breaks = c(seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = jtours$finalweight[jtours$JOINT_PURP>=7 & jtours$JOINT_PURP<=9])
 tourdist10 <- wtd.hist(tours$SKIMDIST[tours$IS_SUBTOUR == 1], breaks = c(seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$IS_SUBTOUR == 1])
 
-tourDistProfile <- data.frame(tourdist4$counts, tourdisti56$counts, tourdisti789$counts, tourdistj56$counts, tourdistj789$counts, tourdist10$counts)
+tourDistProfile <- data.frame(# tourdist4$counts,
+                              0*tourdisti56$counts,
+                              tourdisti56$counts,
+                              tourdisti789$counts,
+                              tourdistj56$counts,
+                              tourdistj789$counts, 
+                              tourdist10$counts)
 colnames(tourDistProfile) <- c("esco", "imain", "idisc", "jmain", "jdisc", "atwork")
 fwrite(tourDistProfile, file.path(outdir, "nonMandTourDistProfile.csv"))
 
@@ -2002,7 +2043,7 @@ cat("\n Average Tour Distance [jmain]: ", weighted.mean(jtours$SKIMDIST[jtours$J
 cat("\n Average Tour Distance [jdisc]: ", weighted.mean(jtours$SKIMDIST[jtours$JOINT_PURP>=7 & jtours$JOINT_PURP<=9], jtours$finalweight[jtours$JOINT_PURP>=7 & jtours$JOINT_PURP<=9], na.rm = TRUE))
 cat("\n Average Tour Distance [atwork]: ", weighted.mean(tours$SKIMDIST[tours$IS_SUBTOUR == 1], tours$finalweight[tours$IS_SUBTOUR == 1], na.rm = TRUE))
 
-## Output average trips lengths for visualizer
+#### Output average trips lengths for visualizer ####
 
 avgTripLengths <- c(weighted.mean(tours$SKIMDIST[tours$TOURPURP==4 & tours$FULLY_JOINT==0], tours$finalweight[tours$TOURPURP==4 & tours$FULLY_JOINT==0], na.rm = TRUE),
                     weighted.mean(tours$SKIMDIST[tours$TOURPURP>=5 & tours$TOURPURP<=6 & tours$FULLY_JOINT==0], tours$finalweight[tours$TOURPURP>=5 & tours$TOURPURP<=6 & tours$FULLY_JOINT==0], na.rm = TRUE),
@@ -2026,24 +2067,29 @@ nonMandTripLengths <- data.frame(purpose = nonMandTourPurpose, avgTripLength = a
 
 fwrite(nonMandTripLengths, file.path(outdir, "nonMandTripLengths.csv"), row.names = F)
 
-# STop Frequency
+#### STop Frequency ####
 #Outbound
 stopfreq1 <- wtd.hist(tours$OUTBOUND_STOPS[tours$TOURPURP==1 & tours$FULLY_JOINT==0], breaks = c(seq(0,3, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP==1 & tours$FULLY_JOINT==0])
 stopfreq2 <- wtd.hist(tours$OUTBOUND_STOPS[tours$TOURPURP==2 & tours$FULLY_JOINT==0], breaks = c(seq(0,3, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP==2 & tours$FULLY_JOINT==0])
 stopfreq3 <- wtd.hist(tours$OUTBOUND_STOPS[tours$TOURPURP==3 & tours$FULLY_JOINT==0], breaks = c(seq(0,3, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP==3 & tours$FULLY_JOINT==0])
-stopfreq4 <- wtd.hist(tours$OUTBOUND_STOPS[tours$TOURPURP==4 & tours$FULLY_JOINT==0], breaks = c(seq(0,3, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP==4 & tours$FULLY_JOINT==0])
+# stopfreq4 <- wtd.hist(tours$OUTBOUND_STOPS[tours$TOURPURP==4 & tours$FULLY_JOINT==0], breaks = c(seq(0,3, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP==4 & tours$FULLY_JOINT==0])
 stopfreqi56 <- wtd.hist(tours$OUTBOUND_STOPS[tours$TOURPURP>=5 & tours$TOURPURP<=6 & tours$FULLY_JOINT==0], breaks = c(seq(0,3, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP>=5 & tours$TOURPURP<=6 & tours$FULLY_JOINT==0])
 stopfreqi789 <- wtd.hist(tours$OUTBOUND_STOPS[tours$TOURPURP>=7 & tours$TOURPURP<=9 & tours$FULLY_JOINT==0], breaks = c(seq(0,3, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP>=7 & tours$TOURPURP<=9 & tours$FULLY_JOINT==0])
 stopfreqj56 <- wtd.hist(jtours$OUTBOUND_STOPS[jtours$JOINT_PURP>=5 & jtours$JOINT_PURP<=6], breaks = c(seq(0,3, by=1), 9999), freq = NULL, right=FALSE, weight = jtours$finalweight[jtours$JOINT_PURP>=5 & jtours$JOINT_PURP<=6])
 stopfreqj789 <- wtd.hist(jtours$OUTBOUND_STOPS[jtours$JOINT_PURP>=7 & jtours$JOINT_PURP<=9], breaks = c(seq(0,3, by=1), 9999), freq = NULL, right=FALSE, weight = jtours$finalweight[jtours$JOINT_PURP>=7 & jtours$JOINT_PURP<=9])
 stopfreq10 <- wtd.hist(tours$OUTBOUND_STOPS[tours$IS_SUBTOUR == 1], breaks = c(seq(0,3, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$IS_SUBTOUR == 1])
 
-stopFreq <- data.frame(stopfreq1$counts, stopfreq2$counts, stopfreq3$counts, stopfreq4$counts, stopfreqi56$counts
+stopFreq <- data.frame(stopfreq1$counts,
+                       stopfreq2$counts, 
+                       stopfreq3$counts,
+                       stopfreq3$counts*0,
+                       # stopfreq4$counts,
+                       stopfreqi56$counts
                           , stopfreqi789$counts, stopfreqj56$counts, stopfreqj789$counts, stopfreq10$counts)
 colnames(stopFreq) <- c("work", "univ", "sch", "esco","imain", "idisc", "jmain", "jdisc", "atwork")
 fwrite(stopFreq, file.path(outdir, "stopFreqOutProfile.csv"))
 
-# prepare stop frequency input for visualizer
+#### prepare stop frequency input for visualizer ####
 stopFreqout_vis <- stopFreq
 stopFreqout_vis$id <- row.names(stopFreqout_vis)
 stopFreqout_vis <- melt(stopFreqout_vis, id = c("id"))
@@ -2065,15 +2111,23 @@ stopFreqout_vis$purpose[stopFreqout_vis$purpose=="Sum"] <- "Total"
 stopfreq1 <- wtd.hist(tours$INBOUND_STOPS[tours$TOURPURP==1 & tours$FULLY_JOINT==0], breaks = c(seq(0,3, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP==1 & tours$FULLY_JOINT==0])
 stopfreq2 <- wtd.hist(tours$INBOUND_STOPS[tours$TOURPURP==2 & tours$FULLY_JOINT==0], breaks = c(seq(0,3, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP==2 & tours$FULLY_JOINT==0])
 stopfreq3 <- wtd.hist(tours$INBOUND_STOPS[tours$TOURPURP==3 & tours$FULLY_JOINT==0], breaks = c(seq(0,3, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP==3 & tours$FULLY_JOINT==0])
-stopfreq4 <- wtd.hist(tours$INBOUND_STOPS[tours$TOURPURP==4 & tours$FULLY_JOINT==0], breaks = c(seq(0,3, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP==4 & tours$FULLY_JOINT==0])
+# stopfreq4 <- wtd.hist(tours$INBOUND_STOPS[tours$TOURPURP==4 & tours$FULLY_JOINT==0], breaks = c(seq(0,3, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP==4 & tours$FULLY_JOINT==0])
 stopfreqi56 <- wtd.hist(tours$INBOUND_STOPS[tours$TOURPURP>=5 & tours$TOURPURP<=6 & tours$FULLY_JOINT==0], breaks = c(seq(0,3, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP>=5 & tours$TOURPURP<=6 & tours$FULLY_JOINT==0])
 stopfreqi789 <- wtd.hist(tours$INBOUND_STOPS[tours$TOURPURP>=7 & tours$TOURPURP<=9 & tours$FULLY_JOINT==0], breaks = c(seq(0,3, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP>=7 & tours$TOURPURP<=9 & tours$FULLY_JOINT==0])
 stopfreqj56 <- wtd.hist(jtours$INBOUND_STOPS[jtours$JOINT_PURP>=5 & jtours$JOINT_PURP<=6], breaks = c(seq(0,3, by=1), 9999), freq = NULL, right=FALSE, weight = jtours$finalweight[jtours$JOINT_PURP>=5 & jtours$JOINT_PURP<=6])
 stopfreqj789 <- wtd.hist(jtours$INBOUND_STOPS[jtours$JOINT_PURP>=7 & jtours$JOINT_PURP<=9], breaks = c(seq(0,3, by=1), 9999), freq = NULL, right=FALSE, weight = jtours$finalweight[jtours$JOINT_PURP>=7 & jtours$JOINT_PURP<=9])
 stopfreq10 <- wtd.hist(tours$INBOUND_STOPS[tours$IS_SUBTOUR == 1], breaks = c(seq(0,3, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$IS_SUBTOUR == 1])
 
-stopFreq <- data.frame(stopfreq1$counts, stopfreq2$counts, stopfreq3$counts, stopfreq4$counts, stopfreqi56$counts
-                       , stopfreqi789$counts, stopfreqj56$counts, stopfreqj789$counts, stopfreq10$counts)
+stopFreq <- data.frame(stopfreq1$counts,
+                       stopfreq2$counts, 
+                       stopfreq3$counts, 
+                       # stopfreq4$counts,
+                       stopfreq3$counts*0,
+                       stopfreqi56$counts, 
+                       stopfreqi789$counts,
+                       stopfreqj56$counts, 
+                       stopfreqj789$counts,
+                       stopfreq10$counts)
 colnames(stopFreq) <- c("work", "univ", "sch", "esco","imain", "idisc", "jmain", "jdisc", "atwork")
 fwrite(stopFreq, file.path(outdir, "stopFreqInbProfile.csv"))
 
@@ -2104,15 +2158,23 @@ fwrite(stopfreqDir_vis, file.path(outdir, "stopfreqDir_vis.csv"), row.names = F)
 stopfreq1 <- wtd.hist(tours$TOTAL_STOPS[tours$TOURPURP==1 & tours$FULLY_JOINT==0], breaks = c(seq(0,6, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP==1 & tours$FULLY_JOINT==0])
 stopfreq2 <- wtd.hist(tours$TOTAL_STOPS[tours$TOURPURP==2 & tours$FULLY_JOINT==0], breaks = c(seq(0,6, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP==2 & tours$FULLY_JOINT==0])
 stopfreq3 <- wtd.hist(tours$TOTAL_STOPS[tours$TOURPURP==3 & tours$FULLY_JOINT==0], breaks = c(seq(0,6, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP==3 & tours$FULLY_JOINT==0])
-stopfreq4 <- wtd.hist(tours$TOTAL_STOPS[tours$TOURPURP==4 & tours$FULLY_JOINT==0], breaks = c(seq(0,6, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP==4 & tours$FULLY_JOINT==0])
+# stopfreq4 <- wtd.hist(tours$TOTAL_STOPS[tours$TOURPURP==4 & tours$FULLY_JOINT==0], breaks = c(seq(0,6, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP==4 & tours$FULLY_JOINT==0])
 stopfreqi56 <- wtd.hist(tours$TOTAL_STOPS[tours$TOURPURP>=5 & tours$TOURPURP<=6 & tours$FULLY_JOINT==0], breaks = c(seq(0,6, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP>=5 & tours$TOURPURP<=6 & tours$FULLY_JOINT==0])
 stopfreqi789 <- wtd.hist(tours$TOTAL_STOPS[tours$TOURPURP>=7 & tours$TOURPURP<=9 & tours$FULLY_JOINT==0], breaks = c(seq(0,6, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$TOURPURP>=7 & tours$TOURPURP<=9 & tours$FULLY_JOINT==0])
 stopfreqj56 <- wtd.hist(jtours$TOTAL_STOPS[jtours$JOINT_PURP>=5 & jtours$JOINT_PURP<=6], breaks = c(seq(0,6, by=1), 9999), freq = NULL, right=FALSE, weight = jtours$finalweight[jtours$JOINT_PURP>=5 & jtours$JOINT_PURP<=6])
 stopfreqj789 <- wtd.hist(jtours$TOTAL_STOPS[jtours$JOINT_PURP>=7 & jtours$JOINT_PURP<=9], breaks = c(seq(0,6, by=1), 9999), freq = NULL, right=FALSE, weight = jtours$finalweight[jtours$JOINT_PURP>=7 & jtours$JOINT_PURP<=9])
 stopfreq10 <- wtd.hist(tours$TOTAL_STOPS[tours$IS_SUBTOUR == 1 & tours$FULLY_JOINT==0], breaks = c(seq(0,6, by=1), 9999), freq = NULL, right=FALSE, weight = tours$finalweight[tours$IS_SUBTOUR == 1 & tours$FULLY_JOINT==0])
 
-stopFreq <- data.frame(stopfreq1$counts, stopfreq2$counts, stopfreq3$counts, stopfreq4$counts, stopfreqi56$counts
-                       , stopfreqi789$counts, stopfreqj56$counts, stopfreqj789$counts, stopfreq10$counts)
+stopFreq <- data.frame(stopfreq1$counts,
+                       stopfreq2$counts,
+                       stopfreq3$counts,
+                       stopfreq3$counts*0,
+                       # stopfreq4$counts, 
+                       stopfreqi56$counts, 
+                       stopfreqi789$counts,
+                       stopfreqj56$counts, 
+                       stopfreqj789$counts,
+                       stopfreq10$counts)
 colnames(stopFreq) <- c("work", "univ", "sch", "esco","imain", "idisc", "jmain", "jdisc", "atwork")
 fwrite(stopFreq, file.path(outdir, "stopFreqTotProfile.csv"))
 
@@ -2135,19 +2197,26 @@ stopFreq_vis$purpose[stopFreq_vis$purpose=="Sum"] <- "Total"
 
 fwrite(stopFreq_vis, file.path(outdir, "stopfreq_total_vis.csv"), row.names = F)
 
-#Stop purpose X TourPurpose
+#### Stop purpose X TourPurpose ####
 stopfreq1 <- wtd.hist(stops$DEST_PURP[stops$TOURPURP==1 & stops$FULLY_JOINT==0], breaks = c(seq(1,10, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP==1 & stops$FULLY_JOINT==0])
 stopfreq2 <- wtd.hist(stops$DEST_PURP[stops$TOURPURP==2 & stops$FULLY_JOINT==0], breaks = c(seq(1,10, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP==2 & stops$FULLY_JOINT==0])
 stopfreq3 <- wtd.hist(stops$DEST_PURP[stops$TOURPURP==3 & stops$FULLY_JOINT==0], breaks = c(seq(1,10, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP==3 & stops$FULLY_JOINT==0])
-stopfreq4 <- wtd.hist(stops$DEST_PURP[stops$TOURPURP==4 & stops$FULLY_JOINT==0], breaks = c(seq(1,10, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP==4 & stops$FULLY_JOINT==0])
+# stopfreq4 <- wtd.hist(stops$DEST_PURP[stops$TOURPURP==4 & stops$FULLY_JOINT==0], breaks = c(seq(1,10, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP==4 & stops$FULLY_JOINT==0])
 stopfreqi56 <- wtd.hist(stops$DEST_PURP[stops$TOURPURP>=5 & stops$TOURPURP<=6 & stops$FULLY_JOINT==0], breaks = c(seq(1,10, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP>=5 & stops$TOURPURP<=6 & stops$FULLY_JOINT==0])
 stopfreqi789 <- wtd.hist(stops$DEST_PURP[stops$TOURPURP>=7 & stops$TOURPURP<=9 & stops$FULLY_JOINT==0], breaks = c(seq(1,10, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP>=7 & stops$TOURPURP<=9 & stops$FULLY_JOINT==0])
-stopfreqj56 <- wtd.hist(jstops$DEST_PURP[jstops$TOURPURP>=5 & jstops$TOURPURP<=6], breaks = c(seq(1,10, by=1), 9999), freq = NULL, right=FALSE, weight = jstops$finalweight[jstops$TOURPURP>=5 & jstops$TOURPURP<=6])
-stopfreqj789 <- wtd.hist(jstops$DEST_PURP[jstops$TOURPURP>=7 & jstops$TOURPURP<=9], breaks = c(seq(1,10, by=1), 9999), freq = NULL, right=FALSE, weight = jstops$finalweight[jstops$TOURPURP>=7 & jstops$TOURPURP<=9])
+# stopfreqj56 <- wtd.hist(jstops$DEST_PURP[jstops$TOURPURP>=5 & jstops$TOURPURP<=6], breaks = c(seq(1,10, by=1), 9999), freq = NULL, right=FALSE, weight = jstops$finalweight[jstops$TOURPURP>=5 & jstops$TOURPURP<=6])
+# stopfreqj789 <- wtd.hist(jstops$DEST_PURP[jstops$TOURPURP>=7 & jstops$TOURPURP<=9], breaks = c(seq(1,10, by=1), 9999), freq = NULL, right=FALSE, weight = jstops$finalweight[jstops$TOURPURP>=7 & jstops$TOURPURP<=9])
 stopfreq10 <- wtd.hist(stops$DEST_PURP[stops$SUBTOUR==1], breaks = c(seq(1,10, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$SUBTOUR==1])
 
-stopFreq <- data.frame(stopfreq1$counts, stopfreq2$counts, stopfreq3$counts, stopfreq4$counts, stopfreqi56$counts
-                       , stopfreqi789$counts, stopfreqj56$counts, stopfreqj789$counts, stopfreq10$counts)
+stopFreq <- data.frame(stopfreq1$counts,
+                       stopfreq2$counts,
+                       stopfreq3$counts,
+                       stopfreq3$counts*0, # stopfreq4$counts,
+                       stopfreq3$counts*0, # stopfreqi56$counts,
+                       stopfreqi789$counts,
+                       stopfreq3$counts*0, # stopfreqj56$counts
+                       stopfreq3$counts*0, # stopfreqj789$counts,
+                       stopfreq10$counts)
 colnames(stopFreq) <- c("work", "univ", "sch", "esco","imain", "idisc", "jmain", "jdisc", "atwork")
 fwrite(stopFreq, file.path(outdir, "stopPurposeByTourPurpose.csv"))
 
@@ -2174,15 +2243,25 @@ fwrite(stopFreq_vis, file.path(outdir, "stoppurpose_tourpurpose_vis.csv"), row.n
 stopfreq1 <- wtd.hist(stops$out_dir_dist[stops$TOURPURP==1 & stops$FULLY_JOINT==0], breaks = c(-9999,seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP==1 & stops$FULLY_JOINT==0])
 stopfreq2 <- wtd.hist(stops$out_dir_dist[stops$TOURPURP==2 & stops$FULLY_JOINT==0], breaks = c(-9999,seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP==2 & stops$FULLY_JOINT==0])
 stopfreq3 <- wtd.hist(stops$out_dir_dist[stops$TOURPURP==3 & stops$FULLY_JOINT==0], breaks = c(-9999,seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP==3 & stops$FULLY_JOINT==0])
-stopfreq4 <- wtd.hist(stops$out_dir_dist[stops$TOURPURP==4 & stops$FULLY_JOINT==0], breaks = c(-9999,seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP==4 & stops$FULLY_JOINT==0])
+# stopfreq4 <- wtd.hist(stops$out_dir_dist[stops$TOURPURP==4 & stops$FULLY_JOINT==0], breaks = c(-9999,seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP==4 & stops$FULLY_JOINT==0])
 stopfreqi56 <- wtd.hist(stops$out_dir_dist[stops$TOURPURP>=5 & stops$TOURPURP<=6 & stops$FULLY_JOINT==0], breaks = c(-9999,seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP>=5 & stops$TOURPURP<=6 & stops$FULLY_JOINT==0])
 stopfreqi789 <- wtd.hist(stops$out_dir_dist[stops$TOURPURP>=7 & stops$TOURPURP<=9 & stops$FULLY_JOINT==0], breaks = c(-9999,seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP>=7 & stops$TOURPURP<=9 & stops$FULLY_JOINT==0])
-stopfreqj56 <- wtd.hist(jstops$out_dir_dist[jstops$TOURPURP>=5 & jstops$TOURPURP<=6], breaks = c(-9999,seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = jstops$finalweight[jstops$TOURPURP>=5 & jstops$TOURPURP<=6])
-stopfreqj789 <- wtd.hist(jstops$out_dir_dist[jstops$TOURPURP>=7 & jstops$TOURPURP<=9], breaks = c(-9999,seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = jstops$finalweight[jstops$TOURPURP>=7 & jstops$TOURPURP<=9])
+# stopfreqj56 <- wtd.hist(jstops$out_dir_dist[jstops$TOURPURP>=5 & jstops$TOURPURP<=6], breaks = c(-9999,seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = jstops$finalweight[jstops$TOURPURP>=5 & jstops$TOURPURP<=6])
+# stopfreqj789 <- wtd.hist(jstops$out_dir_dist[jstops$TOURPURP>=7 & jstops$TOURPURP<=9], breaks = c(-9999,seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = jstops$finalweight[jstops$TOURPURP>=7 & jstops$TOURPURP<=9])
 stopfreq10 <- wtd.hist(stops$out_dir_dist[stops$SUBTOUR==1], breaks = c(-9999,seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$SUBTOUR==1])
 
-stopFreq <- data.frame(stopfreq1$counts, stopfreq2$counts, stopfreq3$counts, stopfreq4$counts, stopfreqi56$counts
-                       , stopfreqi789$counts, stopfreqj56$counts, stopfreqj789$counts, stopfreq10$counts)
+stopFreq <- data.frame(stopfreq1$counts,
+                       stopfreq2$counts,
+                       stopfreq3$counts, 
+                       stopfreq3$counts*0, 
+                       # stopfreq4$counts, 
+                       stopfreqi56$counts,
+                       stopfreqi789$counts,
+                       # stopfreqj56$counts,
+                       stopfreq3$counts*0,
+                       # stopfreqj789$counts,
+                       stopfreq3$counts*0,
+                       stopfreq10$counts)
 colnames(stopFreq) <- c("work", "univ", "sch", "esco","imain", "idisc", "jmain", "jdisc", "atwork")
 fwrite(stopFreq, file.path(outdir, "stopOutOfDirectionDC.csv"))
 
@@ -2204,9 +2283,9 @@ stopDC_vis <- stopDC_vis[stopDC_vis$distbin!="Sum",]
 stopDC_vis$PURPOSE[stopDC_vis$PURPOSE=="Sum"] <- "Total"
 stopDC_vis$distbin <- as.numeric(stopDC_vis$distbin)
 
-write.csv(stopDC_vis, "stopDC_vis.csv", row.names = F)
+fwrite(stopDC_vis, file.path(outdir, "stopDC_vis.csv"), row.names = F)
 
-# compute average out of dir distance for visualizer
+#### compute average out of dir distance for visualizer ####
 avgDistances <- c(weighted.mean(stops$out_dir_dist[stops$TOURPURP==1 & stops$FULLY_JOINT==0], weight = stops$finalweight[stops$TOURPURP==1 & stops$FULLY_JOINT==0], na.rm = TRUE),
                   weighted.mean(stops$out_dir_dist[stops$TOURPURP==2 & stops$FULLY_JOINT==0], weight = stops$finalweight[stops$TOURPURP==2 & stops$FULLY_JOINT==0], na.rm = TRUE),
                   weighted.mean(stops$out_dir_dist[stops$TOURPURP==3 & stops$FULLY_JOINT==0], weight = stops$finalweight[stops$TOURPURP==3 & stops$FULLY_JOINT==0], na.rm = TRUE),
@@ -2225,23 +2304,33 @@ avgStopOutofDirectionDist <- data.frame(purpose = purp, avgDist = avgDistances)
 fwrite(avgStopOutofDirectionDist, file.path(outdir, "avgStopOutofDirectionDist_vis.csv"), row.names = F)
 
 
-#Stop Departure Time
+#### Stop Departure Time ####
 stopfreq1 <- wtd.hist(stops$DEST_DEP_BIN[stops$TOURPURP==1 & stops$FULLY_JOINT==0], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP==1 & stops$FULLY_JOINT==0])
 stopfreq2 <- wtd.hist(stops$DEST_DEP_BIN[stops$TOURPURP==2 & stops$FULLY_JOINT==0], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP==2 & stops$FULLY_JOINT==0])
 stopfreq3 <- wtd.hist(stops$DEST_DEP_BIN[stops$TOURPURP==3 & stops$FULLY_JOINT==0], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP==3 & stops$FULLY_JOINT==0])
-stopfreq4 <- wtd.hist(stops$DEST_DEP_BIN[stops$TOURPURP==4 & stops$FULLY_JOINT==0], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP==4 & stops$FULLY_JOINT==0])
+# stopfreq4 <- wtd.hist(stops$DEST_DEP_BIN[stops$TOURPURP==4 & stops$FULLY_JOINT==0], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP==4 & stops$FULLY_JOINT==0])
 stopfreqi56 <- wtd.hist(stops$DEST_DEP_BIN[stops$TOURPURP>=5 & stops$TOURPURP<=6 & stops$FULLY_JOINT==0], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP>=5 & stops$TOURPURP<=6 & stops$FULLY_JOINT==0])
 stopfreqi789 <- wtd.hist(stops$DEST_DEP_BIN[stops$TOURPURP>=7 & stops$TOURPURP<=9 & stops$FULLY_JOINT==0], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP>=7 & stops$TOURPURP<=9 & stops$FULLY_JOINT==0])
-stopfreqj56 <- wtd.hist(jstops$DEST_DEP_BIN[jstops$TOURPURP>=5 & jstops$TOURPURP<=6], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = jstops$finalweight[jstops$TOURPURP>=5 & jstops$TOURPURP<=6])
-stopfreqj789 <- wtd.hist(jstops$DEST_DEP_BIN[jstops$TOURPURP>=7 & jstops$TOURPURP<=9], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = jstops$finalweight[jstops$TOURPURP>=7 & jstops$TOURPURP<=9])
+# stopfreqj56 <- wtd.hist(jstops$DEST_DEP_BIN[jstops$TOURPURP>=5 & jstops$TOURPURP<=6], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = jstops$finalweight[jstops$TOURPURP>=5 & jstops$TOURPURP<=6])
+# stopfreqj789 <- wtd.hist(jstops$DEST_DEP_BIN[jstops$TOURPURP>=7 & jstops$TOURPURP<=9], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = jstops$finalweight[jstops$TOURPURP>=7 & jstops$TOURPURP<=9])
 stopfreq10 <- wtd.hist(stops$DEST_DEP_BIN[stops$SUBTOUR==1], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$SUBTOUR==1])
 
-stopFreq <- data.frame(stopfreq1$counts, stopfreq2$counts, stopfreq3$counts, stopfreq4$counts, stopfreqi56$counts
-                       , stopfreqi789$counts, stopfreqj56$counts, stopfreqj789$counts, stopfreq10$counts)
+stopFreq <- data.frame(stopfreq1$counts, 
+                       stopfreq2$counts,
+                       stopfreq3$counts,
+                       # stopfreq4$counts,
+                       stopfreq3$counts*0,
+                       stopfreqi56$counts,
+                       stopfreqi789$counts,
+                       # stopfreqj56$counts,
+                       stopfreq3$counts*0,
+                       # stopfreqj789$counts, 
+                       stopfreq3$counts*0,
+                       stopfreq10$counts)
 colnames(stopFreq) <- c("work", "univ", "sch", "esco","imain", "idisc", "jmain", "jdisc", "atwork")
 fwrite(stopFreq, file.path(outdir, "stopDeparture.csv"))
 
-# prepare stop departure input for visualizer
+#### prepare stop departure input for visualizer ####
 stopDep_vis <- stopFreq
 stopDep_vis$id <- row.names(stopDep_vis)
 stopDep_vis <- melt(stopDep_vis, id = c("id"))
@@ -2264,19 +2353,23 @@ stopDep_vis$timebin <- as.numeric(stopDep_vis$timebin)
 stopfreq1 <- wtd.hist(trips$ORIG_DEP_BIN[trips$TOURPURP==1 & trips$FULLY_JOINT==0], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = trips$finalweight[trips$TOURPURP==1 & trips$FULLY_JOINT==0])
 stopfreq2 <- wtd.hist(trips$ORIG_DEP_BIN[trips$TOURPURP==2 & trips$FULLY_JOINT==0], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = trips$finalweight[trips$TOURPURP==2 & trips$FULLY_JOINT==0])
 stopfreq3 <- wtd.hist(trips$ORIG_DEP_BIN[trips$TOURPURP==3 & trips$FULLY_JOINT==0], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = trips$finalweight[trips$TOURPURP==3 & trips$FULLY_JOINT==0])
-stopfreq4 <- wtd.hist(trips$ORIG_DEP_BIN[trips$TOURPURP==4 & trips$FULLY_JOINT==0], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = trips$finalweight[trips$TOURPURP==4 & trips$FULLY_JOINT==0])
+# stopfreq4 <- wtd.hist(trips$ORIG_DEP_BIN[trips$TOURPURP==4 & trips$FULLY_JOINT==0], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = trips$finalweight[trips$TOURPURP==4 & trips$FULLY_JOINT==0])
 stopfreqi56 <- wtd.hist(trips$ORIG_DEP_BIN[trips$TOURPURP>=5 & trips$TOURPURP<=6 & trips$FULLY_JOINT==0], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = trips$finalweight[trips$TOURPURP>=5 & trips$TOURPURP<=6 & trips$FULLY_JOINT==0])
 stopfreqi789 <- wtd.hist(trips$ORIG_DEP_BIN[trips$TOURPURP>=7 & trips$TOURPURP<=9 & trips$FULLY_JOINT==0], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = trips$finalweight[trips$TOURPURP>=7 & trips$TOURPURP<=9 & trips$FULLY_JOINT==0])
 stopfreqj56 <- wtd.hist(jtrips$ORIG_DEP_BIN[jtrips$TOURPURP>=5 & jtrips$TOURPURP<=6], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = jtrips$finalweight[jtrips$TOURPURP>=5 & jtrips$TOURPURP<=6])
 stopfreqj789 <- wtd.hist(jtrips$ORIG_DEP_BIN[jtrips$TOURPURP>=7 & jtrips$TOURPURP<=9], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = jtrips$finalweight[jtrips$TOURPURP>=7 & jtrips$TOURPURP<=9])
 stopfreq10 <- wtd.hist(trips$ORIG_DEP_BIN[trips$SUBTOUR==1], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = trips$finalweight[trips$SUBTOUR==1])
 
-stopFreq <- data.frame(stopfreq1$counts, stopfreq2$counts, stopfreq3$counts, stopfreq4$counts, stopfreqi56$counts
+stopFreq <- data.frame(stopfreq1$counts, stopfreq2$counts, 
+                       stopfreq3$counts,
+                       stopfreq3$counts*0,
+                       # stopfreq4$counts, 
+                       stopfreqi56$counts
                        , stopfreqi789$counts, stopfreqj56$counts, stopfreqj789$counts, stopfreq10$counts)
 colnames(stopFreq) <- c("work", "univ", "sch", "esco","imain", "idisc", "jmain", "jdisc", "atwork")
 fwrite(stopFreq, file.path(outdir, "tripDeparture.csv"))
 
-# prepare stop departure input for visualizer
+#### prepare stop departure input for visualizer ####
 tripDep_vis <- stopFreq
 tripDep_vis$id <- row.names(tripDep_vis)
 tripDep_vis <- melt(tripDep_vis, id = c("id"))
@@ -2295,11 +2388,22 @@ tripDep_vis <- tripDep_vis[tripDep_vis$timebin!="Sum",]
 tripDep_vis$PURPOSE[tripDep_vis$PURPOSE=="Sum"] <- "Total"
 tripDep_vis$timebin <- as.numeric(tripDep_vis$timebin)
 
-stopTripDep_vis <- data.frame(stopDep_vis, tripDep_vis$freq)
+
+stopTripDep_vis <- merge(stopDep_vis, 
+                         tripDep_vis,
+                         by=c('timebin','PURPOSE'), 
+                         suffixes = c('_stop','_trip'),
+                         all=TRUE)
+
+# stopTripDep_vis <- data.frame(stopDep_vis[1:10,],
+#                               tripDep_vis[1:10,]$freq)
+stopTripDep_vis[is.na(stopTripDep_vis$freq_trip),'freq_trip'] <- 0
+
+
 colnames(stopTripDep_vis) <- c("timebin", "purpose", "freq_stop", "freq_trip")
 fwrite(stopTripDep_vis, file.path(outdir, "stopTripDep_vis.csv"), row.names = F)
 
-#Trip Mode Summary
+#### Trip Mode Summary ####
 
 #avg occupancy for SR3+ mode - for Joel (02/26/2019 - shared AV implementation meeting at SANDAG)
 # trips_sr3 <- trips[trips$TRIPMODE==3,]
@@ -2311,7 +2415,7 @@ fwrite(stopTripDep_vis, file.path(outdir, "stopTripDep_vis.csv"), row.names = F)
 #trips$TRIPMODE <- ifelse(trips$TRIPMODE==19, 3, trips$TRIPMODE)
 #trips$TOURMODE <- ifelse(trips$TOURMODE==10, 2, trips$TOURMODE)
 
-#Work
+#### trip Work ####
 tripmode1 <- wtd.hist(trips$TRIPMODE[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0 & trips$TOURPURP==1 & trips$FULLY_JOINT==0 & trips$TOURMODE==1], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips$finalweight[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP==1 & trips$FULLY_JOINT==0 & trips$TOURMODE==1])
 tripmode2 <- wtd.hist(trips$TRIPMODE[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0 & trips$TOURPURP==1 & trips$FULLY_JOINT==0 & trips$TOURMODE==2], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips$finalweight[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP==1 & trips$FULLY_JOINT==0 & trips$TOURMODE==2])
 tripmode3 <- wtd.hist(trips$TRIPMODE[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0 & trips$TOURPURP==1 & trips$FULLY_JOINT==0 & trips$TOURMODE==3], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips$finalweight[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP==1 & trips$FULLY_JOINT==0 & trips$TOURMODE==3])
@@ -2352,7 +2456,7 @@ tripModeProfile1_vis$purpose <- as.character(tripModeProfile1_vis$purpose)
 tripModeProfile1_vis <- tripModeProfile1_vis[tripModeProfile1_vis$id!="Sum",]
 tripModeProfile1_vis$purpose[tripModeProfile1_vis$purpose=="Sum"] <- "Total"
                                                               
-#Univ                                                         
+#### Univ ####
 tripmode1 <- wtd.hist(trips$TRIPMODE[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP==2 & trips$FULLY_JOINT==0 & trips$TOURMODE==1], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips$finalweight[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP==2 & trips$FULLY_JOINT==0 & trips$TOURMODE==1])
 tripmode2 <- wtd.hist(trips$TRIPMODE[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP==2 & trips$FULLY_JOINT==0 & trips$TOURMODE==2], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips$finalweight[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP==2 & trips$FULLY_JOINT==0 & trips$TOURMODE==2])
 tripmode3 <- wtd.hist(trips$TRIPMODE[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP==2 & trips$FULLY_JOINT==0 & trips$TOURMODE==3], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips$finalweight[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP==2 & trips$FULLY_JOINT==0 & trips$TOURMODE==3])
@@ -2392,7 +2496,7 @@ tripModeProfile2_vis$purpose <- as.character(tripModeProfile2_vis$purpose)
 tripModeProfile2_vis <- tripModeProfile2_vis[tripModeProfile2_vis$id!="Sum",]
 tripModeProfile2_vis$purpose[tripModeProfile2_vis$purpose=="Sum"] <- "Total"
                                                              
-#School                                                       
+#### School ####
 tripmode1 <- wtd.hist(trips$TRIPMODE[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP==3 & trips$FULLY_JOINT==0 & trips$TOURMODE==1], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips$finalweight[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP==3 & trips$FULLY_JOINT==0 & trips$TOURMODE==1])
 tripmode2 <- wtd.hist(trips$TRIPMODE[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP==3 & trips$FULLY_JOINT==0 & trips$TOURMODE==2], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips$finalweight[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP==3 & trips$FULLY_JOINT==0 & trips$TOURMODE==2])
 tripmode3 <- wtd.hist(trips$TRIPMODE[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP==3 & trips$FULLY_JOINT==0 & trips$TOURMODE==3], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips$finalweight[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP==3 & trips$FULLY_JOINT==0 & trips$TOURMODE==3])
@@ -2432,7 +2536,7 @@ tripModeProfile3_vis$purpose <- as.character(tripModeProfile3_vis$purpose)
 tripModeProfile3_vis <- tripModeProfile3_vis[tripModeProfile3_vis$id!="Sum",]
 tripModeProfile3_vis$purpose[tripModeProfile3_vis$purpose=="Sum"] <- "Total"
                                                              
-#iMain                                                        
+#### iMain ####                                                     
 tripmode1 <- wtd.hist(trips$TRIPMODE[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP>=4 & trips$TOURPURP<=6 & trips$FULLY_JOINT==0 & trips$TOURMODE==1], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips$finalweight[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP>=4 & trips$TOURPURP<=6 & trips$FULLY_JOINT==0 & trips$TOURMODE==1])
 tripmode2 <- wtd.hist(trips$TRIPMODE[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP>=4 & trips$TOURPURP<=6 & trips$FULLY_JOINT==0 & trips$TOURMODE==2], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips$finalweight[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP>=4 & trips$TOURPURP<=6 & trips$FULLY_JOINT==0 & trips$TOURMODE==2])
 tripmode3 <- wtd.hist(trips$TRIPMODE[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP>=4 & trips$TOURPURP<=6 & trips$FULLY_JOINT==0 & trips$TOURMODE==3], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips$finalweight[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP>=4 & trips$TOURPURP<=6 & trips$FULLY_JOINT==0 & trips$TOURMODE==3])
@@ -2472,7 +2576,7 @@ tripModeProfile4_vis$purpose <- as.character(tripModeProfile4_vis$purpose)
 tripModeProfile4_vis <- tripModeProfile4_vis[tripModeProfile4_vis$id!="Sum",]
 tripModeProfile4_vis$purpose[tripModeProfile4_vis$purpose=="Sum"] <- "Total"
 
-#iDisc                                                        
+#### trip iDisc ####
 tripmode1 <- wtd.hist(trips$TRIPMODE[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP>=7 & trips$TOURPURP<=9 & trips$FULLY_JOINT==0 & trips$TOURMODE==1], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips$finalweight[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP>=7 & trips$TOURPURP<=9 & trips$FULLY_JOINT==0 & trips$TOURMODE==1])
 tripmode2 <- wtd.hist(trips$TRIPMODE[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP>=7 & trips$TOURPURP<=9 & trips$FULLY_JOINT==0 & trips$TOURMODE==2], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips$finalweight[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP>=7 & trips$TOURPURP<=9 & trips$FULLY_JOINT==0 & trips$TOURMODE==2])
 tripmode3 <- wtd.hist(trips$TRIPMODE[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP>=7 & trips$TOURPURP<=9 & trips$FULLY_JOINT==0 & trips$TOURMODE==3], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips$finalweight[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURPURP>=7 & trips$TOURPURP<=9 & trips$FULLY_JOINT==0 & trips$TOURMODE==3])
@@ -2512,7 +2616,7 @@ tripModeProfile5_vis$purpose <- as.character(tripModeProfile5_vis$purpose)
 tripModeProfile5_vis <- tripModeProfile5_vis[tripModeProfile5_vis$id!="Sum",]
 tripModeProfile5_vis$purpose[tripModeProfile5_vis$purpose=="Sum"] <- "Total"
 
-#jMain                                                        
+#### trip jMain ####                                                      
 tripmode1 <- wtd.hist(jtrips$TRIPMODE[!is.na(jtrips$TRIPMODE) & jtrips$TRIPMODE>0  & jtrips$TOURPURP>=4 & jtrips$TOURPURP<=6 & jtrips$TOURMODE==1], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = jtrips$finalweight[!is.na(jtrips$TRIPMODE) & jtrips$TRIPMODE>0  & jtrips$TOURPURP>=4 & jtrips$TOURPURP<=6 & jtrips$TOURMODE==1])
 tripmode2 <- wtd.hist(jtrips$TRIPMODE[!is.na(jtrips$TRIPMODE) & jtrips$TRIPMODE>0  & jtrips$TOURPURP>=4 & jtrips$TOURPURP<=6 & jtrips$TOURMODE==2], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = jtrips$finalweight[!is.na(jtrips$TRIPMODE) & jtrips$TRIPMODE>0  & jtrips$TOURPURP>=4 & jtrips$TOURPURP<=6 & jtrips$TOURMODE==2])
 tripmode3 <- wtd.hist(jtrips$TRIPMODE[!is.na(jtrips$TRIPMODE) & jtrips$TRIPMODE>0  & jtrips$TOURPURP>=4 & jtrips$TOURPURP<=6 & jtrips$TOURMODE==3], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = jtrips$finalweight[!is.na(jtrips$TRIPMODE) & jtrips$TRIPMODE>0  & jtrips$TOURPURP>=4 & jtrips$TOURPURP<=6 & jtrips$TOURMODE==3])
@@ -2552,7 +2656,7 @@ tripModeProfile6_vis$purpose <- as.character(tripModeProfile6_vis$purpose)
 tripModeProfile6_vis <- tripModeProfile6_vis[tripModeProfile6_vis$id!="Sum",]
 tripModeProfile6_vis$purpose[tripModeProfile6_vis$purpose=="Sum"] <- "Total"
 
-#jDisc                                                        
+#### jDisc ####                                                       
 tripmode1 <- wtd.hist(jtrips$TRIPMODE[!is.na(jtrips$TRIPMODE) & jtrips$TRIPMODE>0  & jtrips$TOURPURP>=7 & jtrips$TOURPURP<=9 & jtrips$TOURMODE==1], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = jtrips$finalweight[!is.na(jtrips$TRIPMODE) & jtrips$TRIPMODE>0  & jtrips$TOURPURP>=7 & jtrips$TOURPURP<=9 & jtrips$TOURMODE==1])
 tripmode2 <- wtd.hist(jtrips$TRIPMODE[!is.na(jtrips$TRIPMODE) & jtrips$TRIPMODE>0  & jtrips$TOURPURP>=7 & jtrips$TOURPURP<=9 & jtrips$TOURMODE==2], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = jtrips$finalweight[!is.na(jtrips$TRIPMODE) & jtrips$TRIPMODE>0  & jtrips$TOURPURP>=7 & jtrips$TOURPURP<=9 & jtrips$TOURMODE==2])
 tripmode3 <- wtd.hist(jtrips$TRIPMODE[!is.na(jtrips$TRIPMODE) & jtrips$TRIPMODE>0  & jtrips$TOURPURP>=7 & jtrips$TOURPURP<=9 & jtrips$TOURMODE==3], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = jtrips$finalweight[!is.na(jtrips$TRIPMODE) & jtrips$TRIPMODE>0  & jtrips$TOURPURP>=7 & jtrips$TOURPURP<=9 & jtrips$TOURMODE==3])
@@ -2591,7 +2695,7 @@ tripModeProfile7_vis$purpose <- as.character(tripModeProfile7_vis$purpose)
 tripModeProfile7_vis <- tripModeProfile7_vis[tripModeProfile7_vis$id!="Sum",]
 tripModeProfile7_vis$purpose[tripModeProfile7_vis$purpose=="Sum"] <- "Total"
 
-#At-work                                                       
+#### trip At-work ####
 tripmode1 <- wtd.hist(trips$TRIPMODE[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$SUBTOUR==1 & trips$TOURMODE==1], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips$finalweight[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$SUBTOUR==1 & trips$TOURMODE==1])
 tripmode2 <- wtd.hist(trips$TRIPMODE[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$SUBTOUR==1 & trips$TOURMODE==2], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips$finalweight[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$SUBTOUR==1 & trips$TOURMODE==2])
 tripmode3 <- wtd.hist(trips$TRIPMODE[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$SUBTOUR==1 & trips$TOURMODE==3], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips$finalweight[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$SUBTOUR==1 & trips$TOURMODE==3])
@@ -2629,7 +2733,7 @@ tripModeProfile8_vis$purpose <- as.character(tripModeProfile8_vis$purpose)
 tripModeProfile8_vis <- tripModeProfile8_vis[tripModeProfile8_vis$id!="Sum",]
 tripModeProfile8_vis$purpose[tripModeProfile8_vis$purpose=="Sum"] <- "Total"
 
-#Total                                                       
+#### trip Total ####
 tripmode1 <- wtd.hist(trips$TRIPMODE[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURMODE==1], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips$finalweight[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURMODE==1])
 tripmode2 <- wtd.hist(trips$TRIPMODE[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURMODE==2], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips$finalweight[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURMODE==2])
 tripmode3 <- wtd.hist(trips$TRIPMODE[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURMODE==3], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips$finalweight[!is.na(trips$TRIPMODE) & trips$TRIPMODE>0  & trips$TOURMODE==3])
@@ -2696,8 +2800,7 @@ colnames(temp) <- c("tripmode","tourmode","purpose","value","grp_var")
 
 fwrite(temp, file.path(outdir, "tripModeProfile_vis.csv"), row.names = F)
 
-###########
-#trip mode by time period - for Wu, Sun
+#### trip mode by time period - for Wu, Sun ####
 #calculate time of day
 trips$tod <- 5 # EA: 3 am - 6 am
 trips$tod <- ifelse(trips$ORIG_DEP_BIN>=4 & trips$ORIG_DEP_BIN<=9, 1, trips$tod)   # AM: 6 am - 9 am
@@ -2721,9 +2824,8 @@ jtrips_summary <- aggregate(num_trips~tod+TOURPURP+TOURMODE+TRIPMODE, data=jtrip
 
 fwrite(itrips_summary, file.path(outdir, "itrips_tripmode_summary.csv"), row.names = F)
 fwrite(jtrips_summary, file.path(outdir, "jtrips_tripmode_summary.csv"), row.names = F)
-###########
 
-# Total number of stops, trips & tours
+#### Total number of stops, trips & tours ####
 cat("Total number of stops : ", sum(stops$finalweight[stops$FULLY_JOINT==0]) + sum(jstops$finalweight))
 cat("Total number of trips : ", sum(trips$finalweight[trips$FULLY_JOINT==0]) + sum(jtrips$finalweight))
 cat("Total number of tours : ", sum(tours$finalweight[tours$TOURPURP<=10]))
@@ -2779,7 +2881,7 @@ fwrite(trips, file.path(outdir, "trips.csv"), row.names = F)
 fwrite(jtrips,file.path(outdir,  "jtrips.csv"), row.names = F)
 
 
-### IE/EI trip mode distrribution
+#### IE/EI trip mode distrribution ####
 #   IE/EI trips defined as trips with a missing TAZ but non-missing coordinate
 #trips_ie <- trips[(((is.na(trips$DTAZ) | (trips$DTAZ>0 & trips$DTAZ<=12)) & trips$OTAZ>0 & !(trips$OTAZ<=12)) | 
 #                  ((is.na(trips$OTAZ) | (trips$OTAZ>0 & trips$OTAZ<=12)) & trips$DTAZ>0 & !(trips$DTAZ<=12))) & 
@@ -2806,13 +2908,13 @@ trips_ie <- trips_ie[!trips_ie$TRIPMODE==4,]
 out <- trips_ie[(trips_ie$TOURPURP==13),c("HH_ID", "PER_ID", "TOUR_ID", "TRIP_ID","OTAZ", "ORIG_X", "ORIG_Y", "DTAZ" ,"DEST_X", "DEST_Y", "TRIPMODE", "ORIG_PURP", "DEST_PURP", "TOURPURP", "finalweight")]
 fwrite(out, file.path(outdir, "out_13.csv"), row.names = F)
 
-tripmode_ie <- wtd.hist(trips_ie$TRIPMODE[!is.na(trips_ie$TRIPMODE) & trips_ie$TRIPMODE>0 & trips_ie$TRIPMODE<=9], breaks = seq(1,14, by=1), freq = NULL, right=FALSE, weight = trips_ie$finalweight[!is.na(trips_ie$TRIPMODE) & trips_ie$TRIPMODE>0 & trips_ie$TRIPMODE<=9])
-fwrite(tripmode_ie$counts, file.path(outdir, "tripmode_ie.csv"), row.names = F)
+tripmode_ie <- wtd.hist(trips_ie$TRIPMODE[!is.na(trips_ie$TRIPMODE) & trips_ie$TRIPMODE>0 & trips_ie$TRIPMODE<=9],
+                        breaks = seq(1,14, by=1), freq = NULL, right=FALSE,
+                        weight = trips_ie$finalweight[!is.na(trips_ie$TRIPMODE) & trips_ie$TRIPMODE>0 & trips_ie$TRIPMODE<=9])
+write.csv(tripmode_ie$counts, file.path(outdir, "tripmode_ie.csv"), row.names = F)
 
-###*********************************************************************
-### Generate school escorting summaries
-###*********************************************************************
 
+#### Generate school escorting summaries ####
 ## These summaries are created for the full OHAS data of Oregon state
 ## Therefore, clear workspace and reload the required files
 
@@ -2855,7 +2957,7 @@ out_table2  <- xtabs(HHEXPFACT~OUT_ESCORT_TYPE+OUT_CHAUFFUER_PTYPE, data = out_s
 inb_table2  <- xtabs(HHEXPFACT~INB_ESCORT_TYPE+INB_CHAUFFUER_PTYPE, data = inb_sample2)
 
 
-# summary of non-mandatory stops on pure escorting tours
+#### summary of non-mandatory stops on pure escorting tours ####
 pure_escort_tours <- tours[(tours$OUT_ESCORTING_TYPE==2 & tours$OUT_ESCORTEE_TOUR_PURP==3) |
                              (tours$INB_ESCORTING_TYPE==2 & tours$INB_ESCORTEE_TOUR_PURP==3) ,]
 
@@ -2876,7 +2978,7 @@ pure_escort_tours <- pure_escort_tours %>%
 xtabs(HHEXPFACT~TOURPURP+nonescortstops, data = pure_escort_tours)
 
 
-# Worker summary
+#### Worker summary ####
 # summary of worker with a child which went to school
 # by escort type, can be separated by outbound and inbound direction
 
@@ -3052,10 +3154,10 @@ fwrite(table2, file.path(outdir, "esctype_by_chauffeurtype.csv"), row.names = F)
 fwrite(worker_table, file.path(outdir, "worker_school_escorting.csv"), row.names = F)
 
 
-detach("package:dplyr", unload=TRUE)
+# detach("package:dplyr", unload=TRUE)
 
 
-### Stop purpose lookup proportions
+#### Stop purpose lookup proportions ####
 stops_temp <- stops[, c("stops", "TOURPURP", "IS_INBOUND", "ANCHOR_DEPART_HOUR", "ANCHOR_DEPART_MIN", 
                         "PERSONTYPE", "DEST_PURP", "finalweight", "FULLY_JOINT", "SUBTOUR")]
 stops_temp <- stops_temp[!is.na(stops_temp$ANCHOR_DEPART_HOUR), ]
@@ -3121,7 +3223,7 @@ colnames(jstop_prop) <- c("TOURPURP","IS_INBOUND","TOD","MAX_AGE_PERTYPE","shop"
 fwrite(stop_prop, file.path(outdir, "istop_purpose_lookups.csv"), row.names = F)
 fwrite(jstop_prop, file.path(outdir, "jstop_purpose_lookups.csv"), row.names = F)
 
-### stop depart/arrive proportions
+#### stop depart/arrive proportions ####
 #View(stops_temp[,c("IS_INBOUND","TRIP_ID", "stop_id", "ORIG_ARR_BIN", 
 #                   "ORIG_DEP_BIN", "DEST_ARR_BIN", "DEST_DEP_BIN", "TRIP_DUR_BIN")])
 #

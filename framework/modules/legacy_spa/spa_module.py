@@ -3,9 +3,9 @@ import time
 import pandas as pd
 
 import sys
-from core.functions import read_mappings
+from core.utils import read_mappings
 from core import base
-from modules.legacy_tools import households, persons, tours, trips, joint_tours, joint_ultrips
+from modules.legacy_spa import households, persons, tours, trips, joint_tours, joint_ultrips
 
 
 class SPAToolModule(base.BaseModule):

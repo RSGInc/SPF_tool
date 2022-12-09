@@ -1,6 +1,6 @@
 import numpy as np
 import math
-from core import functions
+from core import utils
 
 
 class Joint_ultrip:

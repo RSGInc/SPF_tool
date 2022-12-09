@@ -4,9 +4,9 @@
 ##################################################################
 
 from core import base
-from visualizer import functions
+from modules.visualizer import summaries
 
-class Visualizer(base.BaseModule, functions.VisualizerFunctions):
+class Visualizer(base.BaseModule, summaries.VisualizerFunctions):
     def __init__(self, namespace, **kwargs):
         super().__init__(namespace, **kwargs)
 

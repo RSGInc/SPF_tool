@@ -1,8 +1,9 @@
 # Declare the custom processing steps to run here
-START_FROM: SPAToolModule
+START_FROM: TripsToPlace
+
 PROCESSING_STEPS:
-    GetAccessDBData:
-        module: accessdb
+    ReadMSAccessDB:
+        module: database.msaccessdb
         output_dir: raw
         data:
             database:
@@ -11,9 +12,10 @@ PROCESSING_STEPS:
         configs:
             dictionary_file: db_specs/codebook_dictionary.csv
             categories_file: db_specs/codebook_categories.csv
+
     ExpressionPreProcess:
         #        skip: True
-        module: expressions
+        module: expressions.expressions_module
         from_pipeline: False # Read directly from pipeline, or pull from directory
         output_dir: preprocessed
         data:
@@ -43,9 +45,9 @@ PROCESSING_STEPS:
                 index: zone_id
         configs:
             mapping_file: preprocess_specs/preprocess_mapping.csv
-            long_expressions: preprocess_specs/long_expressions.py # Can define more complex functions to run in a python file.
+
     TripsToPlace:
-        module: trip_to_place
+        module: placemaking.trip_to_place
         from_pipeline: False # Read directly from pipeline, or pull from directory
         output_dir: preprocessed
         data:
@@ -60,7 +62,7 @@ PROCESSING_STEPS:
                 index: trip_id
 
     SPAToolModule:
-        module: legacy_spa
+        module: legacy_spa.spa_module
         from_pipeline: False
         output_dir: spa_output
         data:

@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import math
 import os
-from core.functions import calculate_duration, convert2minutes, add_quote_char
+from core.utils import calculate_duration, convert2minutes, add_quote_char
 
 TOUR_COLUMNS = pd.read_csv(os.path.join(os.path.dirname(__file__), 'static/tour_columns.csv'),
                                 index_col="key", names=["key", "name"], header=None).name.to_dict()

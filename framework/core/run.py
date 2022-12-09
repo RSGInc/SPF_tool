@@ -1,9 +1,7 @@
 import os
 import sys
 import argparse
-
-from core import functions
-
+from core import utils
 
 def add_run_args(parser):
     """Run command args"""
@@ -50,10 +48,10 @@ class SPTFramework:
     def __init__(self, namespace_args):
         self.nargs = self.check_namespace(namespace_args)
 
-        settings_file = functions.find_source_root(
+        settings_file = utils.find_source_root(
             "settings.yaml", self.nargs.configs
         )
-        self.settings = functions.read_config(settings_file)
+        self.settings = utils.read_config(settings_file)
 
         self.run()
 
@@ -86,7 +84,7 @@ class SPTFramework:
         assert (
             self.settings.get("START_FROM")
             in self.settings.get("PROCESSING_STEPS").keys()
-        ), "Missing START_FROM step"
+        ), f"Missing START_FROM step, did you mean one of these?: {self.settings.get('PROCESSING_STEPS').keys()}"
 
         for class_name, params in steps.items():
             print(f"Running {class_name} module...")
@@ -99,6 +97,7 @@ class SPTFramework:
                 ".py", ""
             )
             class_args = {**params, **{"pipeline": results}}
+
 
             module_obj = __import__(module_name, fromlist=["modules"])
             class_obj = getattr(module_obj, class_name)

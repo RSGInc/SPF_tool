@@ -1,9 +1,9 @@
 import os
 import numpy as np
 import pandas as pd
-from modules.legacy_tools.joint_tours import Joint_tour
+from modules.legacy_spa.joint_tours import Joint_tour
 from collections import defaultdict
-from core.functions import add_quote_char
+from core.utils import add_quote_char
 
 HOUSEHOLD_COLUMNS = pd.read_csv(os.path.join(os.path.dirname(__file__), 'static/household_columns.csv'),
                                 index_col="key", names=["key", "name"], header=None).name.to_dict()

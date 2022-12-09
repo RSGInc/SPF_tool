@@ -5,7 +5,7 @@
 
 import pandas as pd
 from copy import deepcopy
-from core import functions
+from core import utils
 from core import base
 
 class TripsToPlace(base.BaseModule):
@@ -153,7 +153,7 @@ class TripsToPlace(base.BaseModule):
 
         # If buffer distance is missing
         if "BUFFER_DIST" not in place.columns:
-            place["BUFFER_DIST"] = functions.distance_on_unit_sphere(
+            place["BUFFER_DIST"] = utils.distance_on_unit_sphere(
                 lat1=place.YCORD,
                 long1=place.XCORD,
                 lat2=place.WYCORD,
@@ -168,7 +168,7 @@ class TripsToPlace(base.BaseModule):
 
 if __name__ == "__main__":
     import argparse
-    from core.main import add_run_args
+    from core.run import add_run_args
 
     # Test scripts
     parser = argparse.ArgumentParser()

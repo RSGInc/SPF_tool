@@ -1,9 +1,9 @@
-# SPA Tool 2.0
+# Survey Processing Framework
 
-The SPA Tool 2.0 is intended provide a basic framework structure and workflow "pipeline" for processing and analyzing survey data. The objective is to move away from bespoke one-off data processing scripts and towards a generalizable and programmatic processing tool. The goal is to reduce the amount of time rewriting code and debugging the countless hardcoded values.  
+The Survey Processing Framework (SPF) is intended provide a basic framework structure and workflow "pipeline" for processing and analyzing survey data. The objective is to move away from bespoke one-off data processing scripts and towards a generalizable and programmatic processing tool. The goal is to reduce the amount of time rewriting code, debugging sloppy methods, and the changing countless hardcoded values. 
 
 
-While the SPA Tool 2.0 is a work in progress, and still heavily relies on the original SPA Tool code, the codebase is gradually being cleaned up and organized under the guiding principles of the Zen of Python:
+While the SPF is a work in progress, and still heavily relies on the original SPA Tool code, the codebase is gradually being cleaned up and organized under the guiding principles of the Zen of Python:
 
 - Beautiful is better than ugly.
 - Explicit is better than implicit.

@@ -1,6 +1,6 @@
 import sys
 import argparse
-from core.main import SPTFramework, add_run_args
+from core.run import SPTFramework, add_run_args
 
 parser = argparse.ArgumentParser()
 add_run_args(parser)

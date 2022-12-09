@@ -8,9 +8,9 @@ import os
 import sys
 import importlib.util
 from core import base
+from modules.expressions import long_expressions
 
-
-class ExpressionPreProcess(base.BaseModule):
+class ExpressionPreProcess(base.BaseModule, long_expressions.LongExpressions):
     def __init__(self, namespace, **kwargs):
         super().__init__(namespace, **kwargs)
 

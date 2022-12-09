@@ -2,16 +2,15 @@
 # Script for extracting raw data from ms access db
 # Author: Nicholas Fournier nick.fournier@rsginc.com, Oct, 2022
 ##################################################################
-import pandas as pd
+
 from pandas_weighting import weight
+from core import base, utils
+import pandas as pd
 import pyodbc
 import os
 
-from core import functions
-from core import base
 
-
-class GetAccessDBData(base.BaseModule):
+class ReadMSAccessDB(base.BaseModule):
     names_map = {
         "H": "household",
         "H6": "vehicle",
@@ -229,9 +228,9 @@ class GetAccessDBData(base.BaseModule):
 
             results = {
                 # Get unweighted values, initialize dummy item
-                "unweighted": functions.summarize(table, summarize_codebook),
+                "unweighted": utils.summarize(table, summarize_codebook),
                 # Add weighted results where applicable
-                "weighted": functions.summarize(
+                "weighted": utils.summarize(
                     table, summarize_codebook, weight_col=table_name + "_weight"
                 ),
             }
@@ -249,7 +248,7 @@ class GetAccessDBData(base.BaseModule):
 
 if __name__ == "__main__":
     import argparse
-    from core.main import add_run_args
+    from core.run import add_run_args
 
     # Test scripts
     parser = argparse.ArgumentParser()

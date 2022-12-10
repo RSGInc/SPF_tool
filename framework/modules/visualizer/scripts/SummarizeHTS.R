@@ -18,7 +18,7 @@ library(reshape)
 library(data.table)
 library(stringr)
 library(geosphere)
-
+library(dplyr)
 
 #### User Inputs ####
 # Directories
@@ -80,7 +80,7 @@ zone_ids = unique(zones$OLDZONE)[!is.na(unique(zones$OLDZONE))]
 
 # Capture as many distances from the survey as possible
 DST_SKM = copy(place)
-DST_SKM[ , (c('o','o_X', 'o_Y')) := shift(.(TAZ, XCORD, YCORD)), by=.(SAMPN, PERNO, DAYNO)]
+DST_SKM[ , (c('o','o_X', 'o_Y')) := data.table::shift(.(TAZ, XCORD, YCORD)), by=.(SAMPN, PERNO, DAYNO)]
 DST_SKM[ , (c('d', 'd_X', 'd_Y')) := .(TAZ, XCORD, YCORD)]
 DST_SKM = unique(DST_SKM[!is.na(o_X),  .(o, d, o_X, o_Y, d_X, d_Y, DISTANCE)])
 DST_SKM = DST_SKM[, lapply(.SD, mean), by=.(o,d), .SDcols=c('DISTANCE', 'o_X', 'o_Y', 'd_X', 'd_Y')]
@@ -343,7 +343,7 @@ hh$HHSIZE[hh$HH_SIZE == 4] <- 4
 hh$HHSIZE[hh$HH_SIZE >= 5] <- 5
 
 #Adults in the HH
-adults <- count(per[!is.na(per$AGE_CAT),], c("SAMPN"), "AGE_CAT>=4")
+adults <- plyr::count(per[!is.na(per$AGE_CAT),], c("SAMPN"), "AGE_CAT>=4")
 hh$ADULTS <- adults$freq[match(hh$SAMPN, adults$SAMPN)]
 hh$ADULTS[is.na(hh$ADULTS)] <- 0
 
@@ -389,21 +389,24 @@ pertypeCodes = with(codebook_categories[grepl('Person type', Description)],
                      data.table(code=Values,
                                 name=Labels))
 
-pertypeCodes = rbind(pertypeCodes, data.table(code='All', name='All'))
+# pertypeCodes = rbind(pertypeCodes, data.table(code=c('All',0), name=c('All','All')))
 
+
+pertypeCodes = rbind(pertypeCodes, data.table(code=c(0, 'All'), name=c('NA','All')))
+per[PERTYPE %in% c(23,24),]
 
 # pertypeCodes <- data.frame(code = c(1,2,3,4,5,6,7,8,"All"), 
 #                            name = c("FT Worker", "PT Worker", "Univ Stud", "Non Worker", "Retiree", "Driv Stud", "NonDriv Stud", "Pre-School", "All"))
 
 
 # Auto ownership
-autoOwnership <- count(hh[!is.na(hh$HHVEH),], c("HHVEH"), "finalweight")
-fwrite(autoOwnership, file.path(outdir,"autoOwnership2.csv"), row.names = TRUE)
+autoOwnership <- plyr::count(hh[!is.na(hh$HHVEH),], c("HHVEH"), "finalweight")
+fwrite(autoOwnership, file.path(outdir,"autoOwnership.csv"), row.names = FALSE)
 
 
 perday[per, on = .(person_id), PERTYPE := i.PERTYPE]
-pertypeDistbn <- count(perday, c("PERTYPE"), "finalweight")
-fwrite(pertypeDistbn, file.path(outdir,"pertypeDistbn.csv"), row.names = TRUE)
+pertypeDistbn <- plyr::count(perday, c("PERTYPE"), "finalweight")
+fwrite(pertypeDistbn, file.path(outdir,"pertypeDistbn.csv"), row.names = FALSE)
 
 perday$PER_EMPLY_LOC_TYPE = per$PER_EMPLY_LOC_TYPE[match(paste(perday$SAMPN, perday$PERNO, sep = "-"),
                                                          paste(per$SAMPN, per$PERNO, sep = "-"))]
@@ -738,8 +741,10 @@ trips$DEST_ARR_BIN[trips$DEST_ARR_BIN>=43] <- 40
 
 
 #Mark trips which are stops on the tour [not going home and not to primary destination]
-trips$stops[trips$DEST_PURP>0 & trips$DEST_PURP<=10 & trips$DEST_IS_TOUR_DEST==0] <- 1
-trips$stops[is.na(trips$stops)] <- 0
+trips$stops <- 0
+# trips$stops[trips$DEST_PURP>0 & trips$DEST_PURP<=10 & trips$DEST_IS_TOUR_DEST==0] <- 1
+trips[trips$DEST_PURP>0 & trips$DEST_IS_TOUR_DEST==0, 'stops'] <- 1
+
 
 trips$OTAZ = trips$ORIG_TAZ #<- place$TAZ[match(trips$HH_ID*10000+trips$PER_ID*1000+trips$ORIG_PLACENO*10+trips$DAYNO, place$SAMPN*10000+place$PERNO*1000+place$PLANO*10+place$DAYNO)]
 trips$DTAZ = trips$DEST_TAZ # <- place$TAZ[match(trips$HH_ID*10000+trips$PER_ID*1000+trips$DEST_PLACENO*10+trips$DAYNO, place$SAMPN*10000+place$PERNO*1000+place$PLANO*10+place$DAYNO)]
@@ -1034,12 +1039,12 @@ fwrite(stopFreqModel_summary, file.path(outdir, "stopFreqModel_summary.csv"), ro
 #---------------------------------------------------------------------------------														  
 # tours[TOURPURP == 1 & IS_SUBTOUR == 0, .N, by=.(HH_ID, PER_ID, DAYNO)]
 
-workCounts <- count(tours, c( "HH_ID", "PER_ID", "DAYNO"), "TOURPURP == 1 & IS_SUBTOUR == 0") #[excluding at work subtours]. joint work tours should be considered individual mandatory tours
-atWorkCounts <- count(tours, c("HH_ID", "PER_ID", "DAYNO"), "(TOURPURP == 20 & IS_SUBTOUR == 1)") #include joint work-subtours as individual subtours
-schlCounts <- count(tours, c("HH_ID", "PER_ID", "DAYNO"), "(TOURPURP == 2 | TOURPURP == 3)") #joint school/university tours should be considered individual mandatory tours
-inmCounts <- count(tours, c("HH_ID", "PER_ID", "DAYNO"), "(TOURPURP>=4 & TOURPURP<=9 & FULLY_JOINT==0 & IS_SUBTOUR == 0) | (TOURPURP==4 & FULLY_JOINT==1)") #joint escort tours should be considered individual non-mandatory tours
-itourCounts <- count(tours, c("HH_ID", "PER_ID", "DAYNO"), "(TOURPURP <= 9 & IS_SUBTOUR == 0 & FULLY_JOINT==0) | (TOURPURP <= 4 & FULLY_JOINT==1)")  #number of individual tours per person [excluding at work subtours]
-jtourCounts <- count(tours, c("HH_ID", "PER_ID", "DAYNO"), "TOURPURP >= 5 & TOURPURP <= 9 & IS_SUBTOUR == 0 & FULLY_JOINT==1")  #number of joint tours per person [excluding at work subtours, also excluding joint escort tours]
+workCounts <- plyr::count(tours, c( "HH_ID", "PER_ID", "DAYNO"), "TOURPURP == 1 & IS_SUBTOUR == 0") #[excluding at work subtours]. joint work tours should be considered individual mandatory tours
+atWorkCounts <- plyr::count(tours, c("HH_ID", "PER_ID", "DAYNO"), "(TOURPURP == 20 & IS_SUBTOUR == 1)") #include joint work-subtours as individual subtours
+schlCounts <- plyr::count(tours, c("HH_ID", "PER_ID", "DAYNO"), "(TOURPURP == 2 | TOURPURP == 3)") #joint school/university tours should be considered individual mandatory tours
+inmCounts <- plyr::count(tours, c("HH_ID", "PER_ID", "DAYNO"), "(TOURPURP>=4 & TOURPURP<=9 & FULLY_JOINT==0 & IS_SUBTOUR == 0) | (TOURPURP==4 & FULLY_JOINT==1)") #joint escort tours should be considered individual non-mandatory tours
+itourCounts <- plyr::count(tours, c("HH_ID", "PER_ID", "DAYNO"), "(TOURPURP <= 9 & IS_SUBTOUR == 0 & FULLY_JOINT==0) | (TOURPURP <= 4 & FULLY_JOINT==1)")  #number of individual tours per person [excluding at work subtours]
+jtourCounts <- plyr::count(tours, c("HH_ID", "PER_ID", "DAYNO"), "TOURPURP >= 5 & TOURPURP <= 9 & IS_SUBTOUR == 0 & FULLY_JOINT==1")  #number of joint tours per person [excluding at work subtours, also excluding joint escort tours]
 
 xworkCounts = workCounts
 xworkCounts$PERTYPE = per$PERTYPE[match(paste(xworkCounts$HH_ID, xworkCounts$PER_ID, sep = "-"),
@@ -1057,10 +1062,10 @@ xworkCounts$PERTYPE = per$PERTYPE[match(paste(xworkCounts$HH_ID, xworkCounts$PER
 
 workCounts_temp <- workCounts
 schlCounts_temp <- schlCounts
-inmCounts_temp <- count(tours, c("HH_ID", "PER_ID", "DAYNO"), "TOURPURP>4 & TOURPURP<=9 & FULLY_JOINT==0 & IS_SUBTOUR == 0") #need to remove school escort tours
+inmCounts_temp <- plyr::count(tours, c("HH_ID", "PER_ID", "DAYNO"), "TOURPURP>4 & TOURPURP<=9 & FULLY_JOINT==0 & IS_SUBTOUR == 0") #need to remove school escort tours
 jtourCounts_temp <- jtourCounts
 atWorkCounts_temp <- atWorkCounts
-escortCounts_temp <- count(tours, c("HH_ID", "PER_ID", "DAYNO"), "TOURPURP==4 & IS_SUBTOUR == 0") #include both individual and joint escort tours
+escortCounts_temp <- plyr::count(tours, c("HH_ID", "PER_ID", "DAYNO"), "TOURPURP==4 & IS_SUBTOUR == 0") #include both individual and joint escort tours
 
 colnames(workCounts_temp)[4] <- "freq_work"
 colnames(schlCounts_temp)[4] <- "freq_schl"
@@ -1096,19 +1101,26 @@ temp2$finalweight_1 <- perday$finalweight_1[match(temp2$HH_ID*1000+temp2$PER_ID*
 persons_mand <- temp2[temp2$freq_m>0,]  #persons with atleast 1 mandatory tours
 persons_nomand <- temp2[temp2$freq_m==0,] #active persons with 0 mandatory tours
 
-freq_nmtours_mand <- count(persons_mand, c("PERTYPE","freq_nm"), "finalweight_1")
-freq_nmtours_nomand <- count(persons_nomand, c("PERTYPE","freq_nm"), "finalweight_1")
+freq_nmtours_mand <- plyr::count(persons_mand, c("PERTYPE","freq_nm"), "finalweight_1")
+freq_nmtours_nomand <- plyr::count(persons_nomand, c("PERTYPE","freq_nm"), "finalweight_1")
 
 #test1 <- count(temp2, c("PERTYPE","freq_inm","freq_m","freq_nm","freq_atwork","freq_escort"), "finalweight")
 #write.csv(test1, "tour_rate_debug_hhwt.csv", row.names = F)
 #test2 <- count(temp2, c("PERTYPE","freq_inm","freq_m","freq_nm","freq_atwork","freq_escort"), "finalweight_1")
 #write.csv(test2, "tour_rate_debug_pdaywt.csv", row.names = F)
 
-indivNMTourFreq_file = file.path(outdir, "indivNMTourFreq.csv")
-write.table("Non-Mandatory Tours for Persons with at-least 1 Mandatory Tour", indivNMTourFreq_file, sep = ",", row.names = F, append = F)
-write.table(freq_nmtours_mand, indivNMTourFreq_file, sep = ",", row.names = F, append = T)
-write.table("Non-Mandatory Tours for Active Persons with 0 Mandatory Tour", indivNMTourFreq_file, sep = ",", row.names = F, append = T)
-write.table(freq_nmtours_nomand, indivNMTourFreq_file, sep = ",", row.names = F, append = TRUE)
+
+indivNMTourFreq_file = file.path(outdir, "indivNMTourFreq_1plusMand.csv")
+indivNMTourFreq_NoMand_file = file.path(outdir, "indivNMTourFreq_NoMand.csv")
+# indivNMTourFreq_file = file.path(outdir, "indivNMTourFreq.csv")
+# write.table("Non-Mandatory Tours for Persons with at-least 1 Mandatory Tour", indivNMTourFreq_file, sep = ",", row.names = F, append = F)
+# write.table(freq_nmtours_mand, indivNMTourFreq_file, sep = ",", row.names = F, append = T)
+# write.table("Non-Mandatory Tours for Active Persons with 0 Mandatory Tour", indivNMTourFreq_file, sep = ",", row.names = F, append = T)
+# write.table(freq_nmtours_nomand, indivNMTourFreq_file, sep = ",", row.names = F, append = TRUE)
+
+fwrite(freq_nmtours_mand, indivNMTourFreq_file)
+fwrite(freq_nmtours_nomand, indivNMTourFreq_NoMand_file)
+
 
 # fwrite(freq_nmtours_mand,  file.path(outdir, "freq_nmtours_mand.csv"))
 # fwrite(freq_nmtours_nomand,  file.path(outdir, "freq_nmtours_mand.csv"))
@@ -1119,21 +1131,21 @@ write.table(freq_nmtours_nomand, indivNMTourFreq_file, sep = ",", row.names = F,
 # ----------------------
 # added for calibration by nagendra.dhakar@rsginc.com
 
-i4tourCounts <- count(tours, c("HH_ID", "PER_ID", "DAYNO"), "TOURPURP == 4 & FULLY_JOINT==0 & IS_SUBTOUR == 0")
-i5tourCounts <- count(tours, c("HH_ID", "PER_ID", "DAYNO"), "TOURPURP == 5  & FULLY_JOINT==0 & IS_SUBTOUR == 0")
-i6tourCounts <- count(tours, c("HH_ID", "PER_ID", "DAYNO"), "TOURPURP == 6  & FULLY_JOINT==0 & IS_SUBTOUR == 0")
-i7tourCounts <- count(tours, c("HH_ID", "PER_ID", "DAYNO"), "TOURPURP == 7  & FULLY_JOINT==0 & IS_SUBTOUR == 0")
-i8tourCounts <- count(tours, c("HH_ID", "PER_ID", "DAYNO"), "TOURPURP == 8  & FULLY_JOINT==0 & IS_SUBTOUR == 0")
-i9tourCounts <- count(tours, c("HH_ID", "PER_ID", "DAYNO"), "TOURPURP == 9  & FULLY_JOINT==0 & IS_SUBTOUR == 0")
+i4tourCounts <- plyr::count(tours, c("HH_ID", "PER_ID", "DAYNO"), "TOURPURP == 4 & FULLY_JOINT==0 & IS_SUBTOUR == 0")
+i5tourCounts <- plyr::count(tours, c("HH_ID", "PER_ID", "DAYNO"), "TOURPURP == 5  & FULLY_JOINT==0 & IS_SUBTOUR == 0")
+i6tourCounts <- plyr::count(tours, c("HH_ID", "PER_ID", "DAYNO"), "TOURPURP == 6  & FULLY_JOINT==0 & IS_SUBTOUR == 0")
+i7tourCounts <- plyr::count(tours, c("HH_ID", "PER_ID", "DAYNO"), "TOURPURP == 7  & FULLY_JOINT==0 & IS_SUBTOUR == 0")
+i8tourCounts <- plyr::count(tours, c("HH_ID", "PER_ID", "DAYNO"), "TOURPURP == 8  & FULLY_JOINT==0 & IS_SUBTOUR == 0")
+i9tourCounts <- plyr::count(tours, c("HH_ID", "PER_ID", "DAYNO"), "TOURPURP == 9  & FULLY_JOINT==0 & IS_SUBTOUR == 0")
 
 # end of addition for calibration
 # -----------------------
 
-joint5 <- count(jtours, c("HH_ID", "DAYNO"), "JOINT_PURP==5")
-joint6 <- count(jtours, c("HH_ID", "DAYNO"), "JOINT_PURP==6")
-joint7 <- count(jtours, c("HH_ID", "DAYNO"), "JOINT_PURP==7")
-joint8 <- count(jtours, c("HH_ID", "DAYNO"), "JOINT_PURP==8")
-joint9 <- count(jtours, c("HH_ID", "DAYNO"), "JOINT_PURP==9")
+joint5 <- plyr::count(jtours, c("HH_ID", "DAYNO"), "JOINT_PURP==5")
+joint6 <- plyr::count(jtours, c("HH_ID", "DAYNO"), "JOINT_PURP==6")
+joint7 <- plyr::count(jtours, c("HH_ID", "DAYNO"), "JOINT_PURP==7")
+joint8 <- plyr::count(jtours, c("HH_ID", "DAYNO"), "JOINT_PURP==8")
+joint9 <- plyr::count(jtours, c("HH_ID", "DAYNO"), "JOINT_PURP==9")
 
 hhday$joint5 <- joint5$freq[match(hhday$SAMPN*10+hhday$DAYNO, joint5$HH_ID*10+joint5$DAYNO)]
 hhday$joint6 <- joint6$freq[match(hhday$SAMPN*10+hhday$DAYNO, joint6$HH_ID*10+joint6$DAYNO)]
@@ -1218,18 +1230,18 @@ perday$i9numTours[is.na(perday$i9numTours)] <- 0
 tours$PERTYPE = tours$PERSONTYPE
 trips$PERTYPE = trips$PERSONTYPE
 perday$numTours[is.na(perday$numTours)] <- 0
-toursPertypeDistbn <- count(tours[!is.na(tours$TOURPURP) & tours$TOURPURP<=10 & tours$FULLY_JOINT==0 & tours$IS_SUBTOUR==0,], c("PERTYPE"), "finalweight")
-fwrite(toursPertypeDistbn, file.path(outdir, "toursPertypeDistbn.csv"), row.names = TRUE)
+toursPertypeDistbn <- plyr::count(tours[!is.na(tours$TOURPURP) & tours$TOURPURP<=10 & tours$FULLY_JOINT==0 & tours$IS_SUBTOUR==0,], c("PERTYPE"), "finalweight")
+fwrite(toursPertypeDistbn, file.path(outdir, "toursPertypeDistbn.csv"), row.names = FALSE)
 
 # Total tours by person type for visualizer
-totaltoursPertypeDistbn <- count(tours[!is.na(tours$TOURPURP) & tours$TOURPURP<=10,], c("PERTYPE"), "finalweight")  #updated by nagendra.dhakar@rsginc, 01/30/2018 -  removed (tours$IS_SUBTOUR==0)
+totaltoursPertypeDistbn <- plyr::count(tours[!is.na(tours$TOURPURP) & tours$TOURPURP<=10,], c("PERTYPE"), "finalweight")  #updated by nagendra.dhakar@rsginc, 01/30/2018 -  removed (tours$IS_SUBTOUR==0)
 fwrite(totaltoursPertypeDistbn, file.path(outdir, "total_tours_by_pertype_vis.csv"), row.names = F)
 
 
 # Total indi NM tours by person type and purpose
-# tours_pertype_purpose <- count(tours[tours$TOURPURP>=4 & tours$TOURPURP<=9 & tours$FULLY_JOINT==0,], c("PERTYPE", "TOURPURP"), "finalweight")
-tours_pertype_purpose <- count(tours[tours$FULLY_JOINT==0,], c("PERTYPE", "TOURPURP"), "finalweight")
-fwrite(tours_pertype_purpose, file.path(outdir, "tours_pertype_purpose.csv"), row.names = TRUE)
+# tours_pertype_purpose <- plyr::count(tours[tours$TOURPURP>=4 & tours$TOURPURP<=9 & tours$FULLY_JOINT==0,], c("PERTYPE", "TOURPURP"), "finalweight")
+tours_pertype_purpose <- plyr::count(tours[tours$FULLY_JOINT==0,], c("PERTYPE", "TOURPURP"), "finalweight")
+fwrite(tours_pertype_purpose, file.path(outdir, "tours_pertype_purpose.csv"), row.names = FALSE)
 
 # ---------------------------------------------------
 # added for calibration by nagendra.dhakar@rsginc.com
@@ -1242,12 +1254,12 @@ perday$i7numTours[perday$i7numTours>=1] <- 1
 perday$i8numTours[perday$i8numTours>=1] <- 1
 perday$i9numTours[perday$i9numTours>=2] <- 2
 
-tours_pertype_esco <- count(perday, c("PERTYPE", "i4numTours"), "finalweight_1")
-tours_pertype_shop <- count(perday, c("PERTYPE", "i5numTours"), "finalweight_1")
-tours_pertype_main <- count(perday, c("PERTYPE", "i6numTours"), "finalweight_1")
-tours_pertype_eati <- count(perday, c("PERTYPE", "i7numTours"), "finalweight_1")
-tours_pertype_visi <- count(perday, c("PERTYPE", "i8numTours"), "finalweight_1")
-tours_pertype_disc <- count(perday, c("PERTYPE", "i9numTours"), "finalweight_1")
+tours_pertype_esco <- plyr::count(perday, c("PERTYPE", "i4numTours"), "finalweight_1")
+tours_pertype_shop <- plyr::count(perday, c("PERTYPE", "i5numTours"), "finalweight_1")
+tours_pertype_main <- plyr::count(perday, c("PERTYPE", "i6numTours"), "finalweight_1")
+tours_pertype_eati <- plyr::count(perday, c("PERTYPE", "i7numTours"), "finalweight_1")
+tours_pertype_visi <- plyr::count(perday, c("PERTYPE", "i8numTours"), "finalweight_1")
+tours_pertype_disc <- plyr::count(perday, c("PERTYPE", "i9numTours"), "finalweight_1")
 
 
 colnames(tours_pertype_esco) <- c("PERTYPE","inumTours","freq")
@@ -1305,7 +1317,7 @@ t3 <- wtd.hist(jtours$JOINT_PURP[jtours$JOINT_PURP<10], breaks = seq(1,10, by=1)
 tours_purpose_type <- data.frame(t1$counts, t3$counts)
 colnames(tours_purpose_type) <- c("indi", "joint")
 
-fwrite(tours_purpose_type, file.path(outdir, "tours_purpose_type.csv"), row.names = TRUE)
+fwrite(tours_purpose_type, file.path(outdir, "tours_purpose_type.csv"), row.names = FALSE)
 
 
 # DAP by pertype
@@ -1314,12 +1326,12 @@ perday$DAP[perday$workTours > 0 | perday$schlTours > 0] <- "M"
 perday$DAP[perday$numTours > 0 & perday$DAP == "H"] <- "N"
 perday$DAP[(perday$PERTYPE == 4 | perday$PERTYPE == 5) & perday$DAP == "M"] = "N"
 
-dapSummary <- count(perday, c("PERTYPE", "DAP"), "finalweight")
-fwrite(dapSummary, file.path(outdir, "dapSummary.csv"), row.names = TRUE)
+dapSummary <- plyr::count(perday, c("PERTYPE", "DAP"), "finalweight")
+fwrite(dapSummary, file.path(outdir, "dapSummary.csv"), row.names = FALSE)
 
-dapSummary_day <- count(perday, c("DAYNO","PERTYPE", "DAP"), "finalweight")
+dapSummary_day <- plyr::count(perday, c("DAYNO","PERTYPE", "DAP"), "finalweight")
 
-fwrite(dapSummary_day, file.path(outdir, "dapSummary_day.csv"), row.names = TRUE)
+fwrite(dapSummary_day, file.path(outdir, "dapSummary_day.csv"), row.names = FALSE)
 
 # Prepare DAP summary for visualizer
 dapSummary_vis <- xtabs(freq~PERTYPE+DAP, dapSummary)
@@ -1334,12 +1346,12 @@ dapSummary_vis$PERTYPE <- as.character(dapSummary_vis$PERTYPE)
 dapSummary_vis <- dapSummary_vis[dapSummary_vis$DAP!="Sum",]
 dapSummary_vis$PERTYPE[dapSummary_vis$PERTYPE=="Sum"] <- "Total"
 
-fwrite(dapSummary_vis, file.path(outdir, "dapSummary_vis.csv"), row.names = TRUE)
+fwrite(dapSummary_vis, file.path(outdir, "dapSummary_vis.csv"), row.names = FALSE)
 
 # HHSize X Joint
-hhsizeJoint <- count(hhday[hhday$HHSIZE>=2,], c("HHSIZE", "JOINT"), "finalweight")
+hhsizeJoint <- plyr::count(hhday[hhday$HHSIZE>=2,], c("HHSIZE", "JOINT"), "finalweight")
 
-fwrite(hhsizeJoint, file.path(outdir, "hhsizeJoint.csv"), row.names = TRUE)
+fwrite(hhsizeJoint, file.path(outdir, "hhsizeJoint.csv"), row.names = FALSE)
 
 #### mandatory tour frequency ####
 perday$mtf <- 0
@@ -1349,7 +1361,7 @@ perday$mtf[perday$schlTours == 1] <- 3
 perday$mtf[perday$schlTours >= 2] <- 4
 perday$mtf[perday$workTours >= 1 & perday$schlTours >= 1] <- 5
 
-mtfSummary <- count(perday[perday$mtf > 0,], c("PERTYPE", "mtf"), "finalweight_1")
+mtfSummary <- plyr::count(perday[perday$mtf > 0,], c("PERTYPE", "mtf"), "finalweight_1")
 fwrite(mtfSummary, file.path(outdir, "mtfSummary.csv"))
 #write.csv(tours, "tours_test.csv")
 
@@ -1368,10 +1380,10 @@ mtfSummary_vis$PERTYPE[mtfSummary_vis$PERTYPE=="Sum"] <- "Total"
 fwrite(mtfSummary_vis, file.path(outdir, "mtfSummary_vis.csv"))
 
 # indi NM summary
-inm0Summary <- count(perday[perday$inmTours==0,], c("PERTYPE"), "finalweight_1")
-inm1Summary <- count(perday[perday$inmTours==1,], c("PERTYPE"), "finalweight_1")
-inm2Summary <- count(perday[perday$inmTours==2,], c("PERTYPE"), "finalweight_1")
-inm3Summary <- count(perday[perday$inmTours>=3,], c("PERTYPE"), "finalweight_1")
+inm0Summary <- plyr::count(perday[perday$inmTours==0,], c("PERTYPE"), "finalweight_1")
+inm1Summary <- plyr::count(perday[perday$inmTours==1,], c("PERTYPE"), "finalweight_1")
+inm2Summary <- plyr::count(perday[perday$inmTours==2,], c("PERTYPE"), "finalweight_1")
+inm3Summary <- plyr::count(perday[perday$inmTours>=3,], c("PERTYPE"), "finalweight_1")
 
 inmSummary <- data.frame(PERTYPE = c(1,2,3,4,5,6,7,8))
 inmSummary$tour0 <- inm0Summary$freq[match(inmSummary$PERTYPE, inm0Summary$PERTYPE)]
@@ -1402,16 +1414,16 @@ inmSummary_vis$PERTYPE[inmSummary_vis$PERTYPE=="Sum"] <- "Total"
 fwrite(inmSummary_vis, file.path(outdir, "inmSummary_vis.csv"))
 
 # Joint Tour Frequency and composition
-jtfSummary <- count(hhday[!is.na(hhday$jtf),], c("jtf"), "finalweight")
-jointComp <- count(jtours[jtours$JOINT_PURP>=5 & jtours$JOINT_PURP<=9,], c("COMPOSITION"), "finalweight")
-jointPartySize <- count(jtours[jtours$JOINT_PURP>=5 & jtours$JOINT_PURP<=9,], c("NUMBER_HH"), "finalweight")
-jointCompPartySize <- count(jtours[jtours$JOINT_PURP>=5 & jtours$JOINT_PURP<=9,], c("COMPOSITION","NUMBER_HH"), "finalweight")
+jtfSummary <- plyr::count(hhday[!is.na(hhday$jtf),], c("jtf"), "finalweight")
+jointComp <- plyr::count(jtours[jtours$JOINT_PURP>=5 & jtours$JOINT_PURP<=9,], c("COMPOSITION"), "finalweight")
+jointPartySize <- plyr::count(jtours[jtours$JOINT_PURP>=5 & jtours$JOINT_PURP<=9,], c("NUMBER_HH"), "finalweight")
+jointCompPartySize <- plyr::count(jtours[jtours$JOINT_PURP>=5 & jtours$JOINT_PURP<=9,], c("COMPOSITION","NUMBER_HH"), "finalweight")
 
 hhday$jointCat[hhday$jtours==0] <- 0
 hhday$jointCat[hhday$jtours==1] <- 1
 hhday$jointCat[hhday$jtours>=2] <- 2
 
-jointToursHHSize <- count(hhday[!is.na(hhday$HHSIZE) & !is.na(hhday$jointCat),], c("HHSIZE", "jointCat"), "finalweight")
+jointToursHHSize <- plyr::count(hhday[!is.na(hhday$HHSIZE) & !is.na(hhday$jointCat),], c("HHSIZE", "jointCat"), "finalweight")
 
 
 write.table(jtfSummary, file.path(outdir, "jtfSummary.csv"), col.names=TRUE, sep=",")
@@ -2204,7 +2216,7 @@ stopfreq3 <- wtd.hist(stops$DEST_PURP[stops$TOURPURP==3 & stops$FULLY_JOINT==0],
 # stopfreq4 <- wtd.hist(stops$DEST_PURP[stops$TOURPURP==4 & stops$FULLY_JOINT==0], breaks = c(seq(1,10, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP==4 & stops$FULLY_JOINT==0])
 stopfreqi56 <- wtd.hist(stops$DEST_PURP[stops$TOURPURP>=5 & stops$TOURPURP<=6 & stops$FULLY_JOINT==0], breaks = c(seq(1,10, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP>=5 & stops$TOURPURP<=6 & stops$FULLY_JOINT==0])
 stopfreqi789 <- wtd.hist(stops$DEST_PURP[stops$TOURPURP>=7 & stops$TOURPURP<=9 & stops$FULLY_JOINT==0], breaks = c(seq(1,10, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP>=7 & stops$TOURPURP<=9 & stops$FULLY_JOINT==0])
-# stopfreqj56 <- wtd.hist(jstops$DEST_PURP[jstops$TOURPURP>=5 & jstops$TOURPURP<=6], breaks = c(seq(1,10, by=1), 9999), freq = NULL, right=FALSE, weight = jstops$finalweight[jstops$TOURPURP>=5 & jstops$TOURPURP<=6])
+stopfreqj56 <- wtd.hist(jstops$DEST_PURP[jstops$TOURPURP>=5 & jstops$TOURPURP<=6], breaks = c(seq(1,10, by=1), 9999), freq = NULL, right=FALSE, weight = jstops$finalweight[jstops$TOURPURP>=5 & jstops$TOURPURP<=6])
 # stopfreqj789 <- wtd.hist(jstops$DEST_PURP[jstops$TOURPURP>=7 & jstops$TOURPURP<=9], breaks = c(seq(1,10, by=1), 9999), freq = NULL, right=FALSE, weight = jstops$finalweight[jstops$TOURPURP>=7 & jstops$TOURPURP<=9])
 stopfreq10 <- wtd.hist(stops$DEST_PURP[stops$SUBTOUR==1], breaks = c(seq(1,10, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$SUBTOUR==1])
 
@@ -2212,9 +2224,9 @@ stopFreq <- data.frame(stopfreq1$counts,
                        stopfreq2$counts,
                        stopfreq3$counts,
                        stopfreq3$counts*0, # stopfreq4$counts,
-                       stopfreq3$counts*0, # stopfreqi56$counts,
+                       stopfreqi56$counts,
                        stopfreqi789$counts,
-                       stopfreq3$counts*0, # stopfreqj56$counts
+                       stopfreqj56$counts,
                        stopfreq3$counts*0, # stopfreqj789$counts,
                        stopfreq10$counts)
 colnames(stopFreq) <- c("work", "univ", "sch", "esco","imain", "idisc", "jmain", "jdisc", "atwork")
@@ -2246,7 +2258,7 @@ stopfreq3 <- wtd.hist(stops$out_dir_dist[stops$TOURPURP==3 & stops$FULLY_JOINT==
 # stopfreq4 <- wtd.hist(stops$out_dir_dist[stops$TOURPURP==4 & stops$FULLY_JOINT==0], breaks = c(-9999,seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP==4 & stops$FULLY_JOINT==0])
 stopfreqi56 <- wtd.hist(stops$out_dir_dist[stops$TOURPURP>=5 & stops$TOURPURP<=6 & stops$FULLY_JOINT==0], breaks = c(-9999,seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP>=5 & stops$TOURPURP<=6 & stops$FULLY_JOINT==0])
 stopfreqi789 <- wtd.hist(stops$out_dir_dist[stops$TOURPURP>=7 & stops$TOURPURP<=9 & stops$FULLY_JOINT==0], breaks = c(-9999,seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP>=7 & stops$TOURPURP<=9 & stops$FULLY_JOINT==0])
-# stopfreqj56 <- wtd.hist(jstops$out_dir_dist[jstops$TOURPURP>=5 & jstops$TOURPURP<=6], breaks = c(-9999,seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = jstops$finalweight[jstops$TOURPURP>=5 & jstops$TOURPURP<=6])
+stopfreqj56 <- wtd.hist(jstops$out_dir_dist[jstops$TOURPURP>=5 & jstops$TOURPURP<=6], breaks = c(-9999,seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = jstops$finalweight[jstops$TOURPURP>=5 & jstops$TOURPURP<=6])
 # stopfreqj789 <- wtd.hist(jstops$out_dir_dist[jstops$TOURPURP>=7 & jstops$TOURPURP<=9], breaks = c(-9999,seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = jstops$finalweight[jstops$TOURPURP>=7 & jstops$TOURPURP<=9])
 stopfreq10 <- wtd.hist(stops$out_dir_dist[stops$SUBTOUR==1], breaks = c(-9999,seq(0,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$SUBTOUR==1])
 
@@ -2257,10 +2269,8 @@ stopFreq <- data.frame(stopfreq1$counts,
                        # stopfreq4$counts, 
                        stopfreqi56$counts,
                        stopfreqi789$counts,
-                       # stopfreqj56$counts,
-                       stopfreq3$counts*0,
-                       # stopfreqj789$counts,
-                       stopfreq3$counts*0,
+                       stopfreqj56$counts,
+                       stopfreq3$counts*0,# stopfreqj789$counts,
                        stopfreq10$counts)
 colnames(stopFreq) <- c("work", "univ", "sch", "esco","imain", "idisc", "jmain", "jdisc", "atwork")
 fwrite(stopFreq, file.path(outdir, "stopOutOfDirectionDC.csv"))
@@ -2311,21 +2321,18 @@ stopfreq3 <- wtd.hist(stops$DEST_DEP_BIN[stops$TOURPURP==3 & stops$FULLY_JOINT==
 # stopfreq4 <- wtd.hist(stops$DEST_DEP_BIN[stops$TOURPURP==4 & stops$FULLY_JOINT==0], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP==4 & stops$FULLY_JOINT==0])
 stopfreqi56 <- wtd.hist(stops$DEST_DEP_BIN[stops$TOURPURP>=5 & stops$TOURPURP<=6 & stops$FULLY_JOINT==0], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP>=5 & stops$TOURPURP<=6 & stops$FULLY_JOINT==0])
 stopfreqi789 <- wtd.hist(stops$DEST_DEP_BIN[stops$TOURPURP>=7 & stops$TOURPURP<=9 & stops$FULLY_JOINT==0], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$TOURPURP>=7 & stops$TOURPURP<=9 & stops$FULLY_JOINT==0])
-# stopfreqj56 <- wtd.hist(jstops$DEST_DEP_BIN[jstops$TOURPURP>=5 & jstops$TOURPURP<=6], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = jstops$finalweight[jstops$TOURPURP>=5 & jstops$TOURPURP<=6])
+stopfreqj56 <- wtd.hist(jstops$DEST_DEP_BIN[jstops$TOURPURP>=5 & jstops$TOURPURP<=6], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = jstops$finalweight[jstops$TOURPURP>=5 & jstops$TOURPURP<=6])
 # stopfreqj789 <- wtd.hist(jstops$DEST_DEP_BIN[jstops$TOURPURP>=7 & jstops$TOURPURP<=9], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = jstops$finalweight[jstops$TOURPURP>=7 & jstops$TOURPURP<=9])
 stopfreq10 <- wtd.hist(stops$DEST_DEP_BIN[stops$SUBTOUR==1], breaks = c(seq(1,40, by=1), 9999), freq = NULL, right=FALSE, weight = stops$finalweight[stops$SUBTOUR==1])
 
 stopFreq <- data.frame(stopfreq1$counts, 
                        stopfreq2$counts,
                        stopfreq3$counts,
-                       # stopfreq4$counts,
-                       stopfreq3$counts*0,
+                       stopfreq3$counts*0, # stopfreq4$counts,
                        stopfreqi56$counts,
                        stopfreqi789$counts,
-                       # stopfreqj56$counts,
-                       stopfreq3$counts*0,
-                       # stopfreqj789$counts, 
-                       stopfreq3$counts*0,
+                       stopfreqj56$counts,
+                       stopfreq3$counts*0, # stopfreqj789$counts,
                        stopfreq10$counts)
 colnames(stopFreq) <- c("work", "univ", "sch", "esco","imain", "idisc", "jmain", "jdisc", "atwork")
 fwrite(stopFreq, file.path(outdir, "stopDeparture.csv"))
@@ -2854,12 +2861,12 @@ totals_df <- data.frame(name = totals_var, value = totals_val)
 fwrite(totals_df, file.path(outdir, "totals.csv"), row.names = F)
 
 # HH Size distribution
-hhSizeDist <- count(hh[!is.na(hh$HHSIZE),], c("HHSIZE"), "finalweight")
+hhSizeDist <- plyr::count(hh[!is.na(hh$HHSIZE),], c("HHSIZE"), "finalweight")
 fwrite(hhSizeDist, file.path(outdir, "hhSizeDist.csv"), row.names = F)
 
 # Active Persons by person type
-actpertypeDistbn <- count(perday[(!is.na(perday$PERTYPE) & (perday$DAP!="H")),], c("PERTYPE"), "finalweight_1")
-fwrite(actpertypeDistbn, file.path(outdir, "activePertypeDistbn.csv"), row.names = TRUE)
+actpertypeDistbn <- plyr::count(perday[(!is.na(perday$PERTYPE) & (perday$DAP!="H")),], c("PERTYPE"), "finalweight_1")
+fwrite(actpertypeDistbn, file.path(outdir, "activePertypeDistbn.csv"), row.names = FALSE)
 
 
 
@@ -2918,7 +2925,7 @@ write.csv(tripmode_ie$counts, file.path(outdir, "tripmode_ie.csv"), row.names = 
 ## These summaries are created for the full OHAS data of Oregon state
 ## Therefore, clear workspace and reload the required files
 
-library(dplyr)
+
 ## INPUTS
 
 
@@ -2939,20 +2946,28 @@ tours$HHEXPFACT = hhday$finalweight[match(paste(tours$HH_ID, tours$DAYNO, sep = 
 tours$OUT_CHAUFFUER_ID <- as.numeric(tours$OUT_CHAUFFUER_ID)
 tours$INB_CHAUFFUER_ID <- as.numeric(tours$INB_CHAUFFUER_ID)
 
-tours_sample <- select(tours, HH_ID, PER_ID, TOUR_ID, TOURPURP, ESCORTED_TOUR, CHAUFFUER_ID, ESCORTING_TOUR, 
-                       PERSONTYPE, OUT_ESCORT_TYPE, OUT_CHAUFFUER_ID, OUT_CHAUFFUER_PURP, OUT_CHAUFFUER_PTYPE, 
-                       INB_ESCORT_TYPE, INB_CHAUFFUER_ID, INB_CHAUFFUER_PURP, INB_CHAUFFUER_PTYPE, HHEXPFACT)
-tours_sample <- filter(tours_sample, TOURPURP==3 & PERSONTYPE>=6)
+# tours_sample <- select(tours, HH_ID, PER_ID, TOUR_ID, TOURPURP, ESCORTED_TOUR, CHAUFFUER_ID, ESCORTING_TOUR, 
+#                        PERSONTYPE, OUT_ESCORT_TYPE, OUT_CHAUFFUER_ID, OUT_CHAUFFUER_PURP, OUT_CHAUFFUER_PTYPE, 
+#                        INB_ESCORT_TYPE, INB_CHAUFFUER_ID, INB_CHAUFFUER_PURP, INB_CHAUFFUER_PTYPE, HHEXPFACT)
+# tours_sample <- filter(tours_sample, TOURPURP==3 & PERSONTYPE>=6)
+# out_sample1 <- filter(tours_sample, !is.na(OUT_ESCORT_TYPE) & !is.na(PERSONTYPE) & OUT_ESCORT_TYPE!="NaN")
+# inb_sample1 <- filter(tours_sample, !is.na(INB_ESCORT_TYPE) & !is.na(PERSONTYPE) & INB_ESCORT_TYPE!="NaN")
 
+tours_sample <- tours[TOURPURP==3 & PERSONTYPE>=6, .(HH_ID, PER_ID, TOUR_ID, TOURPURP, ESCORTED_TOUR, CHAUFFUER_ID, ESCORTING_TOUR, 
+                                                     PERSONTYPE, OUT_ESCORT_TYPE, OUT_CHAUFFUER_ID, OUT_CHAUFFUER_PURP, OUT_CHAUFFUER_PTYPE, 
+                                                     INB_ESCORT_TYPE, INB_CHAUFFUER_ID, INB_CHAUFFUER_PURP, INB_CHAUFFUER_PTYPE, HHEXPFACT)]
 
+out_sample1 <- tours_sample[!is.na(OUT_ESCORT_TYPE) & !is.na(PERSONTYPE) & OUT_ESCORT_TYPE!="NaN",]
+inb_sample1 <- tours_sample[!is.na(INB_ESCORT_TYPE) & !is.na(PERSONTYPE) & INB_ESCORT_TYPE!="NaN",]
 
-out_sample1 <- filter(tours_sample, !is.na(OUT_ESCORT_TYPE) & !is.na(PERSONTYPE) & OUT_ESCORT_TYPE!="NaN")
-inb_sample1 <- filter(tours_sample, !is.na(INB_ESCORT_TYPE) & !is.na(PERSONTYPE) & INB_ESCORT_TYPE!="NaN")
 out_table1  <- xtabs(HHEXPFACT~OUT_ESCORT_TYPE+PERSONTYPE, data = out_sample1)
 inb_table1  <- xtabs(HHEXPFACT~INB_ESCORT_TYPE+PERSONTYPE, data = inb_sample1)
 
-out_sample2 <- filter(tours_sample, !is.na(OUT_ESCORT_TYPE) & !is.na(OUT_CHAUFFUER_PTYPE) & OUT_ESCORT_TYPE!="NaN" & OUT_CHAUFFUER_PTYPE!="NaN")
-inb_sample2 <- filter(tours_sample, !is.na(INB_ESCORT_TYPE) & !is.na(INB_CHAUFFUER_PTYPE) & INB_ESCORT_TYPE!="NaN" & INB_CHAUFFUER_PTYPE!="NaN")
+# out_sample2 <- filter(tours_sample, !is.na(OUT_ESCORT_TYPE) & !is.na(OUT_CHAUFFUER_PTYPE) & OUT_ESCORT_TYPE!="NaN" & OUT_CHAUFFUER_PTYPE!="NaN")
+# inb_sample2 <- filter(tours_sample, !is.na(INB_ESCORT_TYPE) & !is.na(INB_CHAUFFUER_PTYPE) & INB_ESCORT_TYPE!="NaN" & INB_CHAUFFUER_PTYPE!="NaN")
+out_sample2 <- tours_sample[!is.na(OUT_ESCORT_TYPE) & !is.na(OUT_CHAUFFUER_PTYPE) & OUT_ESCORT_TYPE!="NaN" & OUT_CHAUFFUER_PTYPE!="NaN",]
+inb_sample2 <- tours_sample[!is.na(INB_ESCORT_TYPE) & !is.na(INB_CHAUFFUER_PTYPE) & INB_ESCORT_TYPE!="NaN" & INB_CHAUFFUER_PTYPE!="NaN",]
+
 out_table2  <- xtabs(HHEXPFACT~OUT_ESCORT_TYPE+OUT_CHAUFFUER_PTYPE, data = out_sample2)
 inb_table2  <- xtabs(HHEXPFACT~INB_ESCORT_TYPE+INB_CHAUFFUER_PTYPE, data = inb_sample2)
 
@@ -2961,6 +2976,8 @@ inb_table2  <- xtabs(HHEXPFACT~INB_ESCORT_TYPE+INB_CHAUFFUER_PTYPE, data = inb_s
 pure_escort_tours <- tours[(tours$OUT_ESCORTING_TYPE==2 & tours$OUT_ESCORTEE_TOUR_PURP==3) |
                              (tours$INB_ESCORTING_TYPE==2 & tours$INB_ESCORTEE_TOUR_PURP==3) ,]
 
+
+library(dplyr)
 #trips$tempid = trips$HH_ID*1000 + trips$PER_ID*100 + trips$TOUR_ID
 nonescortstops <- trips %>%
   mutate(nonescortstop = ifelse(DEST_PURP>0 & DEST_PURP<=10 & DEST_PURP!=4 & DEST_IS_TOUR_DEST==0, 1, 0)) %>%
@@ -2969,13 +2986,13 @@ nonescortstops <- trips %>%
   summarise(nonescortstops = sum(nonescortstop)) %>%
   ungroup()
 
-pure_escort_tours <- pure_escort_tours %>%
-  mutate(tempid = HH_ID*1000+ PER_ID*100+ TOUR_ID) %>%
-  left_join(nonescortstops, by = c("tempid"))
+# pure_escort_tours <- pure_escort_tours %>%
+#   mutate(tempid = HH_ID*1000+ PER_ID*100+ TOUR_ID) %>%
+#   left_join(nonescortstops, by = c("tempid"))
 
 # summary of pure school escorting tours [outbound or inbound]
 # frequency of non-escorting stops excluding the primary destination by chauffeur tour purpose
-xtabs(HHEXPFACT~TOURPURP+nonescortstops, data = pure_escort_tours)
+# xtabs(HHEXPFACT~TOURPURP+nonescortstops, data = pure_escort_tours)
 
 
 #### Worker summary ####
@@ -3015,36 +3032,36 @@ active_workers <- active_workers %>%
 
 #list of workers who did ride share or pure escort for school student
 out_rs_workers <- tours %>%
-  select(HH_ID, PER_ID, TOUR_ID, TOURPURP, ESCORTED_TOUR, CHAUFFUER_ID, 
+  dplyr::select(HH_ID, PER_ID, TOUR_ID, TOURPURP, ESCORTED_TOUR, CHAUFFUER_ID, 
          OUT_ESCORT_TYPE, OUT_CHAUFFUER_ID, OUT_CHAUFFUER_PURP, OUT_CHAUFFUER_PTYPE) %>%
-  filter(TOURPURP==3 & OUT_ESCORT_TYPE==1) %>%
-  group_by(HH_ID, OUT_CHAUFFUER_ID) %>%
-  mutate(num_escort = 1) %>%
-  summarise(out_rs_escort = sum(num_escort))
+  dplyr::filter(TOURPURP==3 & OUT_ESCORT_TYPE==1) %>%
+  dplyr::group_by(HH_ID, OUT_CHAUFFUER_ID) %>%
+  dplyr::mutate(num_escort = 1) %>%
+  dplyr::summarise(out_rs_escort = sum(num_escort))
 
 out_pe_workers <- tours %>%
-  select(HH_ID, PER_ID, TOUR_ID, TOURPURP, ESCORTED_TOUR, CHAUFFUER_ID, 
+  dplyr::select(HH_ID, PER_ID, TOUR_ID, TOURPURP, ESCORTED_TOUR, CHAUFFUER_ID, 
          OUT_ESCORT_TYPE, OUT_CHAUFFUER_ID, OUT_CHAUFFUER_PURP, OUT_CHAUFFUER_PTYPE) %>%
-  filter(TOURPURP==3 & OUT_ESCORT_TYPE==2) %>%
-  group_by(HH_ID, OUT_CHAUFFUER_ID) %>%
-  mutate(num_escort = 1) %>%
-  summarise(out_pe_escort = sum(num_escort))
+  dplyr::filter(TOURPURP==3 & OUT_ESCORT_TYPE==2) %>%
+  dplyr::group_by(HH_ID, OUT_CHAUFFUER_ID) %>%
+  dplyr::mutate(num_escort = 1) %>%
+  dplyr::summarise(out_pe_escort = sum(num_escort))
 
 inb_rs_workers <- tours %>%
-  select(HH_ID, PER_ID, TOUR_ID, TOURPURP, ESCORTED_TOUR, CHAUFFUER_ID, 
+  dplyr::select(HH_ID, PER_ID, TOUR_ID, TOURPURP, ESCORTED_TOUR, CHAUFFUER_ID, 
          INB_ESCORT_TYPE, INB_CHAUFFUER_ID, INB_CHAUFFUER_PURP, INB_CHAUFFUER_PTYPE) %>%
-  filter(TOURPURP==3 & INB_ESCORT_TYPE==1) %>%
-  group_by(HH_ID, INB_CHAUFFUER_ID) %>%
-  mutate(num_escort = 1) %>%
-  summarise(inb_rs_escort = sum(num_escort))
+  dplyr::filter(TOURPURP==3 & INB_ESCORT_TYPE==1) %>%
+  dplyr::group_by(HH_ID, INB_CHAUFFUER_ID) %>%
+  dplyr::mutate(num_escort = 1) %>%
+  dplyr::summarise(inb_rs_escort = sum(num_escort))
 
 inb_pe_workers <- tours %>%
-  select(HH_ID, PER_ID, TOUR_ID, TOURPURP, ESCORTED_TOUR, CHAUFFUER_ID, 
+  dplyr::select(HH_ID, PER_ID, TOUR_ID, TOURPURP, ESCORTED_TOUR, CHAUFFUER_ID, 
          INB_ESCORT_TYPE, INB_CHAUFFUER_ID, INB_CHAUFFUER_PURP, INB_CHAUFFUER_PTYPE) %>%
-  filter(TOURPURP==3 & INB_ESCORT_TYPE==2) %>%
-  group_by(HH_ID, INB_CHAUFFUER_ID) %>%
-  mutate(num_escort = 1) %>%
-  summarise(inb_pe_escort = sum(num_escort))
+  dplyr::filter(TOURPURP==3 & INB_ESCORT_TYPE==2) %>%
+  dplyr::group_by(HH_ID, INB_CHAUFFUER_ID) %>%
+  dplyr::mutate(num_escort = 1) %>%
+  dplyr::summarise(inb_pe_escort = sum(num_escort))
 
 active_workers <- active_workers %>%
   left_join(out_rs_workers, by = c("HH_ID"="HH_ID", "PER_ID"="OUT_CHAUFFUER_ID")) %>%
@@ -3068,8 +3085,9 @@ worker_table <- xtabs(HHEXPFACT~out_escort_type+inb_escort_type, data = temp)
 ## add marginal totals to all final tables
 out_table1   <- addmargins(as.table(out_table1))
 inb_table1   <- addmargins(as.table(inb_table1))
-out_table2   <- addmargins(as.table(out_table2))
-inb_table2   <- addmargins(as.table(inb_table2))
+  # out_table2   <- addmargins(as.table(out_table2))
+  # inb_table2   <- addmargins(as.table(inb_table2))
+
 worker_table <- addmargins(as.table(worker_table))
 
 ## reshape data in required form for visualizer
@@ -3101,38 +3119,38 @@ table1$child_type[table1$child_type=='7'] <- 'Non-DrivStudent'
 table1$child_type[table1$child_type=='8'] <- 'Pre-Schooler'
 
 
-out_table2 <- as.data.frame.matrix(out_table2)
-out_table2$id <- row.names(out_table2)
-out_table2 <- melt(out_table2, id = c("id"))
-colnames(out_table2) <- c("esc_type", "chauffeur", "freq_out")
-out_table2$esc_type <- as.character(out_table2$esc_type)
-out_table2$chauffeur <- as.character(out_table2$chauffeur)
-out_table2 <- out_table2[out_table2$esc_type!="Sum",]
-out_table2$chauffeur[out_table2$chauffeur=="Sum"] <- "Total"
-
-inb_table2 <- as.data.frame.matrix(inb_table2)
-inb_table2$id <- row.names(inb_table2)
-inb_table2 <- melt(inb_table2, id = c("id"))
-colnames(inb_table2) <- c("esc_type", "chauffeur", "freq_inb")
-inb_table2$esc_type <- as.character(inb_table2$esc_type)
-inb_table2$chauffeur <- as.character(inb_table2$chauffeur)
-inb_table2 <- inb_table2[inb_table2$esc_type!="Sum",]
-inb_table2$chauffeur[inb_table2$chauffeur=="Sum"] <- "Total"
-
-table2 <- inb_table2[,1:2]
-table2$freq_out <- out_table2$freq_out[match(paste(table2$esc_type, table2$chauffeur, sep = "-"), paste(out_table2$esc_type, out_table2$chauffeur, sep = "-"))]
-table2$freq_inb <- inb_table2$freq_inb[match(paste(table2$esc_type, table2$chauffeur, sep = "-"), paste(inb_table2$esc_type, inb_table2$chauffeur, sep = "-"))]
-#table2 <- out_table2
-#table2$freq_inb <- inb_table2$freq_inb
-table2$esc_type[table2$esc_type=="1"] <- "Ride Share"
-table2$esc_type[table2$esc_type=="2"] <- "Pure Escort"
-table2$esc_type[table2$esc_type=="3"] <- "No Escort"
-table2$chauffeur[table2$chauffeur=='1'] <- "FT Worker"
-table2$chauffeur[table2$chauffeur=='2'] <- "PT Worker"
-table2$chauffeur[table2$chauffeur=='3'] <- "Univ Stud"
-table2$chauffeur[table2$chauffeur=='4'] <- "Non-Worker"
-table2$chauffeur[table2$chauffeur=='5'] <- "Retiree"
-table2$chauffeur[table2$chauffeur=='6'] <- "Driv Student"
+# out_table2 <- as.data.frame.matrix(out_table2)
+# out_table2$id <- row.names(out_table2)
+# out_table2 <- melt(out_table2, id = c("id"))
+# colnames(out_table2) <- c("esc_type", "chauffeur", "freq_out")
+# out_table2$esc_type <- as.character(out_table2$esc_type)
+# out_table2$chauffeur <- as.character(out_table2$chauffeur)
+# out_table2 <- out_table2[out_table2$esc_type!="Sum",]
+# out_table2$chauffeur[out_table2$chauffeur=="Sum"] <- "Total"
+# 
+# inb_table2 <- as.data.frame.matrix(inb_table2)
+# inb_table2$id <- row.names(inb_table2)
+# inb_table2 <- melt(inb_table2, id = c("id"))
+# colnames(inb_table2) <- c("esc_type", "chauffeur", "freq_inb")
+# inb_table2$esc_type <- as.character(inb_table2$esc_type)
+# inb_table2$chauffeur <- as.character(inb_table2$chauffeur)
+# inb_table2 <- inb_table2[inb_table2$esc_type!="Sum",]
+# inb_table2$chauffeur[inb_table2$chauffeur=="Sum"] <- "Total"
+# 
+# table2 <- inb_table2[,1:2]
+# table2$freq_out <- out_table2$freq_out[match(paste(table2$esc_type, table2$chauffeur, sep = "-"), paste(out_table2$esc_type, out_table2$chauffeur, sep = "-"))]
+# table2$freq_inb <- inb_table2$freq_inb[match(paste(table2$esc_type, table2$chauffeur, sep = "-"), paste(inb_table2$esc_type, inb_table2$chauffeur, sep = "-"))]
+# #table2 <- out_table2
+# #table2$freq_inb <- inb_table2$freq_inb
+# table2$esc_type[table2$esc_type=="1"] <- "Ride Share"
+# table2$esc_type[table2$esc_type=="2"] <- "Pure Escort"
+# table2$esc_type[table2$esc_type=="3"] <- "No Escort"
+# table2$chauffeur[table2$chauffeur=='1'] <- "FT Worker"
+# table2$chauffeur[table2$chauffeur=='2'] <- "PT Worker"
+# table2$chauffeur[table2$chauffeur=='3'] <- "Univ Stud"
+# table2$chauffeur[table2$chauffeur=='4'] <- "Non-Worker"
+# table2$chauffeur[table2$chauffeur=='5'] <- "Retiree"
+# table2$chauffeur[table2$chauffeur=='6'] <- "Driv Student"
 
 worker_table <- as.data.frame.matrix(worker_table)
 colnames(worker_table)[which(colnames(worker_table) == "1")] = "Ride Share"
@@ -3150,7 +3168,7 @@ worker_table$DropOff[worker_table$DropOff=="Sum"] <- "Total"
 
 ## write outputs
 fwrite(table1, file.path(outdir, "esctype_by_childtype.csv"), row.names = F)
-fwrite(table2, file.path(outdir, "esctype_by_chauffeurtype.csv"), row.names = F)
+# fwrite(table2, file.path(outdir, "esctype_by_chauffeurtype.csv"), row.names = F)
 fwrite(worker_table, file.path(outdir, "worker_school_escorting.csv"), row.names = F)
 
 
@@ -3286,3 +3304,6 @@ fwrite(jstop_arr_dep_dist, file.path(outdir, "jstop_arr_dep_distributions.csv"),
 
 # Turn back warnings;
 options(warn = oldw)
+rm(list=ls())
+gc()
+

@@ -17,86 +17,224 @@
 ## 3. Model area shapefile              : summaryFilesNames.csv
 ## 4. All REF and ABM summary output files
 
+library(data.table)
+library(yaml)
+
+
+# FUNCTIONS
+### Functions
+# copyFile <- function(fileList, sourceDir, targetDir){
+#   error <- F
+#   setwd(sourceDir)
+#   for(file in fileList){
+#     full_file <- paste(sourceDir, file, sep = "/")
+#     ## check if file exists - copy if exists else error out
+#     if(file.exists(file)){
+#       file.copy(full_file, targetDir, overwrite = T, copy.date = T)
+#     }else{
+#       #winDialog("ok", paste(file, "does not exist in", sourceDir))
+#       write.table(paste(file, "does not exist in", sourceDir), paste(OUTPUT_PATH, "error.txt", sep = "/"))
+#       error <- T
+#     }
+#     if(error) break
+#   }
+#   return(error)
+# }
+
+
+
 ### Read Command Line Arguments
 #args                <- commandArgs(trailingOnly = TRUE)
 #Parameters_File     <- args[1]
-Parameters_File = "spa_tool/modules/visualizer/runtime/parameters.csv"
 showWarnings=FALSE
+rm(list=ls())
 
 ### Read parameters from Parameters_File
-parameters          <- read.csv(Parameters_File, header = TRUE)
-WORKING_DIR         <- trimws(paste(parameters$Value[parameters$Key=="WORKING_DIR"]))	
- #   <- trimws(paste(parameters$Value[parameters$Key=="BASE_SUMMARY_DIR"]))
-BUILD_SUMMARY_DIR   <- trimws(paste(parameters$Value[parameters$Key=="BUILD_SUMMARY_DIR"]))
-BASE_SCENARIO_NAME  <- trimws(paste(parameters$Value[parameters$Key=="BASE_SCENARIO_NAME"]))
-BUILD_SCENARIO_NAME <- trimws(paste(parameters$Value[parameters$Key=="BUILD_SCENARIO_NAME"]))
-BASE_SAMPLE_RATE    <- as.numeric(trimws(paste(parameters$Value[parameters$Key=="BASE_SAMPLE_RATE"])))
-BUILD_SAMPLE_RATE   <- as.numeric(trimws(paste(parameters$Value[parameters$Key=="BUILD_SAMPLE_RATE"])))
-R_LIBRARY           <- trimws(paste(parameters$Value[parameters$Key=="R_LIBRARY"]))
-OUTPUT_HTML_NAME    <- trimws(paste(parameters$Value[parameters$Key=="OUTPUT_HTML_NAME"]))
-SHP_FILE_NAME       <- trimws(paste(parameters$Value[parameters$Key=="SHP_FILE_NAME"]))
-IS_BASE_SURVEY      <- trimws(paste(parameters$Value[parameters$Key=="IS_BASE_SURVEY"]))
+setwd('C:/gitclones/Dubai_survey_processing')
+Parameters_File  = file.path(getwd(), "configs/visualizer_specs/parameters.yaml")
+parameters       = read_yaml(Parameters_File)
+
+### Read code book values
+codebook_file = file.path(getwd(), 'configs/visualizer_specs/visualizer_codebook.csv')
+codebook = fread(codebook_file)
+codebook_list = split(codebook, codebook$var)
+names(codebook_list) = paste0(names(codebook_list), '_df')
+
+### Send vars to environment
+parameters = c(parameters, codebook_list)
+
+for (var_name in names(parameters)) {
+  var = parameters[[var_name]]
+  
+  if(class(var)[1]=='list') {
+    var = unlist(var)
+  }
+  
+  assign(var_name, var)
+}
+rm(codebook_list)
+
+
+
+### Paths
+SYSTEM_APP_PATH = file.path(getwd(), 'framework/modules/visualizer')
+TEMPLATE_PATH = file.path(SYSTEM_APP_PATH, 'template.Rmd')
+
+# BASE_SUMMARY_DIR = file.path(WORKING_DIR, 'summaries')
+# BASE_DATA_PATH = "C:\\Users\\andrew.rohne\\OneDrive - Resource Systems Group, Inc\\SANDAG_Viz\\visualizer\\outputs\\summaries\\base_hts"
+# BUILD_SUMMARY_DIR = "C:\\Users\\andrew.rohne\\OneDrive - Resource Systems Group, Inc\\SANDAG_Viz\\visualizer\\data\\build_hts"
+# SYSTEM_SHP_PATH = "C:\\Users\\andrew.rohne\\OneDrive - Resource Systems Group, Inc\\SANDAG_Viz\\visualizer\\data\\SHP"
+# SYSTEM_DATA_PATH      <- file.path(SYSTEM_APP_PATH, "data")
+# SYSTEM_SHP_PATH       <- file.path(SYSTEM_DATA_PATH, "SHP")
+# SYSTEM_TEMPLATES_PATH <- file.path(SYSTEM_APP_PATH, "templates")
+# SYSTEM_SCRIPTS_PATH   <- file.path(SYSTEM_APP_PATH, "scripts")
+# OUTPUT_PATH           <- file.path(SYSTEM_APP_PATH, "outputs")
+# RUNTIME_PATH          <- file.path(SYSTEM_APP_PATH, "runtime")
+# BASE_DATA_PATH        <- file.path(SYSTEM_DATA_PATH, "base")
+# BUILD_DATA_PATH       <- file.path(SYSTEM_DATA_PATH, "build")
+
+### Names
+if(IS_BASE_SURVEY=="Yes"){
+  #   Surey Base
+  BASE_SCENARIO_ALT     <- "IBI"
+  DISTRICT_FLOW_CENSUS  <- "IBI"
+  AO_CENSUS_SHORT       <- "IBI"
+  AO_CENSUS_LONG        <- "IBI"
+}else{
+  #   Non-Survey Base
+  BASE_SCENARIO_ALT     <- BASE_SCENARIO_NAME
+  DISTRICT_FLOW_CENSUS  <- BASE_SCENARIO_NAME
+  AO_CENSUS_SHORT       <- BASE_SCENARIO_NAME
+  AO_CENSUS_LONG        <- BASE_SCENARIO_NAME
+}
+
+
+
+# BUILD_SUMMARY_DIR   <- trimws(paste(parameters$Value[parameters$Key=="BUILD_SUMMARY_DIR"]))
+# BUILD_SCENARIO_NAME <- parameters$BUILD_SCENARIO_NAME
+# BASE_SCENARIO_NAME <- parameters$BASE_SCENARIO_NAME
+# BASE_SAMPLE_RATE    <- as.numeric(trimws(paste(parameters$Value[parameters$Key=="BASE_SAMPLE_RATE"])))
+# BUILD_SAMPLE_RATE   <- as.numeric(trimws(paste(parameters$Value[parameters$Key=="BUILD_SAMPLE_RATE"])))
+# R_LIBRARY           <- trimws(paste(parameters$Value[parameters$Key=="R_LIBRARY"]))
+# SHP_FILE_NAME       <- trimws(paste(parameters$Value[parameters$Key=="SHP_FILE_NAME"]))
+# IS_BASE_SURVEY      <- parameters$"IS_BASE_SURVEY"
+
 
 ### Initialization
 # Load global variables
 #.libPaths(R_LIBRARY)
-source("spa_tool/modules/visualizer/scripts/_SYSTEM_VARIABLES.R")
 
-BASE_SUMMARY_DIR = "C:\\Users\\andrew.rohne\\OneDrive - Resource Systems Group, Inc\\SANDAG_Viz\\visualizer\\data\\base_hts"
-BASE_DATA_PATH = "C:\\Users\\andrew.rohne\\OneDrive - Resource Systems Group, Inc\\SANDAG_Viz\\visualizer\\outputs\\summaries\\base_hts"
+# If not specified in codebook, it can be autogenerated from increment
 
-BUILD_SUMMARY_DIR = "C:\\Users\\andrew.rohne\\OneDrive - Resource Systems Group, Inc\\SANDAG_Viz\\visualizer\\data\\build_hts"
+if(n_time_periods == 40) {
+todBins               <- c("03:00 AM to 05:00 AM","05:00 AM to 05:30 AM","05:30 AM to 06:00 AM","06:00 AM to 06:30 AM","06:30 AM to 07:00 AM",
+                           "07:00 AM to 07:30 AM","07:30 AM to 08:00 AM","08:00 AM to 08:30 AM", "08:30 AM to 09:00 AM","09:00 AM to 09:30 AM",
+                           "09:30 AM to 10:00 AM","10:00 AM to 10:30 AM", "10:30 AM to 11:00 AM","11:00 AM to 11:30 AM", "11:30 AM to 12:00 PM",
+                           "12:00 PM to 12:30 PM", "12:30 PM to 01:00 PM","01:00 PM to 01:30 PM", "01:30 PM to 02:00 PM","02:00 PM to 02:30 PM",
+                           "02:30 PM to 03:00 PM","03:00 PM to 03:30 PM", "03:30 PM to 04:00 PM","04:00 PM to 04:30 PM", "04:30 PM to 05:00 PM",
+                           "05:00 PM to 05:30 PM", "05:30 PM to 06:00 PM","06:00 PM to 06:30 PM", "06:30 PM to 07:00 PM","07:00 PM to 07:30 PM",
+                           "07:30 PM to 08:00 PM","08:00 PM to 08:30 PM", "08:30 PM to 09:00 PM","09:00 PM to 09:30 PM", "09:30 PM to 10:00 PM",
+                           "10:00 PM to 10:30 PM", "10:30 PM to 11:00 PM","11:00 PM to 11:30 PM", "11:30 PM to 12:00 AM","12:00 AM to 03:00 AM")
 
-SYSTEM_SHP_PATH = "C:\\Users\\andrew.rohne\\OneDrive - Resource Systems Group, Inc\\SANDAG_Viz\\visualizer\\data\\SHP"
-###create directories
-dir.create(BASE_DATA_PATH)
-dir.create(BUILD_DATA_PATH)
+
+durBins               <- c("(0.5 hours)","(1 hours)","(1.5 hours)","(2 hours)","(2.5 hours)","(3 hours)","(3.5 hours)","(4 hours)","(4.5 hours)",
+                           "(5 hours)","(5.5 hours)","(6 hours)","(6.5 hours)","(7 hours)","(7.5 hours)","(8 hours)","(8.5 hours)","(9 hours)",
+                           "(9.5 hours)","(10 hours)","(10.5 hours)","(11 hours)","(11.5 hours)","(12 hours)","(12.5 hours)","(13 hours)",
+                           "(13.5 hours)","(14 hours)","(14.5 hours)","(15 hours)","(15.5 hours)","(16 hours)","(16.5 hours)","(17 hours)",
+                           "(17.5 hours)","(18 hours)","(18.5 hours)","(19 hours)","(19.5 hours)","(20 hours)")
+
+} else{
+  tod_seq = seq(0, 24, 24/n_time_periods)
+  time = paste(sprintf("%02d", tod_seq %/% 1), sprintf("%02d", 60 * tod_seq %% 1))
+  todBins = sapply(1:(length(time)-1), function(i) paste(time[i], 'to', time[i+1]))
+}
+
+tod_df = data.frame(var='tod', 
+                    code = seq(from=1, to=n_time_periods), name = todBins)
+
+dur_df = data.frame(var='duration',
+                    code = seq(from=1, to=nrow(tod_df)),
+                    name = paste0('(', seq(0.5, nrow(tod_df)/2, 0.5), ' hours)'))
+
+outDirDist = sapply(seq(0, n_time_periods-1), function(i) paste0(i, '-', i+1))
+
+
+# Dumb vector labels
+jtf_alternatives = jtf_alternatives_df$name
+tourMode = tourMode_df$name
+tripMode = tripMode_df$name
+person_type_char = person_type_df$name
+
+
 
 ### Copy summary CSVs
-base_CSV_list <- ifelse(IS_BASE_SURVEY=="Yes", "summaryFilesNames_survey.csv", "summaryFilesNames.csv")
-summaryFileList_base <- read.csv(paste(SYSTEM_TEMPLATES_PATH, base_CSV_list, sep = '/'), as.is = T)
-summaryFileList_base <- as.list(summaryFileList_base$summaryFile)
-retVal <- copyFile(summaryFileList_base, sourceDir = BASE_SUMMARY_DIR, targetDir = BASE_DATA_PATH)
-if(retVal) stop("Error base") #q(save = "no", status = 11)
+# base_CSV_list <- ifelse(IS_BASE_SURVEY=="Yes", "summaryFilesNames_survey.csv", "summaryFilesNames.csv")
+# summaryFileList_base <- read.csv(paste(SYSTEM_TEMPLATES_PATH, base_CSV_list, sep = '/'), as.is = T)
+# summaryFileList_base <- as.list(summaryFileList_base$summaryFile)
+# retVal <- copyFile(summaryFileList_base, sourceDir = BASE_SUMMARY_DIR, targetDir = BASE_DATA_PATH)
+# if(retVal) stop("Error base") #q(save = "no", status = 11)
 
-summaryFileList_build <- read.csv(paste(SYSTEM_TEMPLATES_PATH, "summaryFilesNames.csv", sep = '/'), as.is = T)
-summaryFileList_build <- as.list(summaryFileList_build$summaryFile)
-retVal <- copyFile(summaryFileList_build, sourceDir = BUILD_SUMMARY_DIR, targetDir = BUILD_DATA_PATH)
-if(retVal) stop("Error build") # q(save = "no", status = 11)
+# summaryFileList_build <- read.csv(paste(SYSTEM_TEMPLATES_PATH, "summaryFilesNames.csv", sep = '/'), as.is = T)
+# summaryFileList_build <- as.list(summaryFileList_build$summaryFile)
+# retVal <- copyFile(summaryFileList_build, sourceDir = BUILD_SUMMARY_DIR, targetDir = BUILD_DATA_PATH)
+# if(retVal) stop("Error build") # q(save = "no", status = 11)
 
 ### Load required libraries
-SYSTEM_REPORT_PKGS <- c("DT", "flexdashboard", "leaflet", "geojsonio", "htmltools", "htmlwidgets", "kableExtra",
-                        "knitr", "mapview", "plotly", "RColorBrewer", "rgdal", "rgeos", "crosstalk","treemap", "htmlTable",
-                        "rmarkdown", "scales", "stringr", "jsonlite", "pander", "ggplot2", "reshape", "raster", "dplyr")
+SYSTEM_REPORT_PKGS <- c("DT", "flexdashboard", "leaflet", "geojsonio",
+                        "htmltools", "htmlwidgets", "kableExtra",
+                        "knitr", "mapview", "plotly", "RColorBrewer",
+                        "rgdal", "rgeos", "crosstalk","treemap", "htmlTable",
+                        "rmarkdown", "scales", "stringr", "jsonlite",
+                        "pander", "ggplot2", "reshape", "raster", "dplyr")
 
 lapply(SYSTEM_REPORT_PKGS, library, character.only = TRUE)
 
 ### Read Target and Output Summary files
-currDir <- getwd()
-setwd(BASE_DATA_PATH)
-base_csv = list.files(pattern="*.csv")
-base_data <- lapply(base_csv, read.csv)
-base_csv_names <- unlist(lapply(base_csv, function (x) {gsub(".csv", "", x)}))
+# Base data
 
-setwd(BUILD_DATA_PATH)
-build_csv = list.files(pattern="*.csv")
-build_data <- lapply(build_csv, read.csv)
-build_csv_names <- unlist(lapply(build_csv, function (x) {gsub(".csv", "", x)}))
+base_data <- lapply(list.files(VIS_BASE_DATA_DIR, full.names = TRUE), function(x){
+  print(basename(x))
+  tmp = fread(x)
+  
+  print(colnames(tmp))
+})
 
-## Read SHP file
-setwd(SYSTEM_SHP_PATH)
-zone_shp <- shapefile(SHP_FILE_NAME)
-zone_shp <- spTransform(zone_shp, CRS("+proj=longlat +ellps=GRS80"))
 
-setwd(currDir)
+base_data <- lapply(list.files(VIS_BASE_DATA_DIR, full.names = TRUE), fread)
+base_csv_names <- gsub('.csv','', list.files(VIS_BASE_DATA_DIR))
+names(base_data) <- base_csv_names
+
+# Build data
+build_data <- lapply(list.files(VIS_BUILD_DATA_DIR, full.names = TRUE), fread)
+build_csv_names <- gsub('.csv','', list.files(VIS_BUILD_DATA_DIR))
+names(build_data) <- build_csv_names
+
+# setwd(BASE_DATA_PATH)
+# base_csv = list.files(pattern="*.csv")
+# base_data <- lapply(base_csv, read.csv)
+# base_csv_names <- unlist(lapply(base_csv, function (x) {gsub(".csv", "", x)}))
+
+# setwd(BUILD_DATA_PATH)
+# build_csv = list.files(pattern="*.csv")
+# build_data <- lapply(build_csv, read.csv)
+# build_csv_names <- unlist(lapply(build_csv, function (x) {gsub(".csv", "", x)}))
+
+# ## Read SHP file
+# setwd(SYSTEM_SHP_PATH)
+# zone_shp <- shapefile(SHP_FILE_NAME)
+# zone_shp <- spTransform(zone_shp, CRS("+proj=longlat +ellps=GRS80"))
+# 
+# setwd(currDir)
+
 
 ### Generate dashboard
-rmarkdown::render(file.path(SYSTEM_TEMPLATES_PATH, "template.Rmd"),
-                  output_dir = RUNTIME_PATH,
-                  intermediates_dir = RUNTIME_PATH, quiet = TRUE)
-template.html <- readLines(file.path(RUNTIME_PATH, "template.html"))
+rmarkdown::render(TEMPLATE_PATH, output_dir = VIS_DIR,
+                  intermediates_dir = VIS_DIR, quiet = TRUE)
+
+
+template.html <- readLines(file.path(VIZ_DIR, "template.html"))
 idx <- which(template.html == "window.FlexDashboardComponents = [];")[1]
 template.html <- append(template.html, "L_PREFER_CANVAS = true;", after = idx)
-writeLines(template.html, file.path(OUTPUT_PATH, paste(OUTPUT_HTML_NAME, ".html", sep = "")))
+writeLines(template.html, file.path(VIZ_DIR, paste(OUTPUT_HTML_NAME, ".html", sep = "")))
 
 # finish

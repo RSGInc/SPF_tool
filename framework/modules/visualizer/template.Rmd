@@ -122,7 +122,7 @@ get_standardDF <- function(data_df1, data_df2, x, y, grp = "", shared = F){
   }
   data_df[is.na(data_df)] <- 0
   
-  #data_df$grp_var <- as.character(data_df$grp_var)
+  # data_df$grp_var <- as.character(data_df$grp_var)
   
   # compute proportions for y variables
   for(i in seq(from=1, to=length(y))){
@@ -148,7 +148,10 @@ get_standardDF <- function(data_df1, data_df2, x, y, grp = "", shared = F){
   }
   
   # set all NAs to zero
+  # data_df[,c(y_var1, y_var2)][is.na(data_df[,c(y_var1, y_var2)])] <- 0
+  # data_df$grp_var <- as.character(data_df$grp_var)
   data_df[is.na(data_df)] <- 0
+
   
   if(!shared){
     return(data_df)
@@ -386,22 +389,22 @@ Note: Mozilla Firefox does not correctly render the images in this HTML file.
 Summary {data-width=600}
 --------------------------------------------
 
-### Modeling Region
-```{r model_region}
-bins <- c(0, 10, 20, 50, 100, 200, 500, 1000, Inf)
-pal <- colorBin("YlOrRd", domain = zone_shp$HH, bins = bins)
+<!-- ### Modeling Region -->
+<!-- ```{r model_region} -->
+<!-- bins <- c(0, 10, 20, 50, 100, 200, 500, 1000, Inf) -->
+<!-- pal <- colorBin("YlOrRd", domain = zone_shp$HH, bins = bins) -->
 
-m <- leaflet(data = zone_shp)%>% 
-  addTiles() %>% 
-  addProviderTiles(providers$OpenStreetMap, group = "Background Map") %>%
-  addLayersControl(
-    overlayGroups = "Background Map", options = layersControlOptions(collapsed = FALSE)
-  ) %>%
-  addPolygons(weight = 0.5, opacity = 1)
-m
+<!-- m <- leaflet(data = zone_shp)%>%  -->
+<!--   addTiles() %>%  -->
+<!--   addProviderTiles(providers$OpenStreetMap, group = "Background Map") %>% -->
+<!--   addLayersControl( -->
+<!--     overlayGroups = "Background Map", options = layersControlOptions(collapsed = FALSE) -->
+<!--   ) %>% -->
+<!--   addPolygons(weight = 0.5, opacity = 1) -->
+<!-- m -->
 
-#  
-```
+<!-- #   -->
+<!-- ``` -->
 
 
 Overview
@@ -499,11 +502,11 @@ Chart Column 1 {data-width=275}
 ```{r Chart_Person_Type}
 base_pos <- which(base_csv_names=="pertypeDistbn")
 base_df <- base_data[[base_pos]]
-base_df$PERNAME <- person_type_df$name_char[match(base_df$PERTYPE, person_type_df$code)]
+base_df$PERNAME <- person_type_df$name[match(base_df$PERTYPE, person_type_df$code)]
 base_df$PERNAME <- factor(base_df$PERNAME, levels = person_type_char)
 build_pos <- which(build_csv_names=="pertypeDistbn")
 build_df <- build_data[[build_pos]]
-build_df$PERNAME <- person_type_df$name_char[match(build_df$PERTYPE, person_type_df$code)]
+build_df$PERNAME <- person_type_df$name[match(build_df$PERTYPE, person_type_df$code)]
 build_df$PERNAME <- factor(build_df$PERNAME, levels = person_type_char)
 
 colnames(build_df) <- colnames(base_df)
@@ -658,20 +661,20 @@ p <- plotly_bar_plotter(data = std_DF, xlabel = "Number of Vehicles", ylabel = "
 p
 ```
 
-### Auto Ownership - Autonomous Vehicles{data-height=150}
-```{r Chart_AV_Ownership}
-base_pos <- which(base_csv_names=="autoOwnership_AV")
-base_df <- base_data[[base_pos]]
-build_pos <- which(build_csv_names=="autoOwnership_AV")
-build_df <- build_data[[build_pos]]
+<!-- ### Auto Ownership - Autonomous Vehicles{data-height=150} -->
+<!-- ```{r Chart_AV_Ownership} -->
+<!-- base_pos <- which(base_csv_names=="autoOwnership_AV") -->
+<!-- base_df <- base_data[[base_pos]] -->
+<!-- build_pos <- which(build_csv_names=="autoOwnership_AV") -->
+<!-- build_df <- build_data[[build_pos]] -->
 
-colnames(build_df) <- colnames(base_df)
+<!-- colnames(build_df) <- colnames(base_df) -->
 
-std_DF_AV <- get_standardDF(data_df1 = base_df, data_df2 = build_df, x = "AVs", y = c("freq"))
+<!-- std_DF_AV <- get_standardDF(data_df1 = base_df, data_df2 = build_df, x = "AVs", y = c("freq")) -->
 
-p <- plotly_bar_plotter(data = std_DF_AV, xlabel = "Number of AVs", ylabel = "Percent", ynames = c(AO_CENSUS_SHORT, BUILD_SCENARIO_NAME), percent = T, height = 175)
-p
-```
+<!-- p <- plotly_bar_plotter(data = std_DF_AV, xlabel = "Number of AVs", ylabel = "Percent", ynames = c(AO_CENSUS_SHORT, BUILD_SCENARIO_NAME), percent = T, height = 175) -->
+<!-- p -->
+<!-- ``` -->
 
 ### {data-height=140}
 ```{r Gauge_WFH1}
@@ -875,11 +878,14 @@ Chart Column 1 {data-width=160}
 ### Daily Activity Pattern{data-height=500}
 ```{r Hist_DAP}
 base_df <- base_data[[which(base_csv_names=="dapSummary_vis")]]
-base_df$PERNAME <- person_type_df$name_char[match(base_df$PERTYPE, person_type_df$code)]
+base_df$PERNAME <- person_type_df$name[match(base_df$PERTYPE, person_type_df$code)]
+base_df[tolower(PERTYPE)=='total' & is.na(PERNAME),]$PERNAME <- 'Total'
 base_df$PERNAME <- factor(base_df$PERNAME, levels = person_type_char)
 base_df$DAP <- factor(base_df$DAP, levels = dap_types)
+
 build_df <- build_data[[which(build_csv_names=="dapSummary_vis")]]
-build_df$PERNAME <- person_type_df$name_char[match(build_df$PERTYPE, person_type_df$code)]
+build_df$PERNAME <- person_type_df$name[match(build_df$PERTYPE, person_type_df$code)]
+build_df[tolower(PERTYPE)=='total' & is.na(PERNAME),]$PERNAME <- 'Total'
 build_df$PERNAME <- factor(build_df$PERNAME, levels = person_type_char)
 build_df$DAP <- factor(build_df$DAP, levels = dap_types)
 
@@ -927,13 +933,13 @@ p
 ```{r Hist_MTF}
 base_pos <- which(base_csv_names=="mtfSummary_vis")
 base_df <- base_data[[base_pos]]
-base_df$PERNAME <- person_type_df$name_char[match(base_df$PERTYPE, person_type_df$code)]
+base_df$PERNAME <- person_type_df$name[match(base_df$PERTYPE, person_type_df$code)]
 base_df$PERNAME <- factor(base_df$PERNAME, levels = person_type_char)
 base_df$mtf_name <- mtf_df$name[match(base_df$MTF, mtf_df$code)]
 base_df$mtf_name <- factor(base_df$mtf_name, levels = mtf_names)
 build_pos <- which(build_csv_names=="mtfSummary_vis")
 build_df <- build_data[[build_pos]]
-build_df$PERNAME <- person_type_df$name_char[match(build_df$PERTYPE, person_type_df$code)]
+build_df$PERNAME <- person_type_df$name[match(build_df$PERTYPE, person_type_df$code)]
 build_df$PERNAME <- factor(build_df$PERNAME, levels = person_type_char)
 build_df$mtf_name <- mtf_df$name[match(build_df$MTF, mtf_df$code)]
 build_df$mtf_name <- factor(build_df$mtf_name, levels = mtf_names)
@@ -955,14 +961,14 @@ Chart Column 1 {data-width=150}
 ### Total Tour Rate (only active Persons)
 ```{r Hist_totaltours}
 base_df <- base_data[[which(base_csv_names=="total_tours_by_pertype_vis")]]
-base_df$PERNAME <- person_type_df$name_char[match(base_df$PERTYPE, person_type_df$code)]
+base_df$PERNAME <- person_type_df$name[match(base_df$PERTYPE, person_type_df$code)]
 base_df$PERNAME <- factor(base_df$PERNAME, levels = person_type_char)
 base_df1 <- base_data[[which(base_csv_names=="activePertypeDistbn")]]
 base_df$persons <- base_df1$freq[match(base_df$PERTYPE, base_df1$PERTYPE)]
 base_df$tourrate <- round(base_df$freq/base_df$persons,2)
 
 build_df <- build_data[[which(build_csv_names=="total_tours_by_pertype_vis")]]
-build_df$PERNAME <- person_type_df$name_char[match(build_df$PERTYPE, person_type_df$code)]
+build_df$PERNAME <- person_type_df$name[match(build_df$PERTYPE, person_type_df$code)]
 build_df$PERNAME <- factor(build_df$PERNAME, levels = person_type_char)
 build_df1 <- build_data[[which(build_csv_names=="activePertypeDistbn")]]
 build_df$persons <- build_df1$freq[match(build_df$PERTYPE, build_df1$PERTYPE)]
@@ -981,11 +987,11 @@ p
 ### Persons by Individual Non-Mandatory Tours
 ```{r Hist_INM}
 base_df <- base_data[[which(base_csv_names=="inmSummary_vis")]]
-base_df$PERNAME <- person_type_df$name_char[match(base_df$PERTYPE, person_type_df$code)]
+base_df$PERNAME <- person_type_df$name[match(base_df$PERTYPE, person_type_df$code)]
 base_df$PERNAME <- factor(base_df$PERNAME, levels = person_type_char)
 
 build_df <- build_data[[which(build_csv_names=="inmSummary_vis")]]
-build_df$PERNAME <- person_type_df$name_char[match(build_df$PERTYPE, person_type_df$code)]
+build_df$PERNAME <- person_type_df$name[match(build_df$PERTYPE, person_type_df$code)]
 build_df$PERNAME <- factor(build_df$PERNAME, levels = person_type_char)
 
 colnames(build_df) <- colnames(base_df)

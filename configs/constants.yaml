@@ -22,6 +22,18 @@ SurveyWorkPurp: 1
 SurveyWorkRelatedPurp: 10
 
 
+N_TIME_PERIODS: 48
+TIME_PERIODS:
+    EV1: 1
+    EA: 4
+    AM: 10
+    MD: 23
+    PM: 30
+    EV: 41
+
+DAP_TYPES: ["M", "N", "H"]
+
+
 # map mode name to mode code
 TRIP_MODE:
     'SOV': 1
@@ -99,6 +111,64 @@ PURPOSE:
     'LOOP':          11
     'CHANGE MODE':   12
     'OTHER':         13
+    
+#TODO convert to integers?
+TOUR_PURPOSE:
+    'atwork': 1 # 'At-Work'
+    'esc': 2    # 'Escorting'
+    'esco': 3   # 'Escorting'
+    'idisc': 4  # 'Indi-Discretionary'
+    'imain': 5  # 'Indi-Maintenance'
+    'jdisc': 6  # 'Joint-Discretionary'
+    'jmain': 7  # 'Joint-Maintenance'
+    'sch': 8    # 'School'
+    'schl': 9   # 'School'
+    'univ': 10  # 'University'
+    'work': 11  # 'Work'
+    
+    
+# Purpose grouping
+STOP_PURPOSES:
+    # FULLY_JOINT == 0
+    INDIV:
+        'WORK':        1
+        'UNIVERSITY':  2
+        'SCHOOL':      3
+        'ESCORTING':   4
+        'INDIV-MAINT': [5, 6]
+        'INDIV-DISC':  [7, 8, 9]
+    # FULLY_JOINT == 1
+    JOINT:
+        'JOINT-MAINT': [5, 6]
+        'JOINT-DISC':  [7, 8, 9]
+    # IS_SUBTOUR == 1
+    SUBTOUR:
+        'WORK-RELATED':  10
+    
+    
+JTF_ALTS:
+    'No Joint Tours': 1
+    '1 Shopping': 2
+    '1 Maintenance': 3
+    '1 Eating Out': 4
+    '1 Visiting': 5
+    '1 Other Discretionary': 6
+    '2 Shopping': 7
+    '1 Shopping / 1 Maintenance': 8
+    '1 Shopping / 1 Eating Out': 9
+    '1 Shopping / 1 Visiting': 10
+    '1 Shopping / 1 Other Discretionary': 11
+    '2 Maintenance': 12
+    '1 Maintenance / 1 Eating Out': 13
+    '1 Maintenance / 1 Visiting': 14
+    '1 Maintenance / 1 Other Discretionary': 15
+    '2 Eating Out': 16
+    '1 Eating Out / 1 Visiting': 17
+    '1 Eating Out / 1 Other Discretionary': 18
+    '2 Visiting': 19
+    '1 Visiting / 1 Other Discretionary': 20
+    '2 Other Discretionary': 21
+
 
 # Map partial tour types to numeric code
 PARTIAL_TOUR:
@@ -128,30 +198,33 @@ PERTYPE:
     'DS' : 6
     'ND' : 7
     'PS' : 8
-    # Local_male: 1
-    # Local_female: 2
-    # Exp_m_HI: 3
-    # Exp_m_CA_MI: 4
-    # Exp_m_CA_LI: 5
-    # Exp_m_NCA_MI: 6
-    # Exp_m_NCA_LI: 7
-    # Exp_f_HI: 8
-    # Exp_f_CA_MI: 9
-    # Exp_f_CA_LI: 10
-    # Exp_f_NCA_MI: 11
-    # Exp_f_NCA_LI: 12
-    # Local_P1: 13
-    # Local_P2: 14
-    # Expat_P1: 15
-    # Expat_P2: 16
-    # Students: 17
-    # Retired: 18
-    # LabC_CA: 19
-    # LabC_NCA: 20
-    # LabO_CA: 21
-    # LabO_NCA: 22
-    # Visitors_Tourists: 23
-    # Visitors_Business: 24
+
+PERTYPE_SURVEY:
+    "None": 0
+    Local_male: 1
+    Local_female: 2
+    Exp_m_HI: 3
+    Exp_m_CA_MI: 4
+    Exp_m_CA_LI: 5
+    Exp_m_NCA_MI: 6
+    Exp_m_NCA_LI: 7
+    Exp_f_HI: 8
+    Exp_f_CA_MI: 9
+    Exp_f_CA_LI: 10
+    Exp_f_NCA_MI: 11
+    Exp_f_NCA_LI: 12
+    Local_P1: 13
+    Local_P2: 14
+    Expat_P1: 15
+    Expat_P2: 16
+    Students: 17
+    Retired: 18
+    LabC_CA: 19
+    LabC_NCA: 20
+    LabO_CA: 21
+    LabO_NCA: 22
+    Visitors_Tourists: 23
+    Visitors_Business: 24
 
 STUDENT:
     'SCHOOL':       1
@@ -180,3 +253,30 @@ JOINT_TOUR_CAT:
     'PART_JOINT':    2
     'FULL_JOINT':    3
     'PROB_JOINT':    4
+
+FACILITY:
+    'Interstate': 1
+    'Principal Arterial': 3
+    'Minor Arterial': 4
+    'Major Collector': 5
+    'Minor Collector': 6
+    'Local Road': 7
+    'Ramp': 30
+    
+MTF:
+    '1 Work': 1
+    '2 Work': 2
+    '1 School': 3
+    '2 School': 4
+    '1 Work & 1 School': 5
+    
+OCC_TYPE:
+    'Management': 1
+    'Service': 2
+    'Sales & Office': 3
+    'Natural Resources': 4
+    'Production': 5
+    'Military': 6
+    'Total': 7
+
+

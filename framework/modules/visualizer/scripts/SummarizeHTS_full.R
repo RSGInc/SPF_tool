@@ -1333,7 +1333,6 @@ dapSummary_day <- plyr::count(perday, c("DAYNO","PERTYPE", "DAP"), "finalweight"
 
 fwrite(dapSummary_day, file.path(outdir, "dapSummary_day.csv"), row.names = FALSE)
 
-
 # Prepare DAP summary for visualizer
 dapSummary_vis <- xtabs(freq~PERTYPE+DAP, dapSummary)
 dapSummary_vis <- addmargins(as.table(dapSummary_vis))
@@ -1348,7 +1347,7 @@ dapSummary_vis <- dapSummary_vis[dapSummary_vis$DAP!="Sum",]
 dapSummary_vis$PERTYPE[dapSummary_vis$PERTYPE=="Sum"] <- "Total"
 
 ###
-# dapSummary_vis <- dapSummary_vis[dapSummary_vis$PERTYPE!='Total', ]
+dapSummary_vis <- dapSummary_vis[dapSummary_vis$PERTYPE!='Total', ]
 
 fwrite(dapSummary_vis, file.path(outdir, "dapSummary_vis.csv"), row.names = FALSE)
 

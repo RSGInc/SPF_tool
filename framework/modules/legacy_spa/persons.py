@@ -11,12 +11,13 @@ PERSON_COLUMNS = pd.read_csv(os.path.join(os.path.dirname(__file__), 'static/per
 class Person:
     """Person class"""
 
-    def __init__(self, hh, per_id, df, constants):
+    def __init__(self, hh_obj, per_id, day_id, df, constants):
         self.constants = constants
-        self.hh_obj = hh
+        self.hh_obj = hh_obj
         self.hh_obj.add_person(self)  # can start logging errors/warning
         self.per_id = per_id
-        self.fields = {"HH_ID": hh.get_id(), "PER_ID": per_id}
+        self.day_id = day_id
+        self.fields = {"HH_ID": hh_obj.get_id(), "PER_ID": per_id}
 
         # Populate fields
         for col in set(df.columns).intersection(PERSON_COLUMNS.values()):
@@ -506,6 +507,7 @@ class Person:
             per_obj=self,
             constants=self.constants,
             tour_id=_new_tour_id,
+            day_id=self.day_id,
             is_subtour=1,
             trips=trips,
         )

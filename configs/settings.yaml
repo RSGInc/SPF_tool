@@ -1,5 +1,5 @@
 # Declare the custom processing steps to run here
-START_FROM: TripsToPlace
+START_FROM: SPAToolModule
 
 PROCESSING_STEPS:
     ReadMSAccessDB:
@@ -78,8 +78,45 @@ PROCESSING_STEPS:
             place:
                 file: preprocessed/place.csv
                 index: place_id
-        configs:
+#        configs:
             # These are variable key mappings for the variables aggregated in the SPA tool.
-            spa_mapping:  spa_specs/variable_mapping.yaml
+#            spa_mapping:  spa_specs/variable_mapping.yaml
              
-            
+    Visualizer:
+        skip: True
+        module: visualizer.visualizer_module
+        from_pipeline: False
+        output_dir: visualizer
+        data:
+            raw:
+                raw_day:
+                    file: day.csv
+                    index: day_id
+                raw_person:
+                    file: person.csv
+                    index: person_id
+                zones:
+                    file: zone.csv
+                    index: zone_id
+            preprocessed:
+                pre_household:
+                    file: household.csv
+                    index: household_id
+                pre_person:
+                    file: person.csv
+                    index: person_id
+                prep_trip:
+                    file: trip.csv
+                    index: trip_id
+                pre_place:
+                    file: place.csv
+                    index: place_id
+            spa_output:
+                spa_household: households.csv
+                spa_person: persons.csv
+                spa_trips: trips.csv
+                spa_tours: tours.csv
+                spa_jultrips: unique_joint_ultrips.csv
+                spa_jtours: unique_joint_tours.csv
+        configs:
+            parameters:  visualizer_specs/parameters.yaml

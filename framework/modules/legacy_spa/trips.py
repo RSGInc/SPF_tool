@@ -12,7 +12,7 @@ TRIP_COLOUMNS = pd.read_csv(os.path.join(os.path.dirname(__file__), 'static/trip
 class Trip:
     """Trip class"""
 
-    def __init__(self, hh_obj, per_obj, tour_obj, constants, trip):
+    def __init__(self, hh_obj, per_obj, tour_obj, constants, day_id, trip):
         """instantiation of a Trip object"""
 
         self.constants = constants
@@ -20,6 +20,7 @@ class Trip:
         self.per_obj = per_obj
         self.tour_obj = tour_obj
         # self.trip_id = trip_id
+        self.day_id = day_id
         self.trip_id = int(trip.TRPNO)
         self.joint_descriptors = []
         self.escort_pers = (
@@ -30,6 +31,7 @@ class Trip:
             "PER_ID": self.get_per_id(),
             "TOUR_ID": self.get_tour_id(),
             "TRIP_ID": self.trip_id,
+            "DAYNO": day_id,
             "TRIP_WEIGHT": trip.TRIP_WEIGHT,
         }
 
@@ -784,17 +786,17 @@ class Trip:
                 _num_joint_episodes = _num_joint_episodes + 1
                 # create and populate a joint travel descriptor object
                 _new_joint_leg = Joint_ultrip(
-                    self,
-                    df["TOTTR"].iloc[row_index],
-                    _hh_mem_on_trip,
-                    convert2minutes(
+                    trip=self,
+                    num_tot_travelers=df["TOTTR"].iloc[row_index],
+                    num_hh_mem=_hh_mem_on_trip,
+                    dep_time=convert2minutes(
                         df["DEP_HR"].iloc[row_index - 1],
                         df["DEP_MIN"].iloc[row_index - 1],
                     ),
-                    convert2minutes(
+                    arr_time=convert2minutes(
                         df["ARR_HR"].iloc[row_index], df["ARR_MIN"].iloc[row_index]
                     ),
-                    [
+                    hh_travelers=[
                         self.get_per_id(),
                         df["PER1"].iloc[row_index],
                         df["PER2"].iloc[row_index],
@@ -803,7 +805,7 @@ class Trip:
                         df["PER5"].iloc[row_index],
                         df["PER6"].iloc[row_index],
                     ],
-                    self.constants,
+                    constants=self.constants,
                 )
                 self.joint_descriptors.append(_new_joint_leg)
                 if (

@@ -1,10 +1,18 @@
 import os
-import pandas as pd
 import math
-import numpy as np
 import yaml
-from collections import defaultdict
+import json
 import pandas_weighting
+import pandas as pd
+import numpy as np
+from collections import defaultdict
+
+
+class JSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if hasattr(obj, 'to_json'):
+            return obj.to_json(orient='records')
+        return json.JSONEncoder.default(self, obj)
 
 
 def read_mappings(**file_paths):
@@ -36,8 +44,8 @@ def read_config(file_path):
     with open(file_path, "r") as file:
         config = yaml.safe_load(file)
 
-    # Setup default values for any missing
-    defaults = {"PROCESSING_STEPS": None, "START_FROM": None}
+    # # Setup default values for any missing
+    # defaults = {"PROCESSING_STEPS": None, "START_FROM": None}
 
     for k, v in config.items():
         config[k] = config.setdefault(k, v)
@@ -60,11 +68,16 @@ def load_pipeline_tables(kwargs):
 
     else:
         for table_name, table_params in kwargs.get("data").items():
-            if not table_params.get("read_csv", True):
+            if isinstance(table_params, dict) and not table_params.get("read_csv", True):
                 continue
 
-            table_dir = table_params.get("file")
-            index_col = table_params.get("index")
+            if isinstance(table_params, str) and '.csv' in table_params:
+                table_dir = table_params
+                index_col = None
+            else:
+                table_dir = table_params.get("file")
+                index_col = table_params.get("index")
+
             # Check if multiple found
             if isinstance(table_dir, list):
                 assert len(table_dir) == 1, (
@@ -184,3 +197,47 @@ def find_source_root(file, sources):
         if len(path) == 1:
             file = path[0]
     return file
+
+# def recursive_file_dict(file_dict, root_dir, flat_dict={}):
+#     for k, v in file_dict.items():
+#         if isinstance(v, str):
+#             flat_dict[k] = find_source_root(v, root_dir)
+#         elif v.get('file'):
+#             v['file'] = find_source_root(v.get('file'), root_dir)
+#             flat_dict[k] = v
+#         else:
+#             recursive_file_dict(v, os.path.join(root_dir, k), flat_dict)
+#
+#     return flat_dict
+
+def recursive_file_dict(file_dict, root_dir):
+    flat_dict = {}
+    def flatten(d, root_dir, fd={}):
+        for k, v in d.items():
+            if isinstance(v, str):
+                fd[k] = find_source_root(v, root_dir)
+            elif v.get('file'):
+                v['file'] = find_source_root(v.get('file'), root_dir)
+                fd[k] = v
+            else:
+                flatten(v, os.path.join(root_dir, k), fd)
+        return fd
+
+    flat_dict = flatten(file_dict, root_dir)
+
+    return flat_dict
+
+# def recursive_file_dict(file_dict, root_dir):
+#     def flatten(key, value, root_dir):
+#         if isinstance(value, str):
+#             return (key, find_source_root(value, root_dir))
+#         elif value.get('file'):
+#             value['file'] = find_source_root(value.get('file'), root_dir)
+#             return (key, value)
+#         else:
+#             return [(k, v) for k, v in recursive_file_dict(value, os.path.join(root_dir, key)).items()]
+#
+#     # flat = {k: v for k, v in file_dict.items()}
+#     items = [item for k, v in file_dict.items() for item in flatten(k, v, root_dir)]
+#
+#     return dict(items)

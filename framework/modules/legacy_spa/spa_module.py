@@ -3,7 +3,7 @@ import time
 import pandas as pd
 
 import sys
-from core.utils import read_mappings
+from core import utils
 from core import base
 from modules.legacy_spa import households, persons, tours, trips, joint_tours, joint_ultrips
 
@@ -11,22 +11,19 @@ from modules.legacy_spa import households, persons, tours, trips, joint_tours, j
 class SPAToolModule(base.BaseModule):
     def __init__(self, namespace, **kwargs):
         super().__init__(namespace, **kwargs)
-        self.constants = self.default_constants()
+        self.default_constants()
 
     def default_constants(self):
-        # FIXME Can put the value labels in here from the dictionary as default rather than have users hard code them
-        constants = read_mappings(**self.kwargs.get("configs"))
-
+        # FIXME One off fix.
         def default_map(vals):
             vals = sorted(vals)
             return dict(zip(vals, vals))
 
-        if not constants.get("SurveyTpurp2Purp"):
-            constants["SurveyTpurp2Purp"] = default_map(
+        if not self.constants.get("SurveyTpurp2Purp"):
+            self.constants["SurveyTpurp2Purp"] = default_map(
                 self.input_tables["trip"].TPURP.unique()
             )
 
-        return constants
 
     def run(self):
         self.legacyspa_run()
@@ -61,7 +58,8 @@ class SPAToolModule(base.BaseModule):
         of_count = len(df_place.groupby(["SAMPN"]))
         ct = 0
         t0 = time.time()
-        for hhid, df_persons in df_place.groupby("SAMPN"):
+
+        for hhid, df_persons in list(df_place.groupby("SAMPN")):
             # create a new household object
             hh = households.Household(df_hh.loc[hhid], constants=self.constants)
             hh_list.append(hh)
@@ -76,8 +74,8 @@ class SPAToolModule(base.BaseModule):
                 # print(msg, end="\r")
                 sys.stdout.write('\r' + msg)
 
-            # loop through each person
-            for (hhid, pid), df_psn_places in df_persons.groupby(["SAMPN", "PERNO"]):
+            # Loop through each person
+            for (hhid, pid, dayid), df_psn_places in df_persons.groupby(["SAMPN", "PERNO", "DAYNO"]):
 
                 # locate the corresponding person in PERSON table
                 df_cur_per = df_per[
@@ -85,7 +83,11 @@ class SPAToolModule(base.BaseModule):
                 ]
 
                 # create a new person object
-                psn = persons.Person(hh, pid, df_cur_per, self.constants)
+                psn = persons.Person(hh_obj=hh,
+                                     per_id=pid,
+                                     day_id=dayid,
+                                     df=df_cur_per,
+                                     constants=self.constants)
 
                 num_places_for_person = len(df_psn_places)
                 # print(f"No. of place entries for person {pid} of household {hhid}: {num_places_for_person}")
@@ -146,7 +148,11 @@ class SPAToolModule(base.BaseModule):
                         # current PLACE marks the start of a new tour
                         # create a new tour object for the person
                         cur_tourid = cur_tourid + 1
-                        tour = tours.Tour(hh, psn, self.constants, cur_tourid)
+                        tour = tours.Tour(hh_obj=hh,
+                                          per_obj=psn,
+                                          constants=self.constants,
+                                          tour_id=cur_tourid,
+                                          day_id=dayid)
                         psn.add_tour(tour)
                         cur_tripid = 0
 
@@ -175,7 +181,12 @@ class SPAToolModule(base.BaseModule):
                         cur_tripid = cur_tripid + 1
 
                         # trip = Trip(hh, psn, tour, self.constants, cur_tripid)
-                        trip = trips.Trip(hh, psn, tour, self.constants, df_psn_places.iloc[cur_tripid])
+                        trip = trips.Trip(hh_obj=hh,
+                                          per_obj=psn,
+                                          tour_obj=tour,
+                                          constants=self.constants,
+                                          day_id=dayid,
+                                          trip=df_psn_places.iloc[cur_tripid])
 
                         # process current linked trip, which is described by rows starting
                         # at cur_trip_start_row and ending at cur_row+1
@@ -251,6 +262,7 @@ class SPAToolModule(base.BaseModule):
                         trip.set_tour_attributes()
                         trip.set_per_type(psn.get_per_type())
 
+                                # FIXME This is sloppy, should concatenate into dataframe and write to csv in bulk...
         # print_in_separate_files(hh_list, OUT_DIR)
         self.print_in_same_files(hh_list, OUT_DIR)
 
@@ -282,6 +294,8 @@ class SPAToolModule(base.BaseModule):
         # write out to a new place file
         df_place.to_csv(self.constants.get("IN_DIR") + out_file)
 
+
+    # FIXME This is sloppy, should concatenate into dataframe and write to csv in bulk...
     def print_in_separate_files(self, hh_list, out_dir):
         # specify output files
         hh_file = open(out_dir + "clean_hh/households.csv", "w")

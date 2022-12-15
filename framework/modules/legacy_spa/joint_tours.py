@@ -1,3 +1,23 @@
+from core import utils
+import numpy as np
+
+JT_TOUR_COLUMNS = ['HH_ID',
+                   'JTOUR_ID',
+                   'DAYNO',
+                   'NUMBER_HH',
+                   'COMPOSITION',
+                   'JOINT_PURP',
+                   'PERSON_1',
+                   'PERSON_2',
+                   'PERSON_3',
+                   'PERSON_4',
+                   'PERSON_5',
+                   'PERSON_6',
+                   'PERSON_7',
+                   'PERSON_8',
+                   'PERSON_9'
+                   ]
+
 class Joint_tour:
     """Joint tour class"""
 
@@ -5,6 +25,7 @@ class Joint_tour:
     def __init__(self, jtour_id, jtrips, constants):
         self.jtour_id = jtour_id
         self.jtrips = jtrips  # list of Joint_trip objects
+        self.day_id = jtrips[0][0].day_id
         self.error_msg = ""
         self.error_flag = False
         self.constants = constants
@@ -15,9 +36,33 @@ class Joint_tour:
             ptrip = jt.parent_trip
             ptour = ptrip.tour_obj
             self.person_tours.append(ptour)
+
         self.joint_purp = self.find_joint_purp()
+
         for ptour in self.person_tours:
             ptour.set_joint_tour_purp(self.joint_purp)
+
+        self.update_field_vals()
+
+    def update_field_vals(self):
+        # write out hh id, joint tour id, and size of travel group
+        # use the 0'th joint trip in the 0'th joint trip group
+        # since all joint trips in the jtrips list contain the same information
+        _jt = self.jtrips[0][0]
+        self.fields = {
+            "HH_ID": _jt.get_hh_id(),
+            "JTOUR_ID": _jt.jtour_id,
+            "DAYNO": _jt.day_id,
+            "NUMBER_HH": _jt.number_hh,
+            'COMPOSITION': _jt.composition,
+            'JOINT_PURP': self.joint_purp
+        }
+
+        _parties = sorted(_jt.travel_party)
+        person_fields = {f'PERSON_{i}': _parties[i-1] if i <= _jt.number_hh else np.NAN for i in range(1, 10)}
+        self.fields = {**self.fields, **person_fields}
+
+
 
     def find_joint_purp(self):
         """given the person tour associated with this fully joint tour, return the joint tour purpose"""
@@ -47,27 +92,17 @@ class Joint_tour:
         if err_msg:  # if there is an error message
             self.error_msg = self.error_msg + "E: " + err_msg
 
+    def coalesce_data(self):
+        if "ERROR" in self.fields.keys():
+            self.fields["ERROR"] = utils.add_quote_char(self.fields["ERROR"])
+        _vals = [self.fields[x] if x in self.fields.keys() else np.NAN for x in JT_TOUR_COLUMNS]
+
     def print_header(fp):
-        _header = ["HH_ID", "JTOUR_ID", "NUMBER_HH"]
-        # PERSON_1 to PERSON_9
-        for _i in range(1, 10):
-            _header.append("PERSON_" + str(_i))
-        _header.extend(["COMPOSITION", "JOINT_PURP"])
-        fp.write(",".join(["%s" % field for field in _header]) + "\n")
-        # Trip.print_header(fp)
+        fp.write(",".join(["%s" % name for name in JT_TOUR_COLUMNS]) + "\n")
 
     def print_vals(self, fp):
-        # write out hh id, joint tour id, and size of travel group
-        # use the 0'th joint trip in the 0'th joint trip group
-        # since all joint trips in the jtrips list contain the same information
-        _jt = self.jtrips[0][0]
-        fp.write("{},{},{}".format(_jt.get_hh_id(), _jt.jtour_id, _jt.number_hh))
-        # write out IDs of people in the travel party
-        _party = sorted(_jt.travel_party)
-        for _i in range(0, _jt.number_hh):
-            fp.write(",{}".format(_party[_i]))
-        # fill nan up to person 9
-        for _i in range(_jt.number_hh, 9):
-            fp.write(",nan")
-        # write out group composition, joint purpose, and error
-        fp.write(",{},{}\n".format(_jt.composition, self.joint_purp))
+        # fp.write(','.join(['%s' %value for value in self.fields.values()])+'\n')
+        if "ERROR" in self.fields.keys():
+            self.fields["ERROR"] = utils.add_quote_char(self.fields["ERROR"])
+        _vals = [self.fields[x] if x in self.fields.keys() else np.NAN for x in JT_TOUR_COLUMNS]
+        fp.write(",".join(["%s" % value for value in _vals]) + "\n")

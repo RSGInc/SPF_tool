@@ -10,7 +10,7 @@ TOUR_COLUMNS = pd.read_csv(os.path.join(os.path.dirname(__file__), 'static/tour_
 class Tour:
     """Tour class"""
 
-    def __init__(self, hh_obj, per_obj, constants, tour_id, is_subtour=0, trips=None):
+    def __init__(self, hh_obj, per_obj, constants, tour_id, day_id, is_subtour=0, trips=None):
         self.hh_obj = hh_obj
         self.per_obj = per_obj
         self.tour_id = int(tour_id)
@@ -33,6 +33,7 @@ class Tour:
             "HH_ID": hh_obj.get_id(),
             "PER_ID": per_obj.get_id(),
             "TOUR_ID": self.tour_id,
+            "DAYNO": day_id,
             "IS_SUBTOUR": self.is_AW_subtour,
             "FULLY_JOINT": 0,
         }

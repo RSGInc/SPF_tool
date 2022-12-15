@@ -25,15 +25,27 @@ VIS_DIR: data\visualizer
 # ASSIGNED: 1
 
 
-n_time_periods: 48
-
-time_periods:
-    EV1: 1
-    EA: 4
-    AM: 10
-    MD: 23
-    PM: 30
-    EV: 41
-
-dap_types: ["M", "N", "H"]
+SUMMARIES:
+    - activePertypeDistbn
+    - autoOwnership
+    - avgStopOutofDirectionDist_vis
+    - dapSummary_vis
+    - hhSizeDist
+    # hhsizeJoint
+    # inmSummary_vis
+    # jointComp
+    # jointCompPartySize
+    # jointPartySize
+    # jointToursHHSize
+    # jtf
+    # mtfSummary_vis
+    # pertypeDistbn
+    # stopDC_vis
+    # stopfreqDir_vis
+    # stoppurpose_tourpurpose_vis
+    # stopTripDep_vis
+    # todProfile_vis
+    # totals
+    # total_tours_by_pertype_vis
+    # trips_flow
 

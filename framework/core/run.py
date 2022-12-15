@@ -46,11 +46,9 @@ def add_run_args(parser):
 
 class SPTFramework:
     def __init__(self, namespace_args):
-        self.nargs = self.check_namespace(namespace_args)
+        self.namespace = self.check_namespace(namespace_args)
 
-        settings_file = utils.find_source_root(
-            "settings.yaml", self.nargs.configs
-        )
+        settings_file = os.path.join(self.namespace.configs, 'settings.yaml')
         self.settings = utils.read_config(settings_file)
 
         self.run()
@@ -103,7 +101,7 @@ class SPTFramework:
             class_obj = getattr(module_obj, class_name)
 
             results[params.get("output_dir", class_name)] = class_obj(
-                self.nargs, **class_args
+                self.namespace, **class_args
             ).run()
 
 

@@ -449,7 +449,9 @@ class Household:
         for _jt_group in jt_groups:
             for _jt in _jt_group:
                 _jt.set_jtour_id(jtour_id)
-        self.unique_jtours.append(Joint_tour(jtour_id, jt_groups, self.constants))
+        self.unique_jtours.append(Joint_tour(jtour_id=jtour_id,
+                                             jtrips=jt_groups,
+                                             constants=self.constants))
 
     def process_escort_trips(self):
         ESCORT_EVENT = self.constants.get("ESCORT_EVENT")

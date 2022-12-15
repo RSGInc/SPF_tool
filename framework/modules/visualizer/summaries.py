@@ -1,30 +1,319 @@
 """
 Visualizer functions mixin class
 
-
 The purpose of this is to define our summary functions cleanly in a separate file,
 but still be able to use them in the Visualizer class.
 
 """
 
+import itertools
+import pandas as pd
+import numpy as np
+from core import utils
+from copy import deepcopy
+
+# TODO Modify SPA output to include the features we pulled from raw and preprocessed data
+#  HH_VEH and HH_SIZE
 
 class VisualizerFunctions:
-    def some_function(self):
-        pass
+
+    def setup_intermediate_data(self):
+        """
+         Setup any intermediate data / calculations in here.
+
+         This is useful to avoid repeating calculations, but want to keep this separate
+         from the main model and input tables to avoid cross-contaminating our data.
+
+        """
+
+        self.setup_households()
+        self.setup_person_day()
+        self.setup_household_day()
+        self.setup_faux_skims()
+        self.setup_stops()
+
+    # Internal functions
+    def tour_type_counts(self):
+        tours = self.input_tables.get('spa_tours')
+        tours[['HH_ID', 'PER_ID']] = tours[['HH_ID', 'PER_ID']].astype(int)
+
+        # Ensure all persons/days are included
+        person_idx = self.input_tables.get('spa_person')[['HH_ID', 'PER_ID']]
+        person_idx = person_idx.astype(int).drop_duplicates().reset_index(drop=True)
+
+        # Find all possible person-days
+        _index = pd.MultiIndex.from_product([person_idx.index, tours.DAYNO.unique()],
+                                              names=['HH_ID-PER_ID', 'DAYNO'])
+        perdays_idx = pd.DataFrame(index=_index).reset_index()
+        perdays_idx = perdays_idx.join(person_idx).drop(columns='HH_ID-PER_ID')
+
+        # Get tour counts
+        grp_cols = ["HH_ID", "PER_ID", "DAYNO"]
+        tour_type_counts = {}
+
+        # First define the filters
+        # [excluding at work subtours]. joint work tours should be considered individual mandatory tours
+        tour_type_counts['work'] = tours[(tours.TOURPURP == 1) & (tours.IS_SUBTOUR==0)]
+        tour_type_counts['atwork'] = tours[(tours.TOURPURP == 20) & (tours.IS_SUBTOUR == 1)]
+        tour_type_counts['schl'] = tours[tours.TOURPURP.isin([2, 3])]
+        tour_type_counts['inm'] = tours[
+            (tours.TOURPURP.isin([4, 5, 6, 7, 8, 9]) &
+             (tours.FULLY_JOINT == 0) & (tours.IS_SUBTOUR == 0)) |
+            ((tours.TOURPURP == 4) & (tours.FULLY_JOINT == 1))
+            ]
+        tour_type_counts['itour'] = tours[
+            ((tours.TOURPURP <= 9) & (tours.IS_SUBTOUR == 0) & (tours.FULLY_JOINT == 0)) |
+            ((tours.TOURPURP <= 4) & (tours.FULLY_JOINT == 1))
+            ]
+        tour_type_counts['jtour'] = tours[
+            (tours.TOURPURP.isin([5, 6, 7, 8, 9]) & (tours.IS_SUBTOUR == 0) & (tours.FULLY_JOINT == 1))
+            ]
+
+        for tour_type, tour_type_df in tour_type_counts.items():
+            tour_type_df = tour_type_df.groupby(grp_cols).size().to_frame(tour_type + '_count')
+            tour_type_df = perdays_idx.set_index(grp_cols).join(tour_type_df).fillna(0)
+            tour_type_counts[tour_type] = tour_type_df.astype(int)
+
+        return tour_type_counts
+
+    def setup_households(self):
+        # Truncate HH_SIZE to 5 plus
+        self.input_tables['pre_household']['HH_SIZE_trunc'] = self.input_tables['pre_household'].HH_SIZE.clip(1, 5)
+
+    def setup_person_day(self):
+        person_day = self.input_tables.get('spa_person')
+        tour_counts = self.tour_type_counts()
+
+        # Merge counts onto person_day table
+        for count_name, counts in tour_counts.items():
+            if 'DAYNO' in person_day.columns:
+                person_day = person_day.merge(counts, on=['HH_ID', 'PER_ID', 'DAYNO'], how='left')
+            else:
+                person_day = person_day.merge(counts.reset_index('DAYNO'), on=['HH_ID', 'PER_ID'], how='left')
+
+        # Assign activity pattern
+        person_day['num_tours'] = person_day[['itour_count', 'jtour_count']].sum(axis=1)
+        person_day['DAP'] = 'H'
+        person_day.loc[(person_day.work_count > 0) | (person_day.schl_count > 0), 'DAP'] = 'M'
+        person_day.loc[(person_day.num_tours > 0) & (person_day.DAP == 'H'), 'DAP'] = 'N'
+        person_day.loc[person_day.PERSONTYPE.isin([4, 5]) | (person_day.DAP == "M"), 'DAP'] = 'N'
+
+        self.intermediate_data['person_day'] = person_day
+
+    def setup_faux_skims(self):
+        grp_cols = ['SAMPN', 'PERNO', 'DAYNO']
+        skim_cols = ['TAZ', 'XCORD', 'YCORD', 'DISTANCE']
+        place = deepcopy(self.input_tables['place'][grp_cols + skim_cols])
+        place = place[place.TAZ != 0] # 0 TAZ was fillna(0)
+
+        # Setup zone data
+        # FIXME The zone file is not aligned with TAZs?
+        #  Going to use mean XY from place file instead
+        # zones = self.input_tables['zones']
+        # zones = zones.loc[~zones.OLDZONE.isnull(), ['OLDZONE', 'X', 'Y']]
+        # zones = zones.rename(columns={'OLDZONE': 'TAZ', 'X': 'XCORD', 'Y': 'YCORD'})
+        # zones.TAZ = zones.TAZ.astype(int)
+        # set(zones.TAZ.unique()).difference(place.TAZ.unique())
+        # set(place.TAZ.unique()).difference(zones.TAZ.unique())
+        zones = place.groupby('TAZ')[['XCORD', 'YCORD']].mean()
+        zones = zones[~zones.index.isin([0])].reset_index()
+
+        # The XY cord for destination is the current place and origin is the previous place,
+        # shifting place down 1 for each person-day, and drop the first place in each.
+        _dests = place[skim_cols].rename(columns={'TAZ': 'dTAZ', 'XCORD': 'dX', 'YCORD': 'dY'})
+        _origins = place.groupby(['SAMPN', 'PERNO', 'DAYNO']).shift(1)
+        _origins = _origins.rename(columns={'TAZ': 'oTAZ', 'XCORD': 'oX', 'YCORD': 'oY'}).drop(columns='DISTANCE')
+
+        # Left join, dropping NA home places
+        place_skims = _origins[~_origins.oTAZ.isnull()].join(_dests)
+        place_skims.oTAZ = place_skims.oTAZ.astype(int)
+
+        # Drop duplicates, take median for repeat OD pairs to avoid outliers
+        place_skims = place_skims.drop_duplicates()
+        place_skims = place_skims.groupby(['oTAZ', 'dTAZ']).median()
+
+        # Create cartesian product to find missing ODs
+        TAZ_list = place.TAZ.unique()
+        _index = pd.MultiIndex.from_product([TAZ_list, TAZ_list], names=['oTAZ', 'dTAZ'])
+        _skims = pd.DataFrame(index=_index).reset_index()
+        _skims = _skims.merge(place_skims, on=['oTAZ', 'dTAZ'], how='left').drop_duplicates()
+
+        # Separate NA skim ODs
+        na_skims = _skims.loc[_skims.DISTANCE.isnull(), ['oTAZ', 'dTAZ']]
+        ok_skims = _skims[~_skims.DISTANCE.isnull()]
+
+        # Fill in missing XY from zone data
+        na_skims = na_skims.merge(zones.rename(columns={'TAZ': 'oTAZ', 'XCORD': 'oX', 'YCORD': 'oY'}), on='oTAZ')
+        na_skims = na_skims.merge(zones.rename(columns={'TAZ': 'dTAZ', 'XCORD': 'dX', 'YCORD': 'dY'}), on='dTAZ')
+
+        # Calculate distance
+        na_skims['DISTANCE'] = utils.distance_on_unit_sphere(
+            lat1=na_skims.oY, long1=na_skims.oX, lat2=na_skims.dY, long2=na_skims.dX
+        )
+
+        # Recombine
+        faux_skims = pd.concat([na_skims, ok_skims], axis=0).set_index(['oTAZ', 'dTAZ'])
+        assert not any(faux_skims.reset_index().duplicated()), 'Duplicate TAZ pairs in faux skims'
+
+        if not faux_skims[faux_skims.duplicated()].empty:
+            print('Some OD data appears duplicated?')
+            # print(faux_skims[faux_skims.duplicated()])
+
+        self.intermediate_data['faux_skims'] = faux_skims
+
+    def setup_stops(self):
+        tours = self.input_tables['spa_tours']
+        trips = self.input_tables['spa_trips']
+
+        # TODO maybe use real skim distances?
+        skims = self.intermediate_data['faux_skims']
+
+        # Merge TOUR OD TAZ to trips
+        tours = tours.rename(columns={'ORIG_TAZ': 'TOUROTAZ', 'DEST_TAZ': 'TOURDTAZ'}).reset_index()
+        trips = trips.merge(
+            tours[['HH_ID', 'PER_ID', 'TOUR_ID', 'DAYNO', 'TOUROTAZ', 'TOURDTAZ']],
+            how='left',
+            on=['HH_ID', 'PER_ID', 'TOUR_ID', 'DAYNO']
+        )
+
+        # Pull out stops & drop NA taz
+        stops = trips[(trips.DEST_PURP > 0) & (trips.DEST_IS_TOUR_DEST == 0)]
+        # stops = stops[~trips.DEST_PURP.isin([0, 11, 12])]
+        stops = stops[(stops.ORIG_TAZ != 0) & (stops.DEST_TAZ != 0) &
+                      (stops.TOURDTAZ != 0) & (stops.TOUROTAZ != 0)]
+
+        # Assign final taz
+        stops.loc[stops.IS_INBOUND == 0, 'FINAL_TAZ'] = stops.loc[stops.IS_INBOUND == 0, 'TOURDTAZ']
+        stops.loc[stops.IS_INBOUND == 1, 'FINAL_TAZ'] = stops.loc[stops.IS_INBOUND == 1, 'TOUROTAZ']
+
+        # Get Origin final Destination dist (OD), origin to stop dist (OS), Stop to final dest dist (SD)
+        od = list(zip(stops.ORIG_TAZ, stops.FINAL_TAZ.astype(int)))
+        os = list(zip(stops.ORIG_TAZ, stops.DEST_TAZ.astype(int)))
+        sd = list(zip(stops.DEST_TAZ, stops.FINAL_TAZ.astype(int)))
+
+        # Assign distances from skim matrix
+        stops['OD_DIST'] = skims.loc[od].DISTANCE.to_list()
+        stops['OS_DIST'] = skims.loc[os].DISTANCE.to_list()
+        stops['SD_DIST'] = skims.loc[sd].DISTANCE.to_list()
+        stops['OUT_DIR_DIST'] = stops.OS_DIST + stops.SD_DIST - stops.OD_DIST
+
+        self.intermediate_data['stops'] = stops
+
+    def setup_household_day(self):
+        df_perday = self.intermediate_data['person_day']
+        df_hh = self.input_tables['pre_household']
+        df_jtours = self.input_tables['spa_jtours']
+
+        # Create hhday table
+        df_hhday = df_hh.merge(df_perday[['HH_ID', 'DAYNO']], on='HH_ID', how='right')
+        df_hhday.HH_ID = df_hhday.HH_ID.astype(int)
+        df_hhday = df_hhday.set_index('HH_ID')
+
+        # Calc NDAYS per household to normalize the hhday weight
+        df_hhday = df_hhday.join(df_hhday.groupby('HH_ID').size().to_frame('NDAYS'))
+        df_hhday.HHDAY_WEIGHT = df_hhday.HH_WEIGHT / df_hhday.NDAYS
+
+        # Determine JOINT field
+        df_jtours.groupby(['HH_ID', 'DAYNO', 'JOINT_PURP']).size()
+
+        # joint5 <- plyr::count(jtours, c("HH_ID", "DAYNO"), "JOINT_PURP==5")
+        # joint6 <- plyr::count(jtours, c("HH_ID", "DAYNO"), "JOINT_PURP==6")
+        # joint7 <- plyr::count(jtours, c("HH_ID", "DAYNO"), "JOINT_PURP==7")
+        # joint8 <- plyr::count(jtours, c("HH_ID", "DAYNO"), "JOINT_PURP==8")
+        # joint9 <- plyr::count(jtours, c("HH_ID", "DAYNO"), "JOINT_PURP==9")
+        #
+        # hhday$joint5 <- joint5$freq[match(hhday$SAMPN*10+hhday$DAYNO, joint5$HH_ID*10+joint5$DAYNO)]
+        # hhday$joint6 <- joint6$freq[match(hhday$SAMPN*10+hhday$DAYNO, joint6$HH_ID*10+joint6$DAYNO)]
+        # hhday$joint7 <- joint7$freq[match(hhday$SAMPN*10+hhday$DAYNO, joint7$HH_ID*10+joint7$DAYNO)]
+        # hhday$joint8 <- joint8$freq[match(hhday$SAMPN*10+hhday$DAYNO, joint8$HH_ID*10+joint8$DAYNO)]
+        # hhday$joint9 <- joint9$freq[match(hhday$SAMPN*10+hhday$DAYNO, joint9$HH_ID*10+joint9$DAYNO)]
+        # hhday$jtours <- hhday$joint5+hhday$joint6+hhday$joint7+hhday$joint8+hhday$joint9
+        #
+        # hhday$joint5[is.na(hhday$joint5)] <- 0
+        # hhday$joint6[is.na(hhday$joint6)] <- 0
+        # hhday$joint7[is.na(hhday$joint7)] <- 0
+        # hhday$joint8[is.na(hhday$joint8)] <- 0
+        # hhday$joint9[is.na(hhday$joint9)] <- 0
+        # hhday$jtours[is.na(hhday$jtours)] <- 0
+        # hhday$JOINT <- 0
+        # hhday$JOINT[hhday$jtours>0] <- 1
+
+
+        self.intermediate_data['household_day'] = df_hhday
+
+
+    def get_weighted_sum(self, df, grp_cols, wt_col):
+        # Get the groupby count sum
+        df_sum = df.groupby(grp_cols)[wt_col].sum()
+        df_sum = df_sum.reset_index().rename(columns={wt_col: 'freq'})
+
+        return df_sum
+
+
+class VisualizerSummaries:
+    # Summary functions
     def activePertypeDistbn(self):
-        pass
+        return self.get_weighted_sum(
+            df=self.intermediate_data['person_day'],
+            grp_cols='PERSONTYPE',
+            wt_col='PER_WEIGHT'
+        )
+
     def autoOwnership(self):
-        pass
+        hhveh_count = self.get_weighted_sum(
+            df=self.input_tables.get('pre_household'),
+            grp_cols='HH_VEH',
+            wt_col='HH_WEIGHT'
+        )
+        hhveh_count.HH_VEH = hhveh_count.HH_VEH.astype(int)
+        return hhveh_count
+
     def avgStopOutofDirectionDist_vis(self):
-        pass
-    def dapSummary(self):
-        pass
-        def dapSummary_vis(self):
-            pass
-    def hSizeDist(self):
-            pass
+        stops = self.intermediate_data['stops']
+
+        average_stop_out_dist = {}
+        for tour_type, purposes in self.constants.get('STOP_PURPOSES').items():
+            is_joint = 1 if tour_type == 'JOINT' else 0
+            is_sub = 1 if tour_type == 'SUBTOUR' else 0
+            for k, tpurps in purposes.items():
+                tpurps = tpurps if isinstance(tpurps, list) else [tpurps]
+
+                df_filtered = stops[stops.TOURPURP.isin(tpurps) &
+                                    (stops.FULLY_JOINT == is_joint) &
+                                    (stops.SUBTOUR == is_sub)]
+                if df_filtered.empty:
+                    avg = None
+                else:
+                    avg = np.average(df_filtered.OUT_DIR_DIST, weights=df_filtered.TRIP_WEIGHT)
+
+                average_stop_out_dist[k] = avg
+
+        return average_stop_out_dist
+
+    def dapSummary_vis(self):
+        dap_summary = self.get_weighted_sum(
+            df=self.intermediate_data.get('person_day'),
+            grp_cols=['PERSONTYPE', 'DAP'],
+            wt_col='PER_WEIGHT'
+        )
+
+        # Get totals
+        margins = dap_summary.groupby('DAP').sum().reset_index()
+        margins['PERSONTYPE'] = 'Total'
+        dap_summary = pd.concat([dap_summary, margins])
+
+        return dap_summary
+
+    def hhSizeDist(self):
+        return self.get_weighted_sum(df=self.input_tables['pre_household'],
+                                     grp_cols='HH_SIZE_trunc',
+                                     wt_col='HH_WEIGHT')
+
     def hhsizeJoint(self):
-            pass
+        return self.get_weighted_sum(df=self.intermediate_data['household_day'],
+                                     grp_cols=['HH_SIZE_trunc', 'JOINT'],
+                                     wt_col='HH_WEIGHT')
+
     def inmSummary_vis(self):
             pass
     def innmSummary(self):

@@ -19,6 +19,7 @@ class Joint_ultrip:
         self.parent_trip = trip
         self.depart_time = dep_time
         self.arrival_time = arr_time
+        self.day_id = trip.day_id
         self.number_tot = int(num_tot_travelers)
         self.number_hh = int(
             num_hh_mem
@@ -146,6 +147,7 @@ class Joint_ultrip:
             "PER_ID",
             "TOUR_ID",
             "TRIP_ID",
+            'DAYNO',
             "LEG_DEST_PLACENO",
             "JTRIP_ID",
             "NUMBER_HH",
@@ -179,6 +181,7 @@ class Joint_ultrip:
             pt.get_per_id(),
             pt.get_tour_id(),
             pt.trip_id,
+            pt.day_id,
             pt.fields["DEST_PLACENO"],
             self.jt_id,
             self.number_hh,
@@ -194,11 +197,11 @@ class Joint_ultrip:
             "," + "_".join(["%s" % int(pid) for pid in sorted(self.travel_party)])
         )  # print travel party
         fp.write(
-            "," + functions.add_quote_char(self.error_msg) + "\n"
+            "," + utils.add_quote_char(self.error_msg) + "\n"
         )  # print error message
 
     def print_header_unique(fp):
-        _header = ["HH_ID", "JTRIP_ID", "NUMBER_HH"]
+        _header = ["HH_ID", "JTRIP_ID", "DAYNO", "NUMBER_HH"]
         # PERSON_1 to PERSON_9
         for _i in range(1, 10):
             _header.append("PERSON_" + str(_i))
@@ -208,7 +211,7 @@ class Joint_ultrip:
     def print_vals_unique(self, fp):
         # write out hh id, joint trip id, and size of travel group
         fp.write(
-            "{},{},{}".format(self.parent_trip.get_hh_id(), self.jt_id, self.number_hh)
+            "{},{},{}".format(self.parent_trip.get_hh_id(), self.jt_id, self.day_id, self.number_hh)
         )
         # write out IDs of people in the travel party
         _party = sorted(self.travel_party)

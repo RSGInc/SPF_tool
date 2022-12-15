@@ -120,6 +120,7 @@ get_standardDF <- function(data_df1, data_df2, x, y, grp = "", shared = F){
     eval_expr <- paste("data_df$", yvar2, " <- data_df2$", y[[i]], "[match(data_df$id_var, data_df2$id_var)]", sep = "")
     eval(parse(text = eval_expr))
   }
+  
   data_df[is.na(data_df)] <- 0
   
   # data_df$grp_var <- as.character(data_df$grp_var)
@@ -945,6 +946,9 @@ build_df$mtf_name <- mtf_df$name[match(build_df$MTF, mtf_df$code)]
 build_df$mtf_name <- factor(build_df$mtf_name, levels = mtf_names)
 colnames(build_df) <- colnames(base_df)
 
+base_df[PERTYPE=='Total' & is.na(PERNAME), PERNAME:= 'Total']
+build_df[PERTYPE=='Total' & is.na(PERNAME), PERNAME:= 'Total']
+
 sd.pertype <- get_standardDF(data_df1=base_df, data_df2=build_df, x="mtf_name", y = c("freq"), grp = "PERNAME", shared = T)
 p <- plotly_bar_plotter(data = sd.pertype, height = 250, xlabel = "MTF Choice", ylabel = "Percent", ynames = c(BASE_SCENARIO_NAME, BUILD_SCENARIO_NAME), percent = T, tickangle = -30, bottom_offset = 50)
 
@@ -995,6 +999,9 @@ build_df$PERNAME <- person_type_df$name[match(build_df$PERTYPE, person_type_df$c
 build_df$PERNAME <- factor(build_df$PERNAME, levels = person_type_char)
 
 colnames(build_df) <- colnames(base_df)
+
+base_df[PERTYPE=='Total' & is.na(PERNAME), PERNAME:= 'Total']
+build_df[PERTYPE=='Total' & is.na(PERNAME), PERNAME:= 'Total']
 
 sd.pertype <- get_standardDF(data_df1=base_df, data_df2=build_df, x="nmtours", y = c("freq"), grp = "PERNAME", shared = T)
 #p <- plotly_bar_plotter(data = sd.pertype, height = 340, xlabel = "Number of Tours", ylabel = "Percent", ynames = c(BASE_SCENARIO_NAME, #BUILD_SCENARIO_NAME), percent = T, tickvals = c(seq(0,2), "3pl"), ticktext = c("0", "1", "2", "3pl"))
@@ -1109,7 +1116,7 @@ bscols(widths=c(12),
 
 ### {data-height=300}
 ```{r schesc3}
-base_df <- base_data[[which(base_csv_names=="worker_school_escorting")]]
+base_df <- data.frame(base_data[[which(base_csv_names=="worker_school_escorting")]])
 nums <- vapply(base_df, is.numeric, FUN.VALUE = logical(1))
 base_df[,nums] <- base_df[,nums]/BASE_SAMPLE_RATE
 base_df[,nums] <- round(base_df[,nums])
@@ -1144,7 +1151,7 @@ p6
 
 ### {data-height=300}
 ```{r schesc6}
-build_df <- build_data[[which(build_csv_names=="worker_school_escorting")]]
+build_df <- as.data.frame(build_data[[which(build_csv_names=="worker_school_escorting")]])
 nums <- vapply(build_df, is.numeric, FUN.VALUE = logical(1))
 build_df[,nums] <- build_df[,nums]/BUILD_SAMPLE_RATE
 build_df[,nums] <- round(build_df[,nums])
@@ -1312,6 +1319,7 @@ colnames(build_df) <- colnames(base_df)
 # change purpose names to standard format
 base_df$PURPOSE <- as.character(base_df$PURPOSE)
 build_df$PURPOSE <- as.character(build_df$PURPOSE)
+
 base_df$PURPOSE <- purpose_type_df$name[match(base_df$PURPOSE, purpose_type_df$code)]
 build_df$PURPOSE <- purpose_type_df$name[match(build_df$PURPOSE, purpose_type_df$code)]
 

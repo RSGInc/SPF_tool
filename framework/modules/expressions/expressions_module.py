@@ -156,7 +156,7 @@ class ExpressionPreProcess(base.BaseModule, long_expressions.LongExpressions):
 
 if __name__ == "__main__":
     import argparse
-    from core.main import add_run_args
+    from core.run import add_run_args
 
     # Test scripts
     parser = argparse.ArgumentParser()

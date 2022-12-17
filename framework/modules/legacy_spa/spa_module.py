@@ -74,6 +74,7 @@ class SPAToolModule(base.BaseModule):
                 # print(msg, end="\r")
                 sys.stdout.write('\r' + msg)
 
+            # FIXME Can this be turned into a function?
             # Loop through each person
             for (hhid, pid, dayid), df_psn_places in df_persons.groupby(["SAMPN", "PERNO", "DAYNO"]):
 

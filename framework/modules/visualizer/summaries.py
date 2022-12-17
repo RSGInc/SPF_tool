@@ -15,7 +15,7 @@ from copy import deepcopy
 # TODO Modify SPA output to include the features we pulled from raw and preprocessed data
 #  HH_VEH and HH_SIZE
 
-class VisualizerFunctions:
+class VisualizerHelperFunctions:
 
     def setup_intermediate_data(self):
         """
@@ -25,16 +25,16 @@ class VisualizerFunctions:
          from the main model and input tables to avoid cross-contaminating our data.
 
         """
-
         self.setup_households()
         self.setup_person_day()
         self.setup_household_day()
+        self.setup_joint_household()
         self.setup_faux_skims()
         self.setup_stops()
 
     # Internal functions
     def tour_type_counts(self):
-        tours = self.input_tables.get('spa_tours')
+        tours = deepcopy(self.input_tables.get('spa_tours'))
         tours[['HH_ID', 'PER_ID']] = tours[['HH_ID', 'PER_ID']].astype(int)
 
         # Ensure all persons/days are included
@@ -78,10 +78,10 @@ class VisualizerFunctions:
 
     def setup_households(self):
         # Truncate HH_SIZE to 5 plus
-        self.input_tables['pre_household']['HH_SIZE_trunc'] = self.input_tables['pre_household'].HH_SIZE.clip(1, 5)
+        self.input_tables['spa_household']['HH_SIZE_trunc'] = self.input_tables['spa_household'].NUM_PERS.clip(1, 5)
 
     def setup_person_day(self):
-        person_day = self.input_tables.get('spa_person')
+        person_day = deepcopy(self.input_tables.get('spa_person'))
         tour_counts = self.tour_type_counts()
 
         # Merge counts onto person_day table
@@ -103,7 +103,7 @@ class VisualizerFunctions:
     def setup_faux_skims(self):
         grp_cols = ['SAMPN', 'PERNO', 'DAYNO']
         skim_cols = ['TAZ', 'XCORD', 'YCORD', 'DISTANCE']
-        place = deepcopy(self.input_tables['place'][grp_cols + skim_cols])
+        place = deepcopy(self.input_tables['pre_place'][grp_cols + skim_cols])
         place = place[place.TAZ != 0] # 0 TAZ was fillna(0)
 
         # Setup zone data
@@ -162,11 +162,11 @@ class VisualizerFunctions:
         self.intermediate_data['faux_skims'] = faux_skims
 
     def setup_stops(self):
-        tours = self.input_tables['spa_tours']
-        trips = self.input_tables['spa_trips']
+        tours = deepcopy(self.input_tables['spa_tours'])
+        trips = deepcopy(self.input_tables['spa_trips'])
 
         # TODO maybe use real skim distances?
-        skims = self.intermediate_data['faux_skims']
+        skims = deepcopy(self.intermediate_data['faux_skims'])
 
         # Merge TOUR OD TAZ to trips
         tours = tours.rename(columns={'ORIG_TAZ': 'TOUROTAZ', 'DEST_TAZ': 'TOURDTAZ'}).reset_index()
@@ -199,48 +199,63 @@ class VisualizerFunctions:
 
         self.intermediate_data['stops'] = stops
 
+    def get_joint_purp_list(self):
+        stop_purposes = self.constants.get('STOP_PURPOSES')['JOINT']
+        return  [x for _, sublist in stop_purposes.items() for x in sublist]
+
     def setup_household_day(self):
-        df_perday = self.intermediate_data['person_day']
-        df_hh = self.input_tables['pre_household']
-        df_jtours = self.input_tables['spa_jtours']
+        df_perday = deepcopy(self.intermediate_data['person_day'])
+        df_hh = deepcopy(self.input_tables['spa_household'])
 
         # Create hhday table
-        df_hhday = df_hh.merge(df_perday[['HH_ID', 'DAYNO']], on='HH_ID', how='right')
-        df_hhday.HH_ID = df_hhday.HH_ID.astype(int)
+        df_hhday = df_hh.merge(df_perday[['HH_ID', 'DAYNO']].drop_duplicates(), on='HH_ID', how='right')
+        # df_hhday.HH_ID = df_hhday.HH_ID.astype(int)
         df_hhday = df_hhday.set_index('HH_ID')
 
         # Calc NDAYS per household to normalize the hhday weight
-        df_hhday = df_hhday.join(df_hhday.groupby('HH_ID').size().to_frame('NDAYS'))
-        df_hhday.HHDAY_WEIGHT = df_hhday.HH_WEIGHT / df_hhday.NDAYS
-
-        # Determine JOINT field
-        df_jtours.groupby(['HH_ID', 'DAYNO', 'JOINT_PURP']).size()
-
-        # joint5 <- plyr::count(jtours, c("HH_ID", "DAYNO"), "JOINT_PURP==5")
-        # joint6 <- plyr::count(jtours, c("HH_ID", "DAYNO"), "JOINT_PURP==6")
-        # joint7 <- plyr::count(jtours, c("HH_ID", "DAYNO"), "JOINT_PURP==7")
-        # joint8 <- plyr::count(jtours, c("HH_ID", "DAYNO"), "JOINT_PURP==8")
-        # joint9 <- plyr::count(jtours, c("HH_ID", "DAYNO"), "JOINT_PURP==9")
-        #
-        # hhday$joint5 <- joint5$freq[match(hhday$SAMPN*10+hhday$DAYNO, joint5$HH_ID*10+joint5$DAYNO)]
-        # hhday$joint6 <- joint6$freq[match(hhday$SAMPN*10+hhday$DAYNO, joint6$HH_ID*10+joint6$DAYNO)]
-        # hhday$joint7 <- joint7$freq[match(hhday$SAMPN*10+hhday$DAYNO, joint7$HH_ID*10+joint7$DAYNO)]
-        # hhday$joint8 <- joint8$freq[match(hhday$SAMPN*10+hhday$DAYNO, joint8$HH_ID*10+joint8$DAYNO)]
-        # hhday$joint9 <- joint9$freq[match(hhday$SAMPN*10+hhday$DAYNO, joint9$HH_ID*10+joint9$DAYNO)]
-        # hhday$jtours <- hhday$joint5+hhday$joint6+hhday$joint7+hhday$joint8+hhday$joint9
-        #
-        # hhday$joint5[is.na(hhday$joint5)] <- 0
-        # hhday$joint6[is.na(hhday$joint6)] <- 0
-        # hhday$joint7[is.na(hhday$joint7)] <- 0
-        # hhday$joint8[is.na(hhday$joint8)] <- 0
-        # hhday$joint9[is.na(hhday$joint9)] <- 0
-        # hhday$jtours[is.na(hhday$jtours)] <- 0
-        # hhday$JOINT <- 0
-        # hhday$JOINT[hhday$jtours>0] <- 1
-
+        df_hhday = df_hhday.join(df_hhday.groupby(['HH_ID', 'DAYNO']).size().to_frame('NDAYS'))
+        df_hhday['HHDAY_WEIGHT'] = df_hhday.HH_WEIGHT / df_hhday.NDAYS
 
         self.intermediate_data['household_day'] = df_hhday
 
+    def setup_joint_household(self):
+        df_hhday = deepcopy(self.intermediate_data['household_day'])
+        df_jtours = deepcopy(self.input_tables['spa_jtours'])
+        JT_PURPS = self.get_joint_purp_list()
+
+        # Get relevant joint purposes
+        jt_purp_freq = deepcopy(df_jtours[df_jtours.JOINT_PURP.isin(JT_PURPS)])
+        jt_purp_freq.JOINT_PURP = jt_purp_freq.JOINT_PURP.astype(int)
+
+        # Get counts by joint purpose
+        jt_purp_freq = jt_purp_freq.groupby(['HH_ID', 'DAYNO', 'JOINT_PURP']).size().to_frame('FREQ')
+        jt_purp_freq = jt_purp_freq.reset_index().pivot(index=['HH_ID', 'DAYNO'], columns='JOINT_PURP', values='FREQ')
+
+        # Add in non-joint hh_ids
+        jt_purp_freq = jt_purp_freq.reindex(index=df_hhday.index).fillna(0).astype(int)
+
+        # Col names and Total column as binary
+        prefix = jt_purp_freq.columns.name
+        jt_purp_freq.columns = [jt_purp_freq.columns.name + str(x) for x in jt_purp_freq.columns]
+        jt_purp_freq['JOINT'] = jt_purp_freq.apply(lambda x: int(x.sum() > 0), axis=1)
+
+        # Assign JTF alt codes
+        jt_purp_freq.loc[jt_purp_freq.JOINT == 0, 'JTF'] = 1
+
+        # Setup multi-purpose sequence
+        multi_purps = [(a, b) for i, a in enumerate(JT_PURPS) for b in JT_PURPS[(i+1):]]
+
+        for i, purp in enumerate(JT_PURPS):
+            purp_x, purp_y = multi_purps[i]
+            id = i + 1
+            jt_purp_freq.loc[jt_purp_freq[prefix + str(purp)] == 1, 'JTF'] = id
+            jt_purp_freq.loc[jt_purp_freq[prefix + str(purp)] > 1, 'JTF'] = id + len(JT_PURPS) + 1
+            jt_purp_freq.loc[(jt_purp_freq[prefix + str(purp_x)] > 0) &
+                             (jt_purp_freq[prefix + str(purp_y)] > 0), 'JTF'] = id + 2*len(JT_PURPS) + 1
+
+        df_hhday = df_hhday.join(jt_purp_freq[['JOINT', 'JTF']])
+
+        self.intermediate_data['household_day'] = df_hhday
 
     def get_weighted_sum(self, df, grp_cols, wt_col):
         # Get the groupby count sum
@@ -251,7 +266,7 @@ class VisualizerFunctions:
 
 
 class VisualizerSummaries:
-    # Summary functions
+    # FIXME a lot of these groupby summaries are repetive and can be parameterized?
     def activePertypeDistbn(self):
         return self.get_weighted_sum(
             df=self.intermediate_data['person_day'],
@@ -269,7 +284,7 @@ class VisualizerSummaries:
         return hhveh_count
 
     def avgStopOutofDirectionDist_vis(self):
-        stops = self.intermediate_data['stops']
+        stops = deepcopy(self.intermediate_data['stops'])
 
         average_stop_out_dist = {}
         for tour_type, purposes in self.constants.get('STOP_PURPOSES').items():
@@ -305,7 +320,7 @@ class VisualizerSummaries:
         return dap_summary
 
     def hhSizeDist(self):
-        return self.get_weighted_sum(df=self.input_tables['pre_household'],
+        return self.get_weighted_sum(df=self.input_tables['spa_household'],
                                      grp_cols='HH_SIZE_trunc',
                                      wt_col='HH_WEIGHT')
 
@@ -315,11 +330,29 @@ class VisualizerSummaries:
                                      wt_col='HH_WEIGHT')
 
     def inmSummary_vis(self):
-            pass
-    def innmSummary(self):
-            pass
+        tours = deepcopy(self.input_tables['spa_tours'])
+        perday = deepcopy(self.intermediate_data['person_day'])
+        JOINT_PURPS = self.get_joint_purp_list()
+
+        # Get individual non-mandatory tour count
+        inm_filter = tours.TOURPURP.isin(JOINT_PURPS) & (tours.FULLY_JOINT == 0) & (tours.IS_SUBTOUR == 0)
+        inm_tour_count = tours[inm_filter].groupby(['HH_ID', 'PER_ID', 'DAYNO']).size().to_frame('nmtours')
+
+        # Merge onto person days
+        perday = perday.merge(inm_tour_count, on=['HH_ID', 'PER_ID', 'DAYNO'], how='left')
+        perday.nmtours = perday.nmtours.fillna(0).astype(int)
+
+        # Aggregate tour counts by person type and tour frequency
+        perday.nmtours = perday.nmtours.clip(0, 3)
+        inm_summary = perday.groupby(['PERSONTYPE', 'nmtours']).PER_WEIGHT.sum().reset_index()
+        return inm_summary.rename(columns={'PER_WEIGHT': 'freq'})
 
     def joint_summary(self):
+        # jtfSummary <- plyr::count(hhday[!is.na(hhday$jtf),], c("jtf"), "finalweight")
+        # jointComp <- plyr::count(jtours[jtours$JOINT_PURP>=5 & jtours$JOINT_PURP<=9,], c("COMPOSITION"), "finalweight")
+        # jointPartySize <- plyr::count(jtours[jtours$JOINT_PURP>=5 & jtours$JOINT_PURP<=9,], c("NUMBER_HH"), "finalweight")
+        # jointCompPartySize <- plyr::count(jtours[jtours$JOINT_PURP>=5 & jtours$JOINT_PURP<=9,], c("COMPOSITION","NUMBER_HH"), "finalweight")
+
         def jointComp(self):
                 pass
         def jointCompPartySize(self):
@@ -329,7 +362,14 @@ class VisualizerSummaries:
         def jointToursHHSize(self):
                 pass
     def jtf(self):
-            pass
+        jtf = self.intermediate_data['household_day'].groupby('JTF').HH_WEIGHT.sum()
+        jtf.index = jtf.index.astype(int)
+
+        jtf_alts = self.constants.get('JTF_ALTS')
+        jtf_alts = pd.Series(jtf_alts.keys(), index=jtf_alts.values(), name='alt_name')
+        jtf_summary = pd.concat([jtf_alts, jtf], axis=1).fillna(0).reset_index()
+        return jtf_summary.rename(columns={'index': 'jtf_code', 'HH_WEIGHT': 'freq'})
+
     def mtfSummary(self):
             pass
     def mtfSummary_vis(self):

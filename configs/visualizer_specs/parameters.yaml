@@ -31,13 +31,13 @@ SUMMARIES:
     - avgStopOutofDirectionDist_vis
     - dapSummary_vis
     - hhSizeDist
-    # hhsizeJoint
-    # inmSummary_vis
+    - hhsizeJoint
+    - inmSummary_vis
     # jointComp
     # jointCompPartySize
     # jointPartySize
     # jointToursHHSize
-    # jtf
+    - jtf
     # mtfSummary_vis
     # pertypeDistbn
     # stopDC_vis

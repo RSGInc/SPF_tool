@@ -148,27 +148,30 @@ STOP_PURPOSES:
     
 JTF_ALTS:
     'No Joint Tours': 1
+     # Codes for JOINT_PURP_x == 1
     '1 Shopping': 2
     '1 Maintenance': 3
     '1 Eating Out': 4
     '1 Visiting': 5
-    '1 Other Discretionary': 6
-    '2 Shopping': 7
+    '1 Other Discretionary': 6    
+    # Codes for JOINT_PURP_x > 1 
+    '2 Shopping': 7   
     '1 Shopping / 1 Maintenance': 8
     '1 Shopping / 1 Eating Out': 9
     '1 Shopping / 1 Visiting': 10
     '1 Shopping / 1 Other Discretionary': 11
-    '2 Maintenance': 12
-    '1 Maintenance / 1 Eating Out': 13
-    '1 Maintenance / 1 Visiting': 14
-    '1 Maintenance / 1 Other Discretionary': 15
-    '2 Eating Out': 16
-    '1 Eating Out / 1 Visiting': 17
-    '1 Eating Out / 1 Other Discretionary': 18
-    '2 Visiting': 19
-    '1 Visiting / 1 Other Discretionary': 20
-    '2 Other Discretionary': 21
-
+    # Codes for JOINT_PURP_x > 1 and JOINT_PURP_y > 1 where x < y
+    '2 Maintenance': 12                             # [5,6]
+    '1 Maintenance / 1 Eating Out': 13              # [5,7]
+    '1 Maintenance / 1 Visiting': 14                # [5,8]
+    '1 Maintenance / 1 Other Discretionary': 15     # [5,9]
+    '2 Eating Out': 16                              # [6,7]
+    '1 Eating Out / 1 Visiting': 17                 # [6,8]
+    '1 Eating Out / 1 Other Discretionary': 18      # [6,9]
+    '2 Visiting': 19                                # [7,8]
+    '1 Visiting / 1 Other Discretionary': 20        # [7,9]
+    '2 Other Discretionary': 21                     # [8,9]
+ 
 
 # Map partial tour types to numeric code
 PARTIAL_TOUR:

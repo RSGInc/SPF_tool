@@ -8,7 +8,7 @@ import json
 from core import base, utils
 from modules.visualizer import summaries
 
-class Visualizer(base.BaseModule, summaries.VisualizerFunctions, summaries.VisualizerSummaries):
+class Visualizer(base.BaseModule, summaries.VisualizerHelperFunctions, summaries.VisualizerSummaries):
     def __init__(self, namespace, **kwargs):
         super().__init__(namespace, **kwargs)
 
@@ -31,6 +31,10 @@ class Visualizer(base.BaseModule, summaries.VisualizerFunctions, summaries.Visua
         summary_file = os.path.join(self.kwargs.get('output_dir'), 'summaries.json')
         with open(summary_file, 'w') as fp:
             json.dump(self.summaries, fp, cls=utils.JSONEncoder)
+
+        for k, df in self.summaries.items():
+            df.to_csv(os.path.join(self.kwargs.get('output_dir'), 'summaries', f'{k}.csv'))
+
 
 
 if __name__ == "__main__":

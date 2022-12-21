@@ -59,7 +59,7 @@ class SPAToolModule(base.BaseModule):
         ct = 0
         t0 = time.time()
 
-        for hhid, df_persons in list(df_place.groupby("SAMPN")):
+        for hhid, df_persons in df_place.groupby("SAMPN"):
             # create a new household object
             hh = households.Household(df_hh.loc[hhid], constants=self.constants)
             hh_list.append(hh)

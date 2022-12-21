@@ -14,6 +14,7 @@ class BaseModule:
         self.constants = self.read_constants()
         self.kwargs = self.update_kwargs(**kwargs)
         self.input_tables = utils.load_pipeline_tables(self.kwargs)
+
     def read_constants(self):
         constants_file = os.path.join(self.namespace.configs, 'constants.yaml')
         constants = utils.read_mappings(**{'constants': constants_file})
@@ -31,6 +32,7 @@ class BaseModule:
         assert namespace.output, 'Missing required argument "-o output"'
 
         return namespace
+
     def set_global_tables(self):
         # This function can be used to create local variables as table names for debugging and script testing
         for k, df in self.input_tables.items():
@@ -59,7 +61,7 @@ class BaseModule:
                 continue
 
             # Flatten any nested dictionary and append file names
-            kwargs[spec] = utils.recursive_file_dict(kwargs[spec], namespace_map[spec])
+            kwargs[spec] = {k: utils.recursive_file_dict(d, namespace_map[spec], nesting=False) for k, d in kwargs[spec].items()}
 
             # additional_configs = {k: utils.read_config(v) for k, v in kwargs[spec].items() if '.yaml' in v}
             # kwargs = {**kwargs, **additional_configs}

@@ -16,13 +16,18 @@ class Trip:
         """instantiation of a Trip object"""
 
         self.constants = constants
+        self.joint_descriptors = []
         self.hh_obj = hh_obj
         self.per_obj = per_obj
         self.tour_obj = tour_obj
         # self.trip_id = trip_id
         self.day_id = day_id
-        self.trip_id = int(trip.TRPNO)
-        self.joint_descriptors = []
+        self.trip_num = int(trip.TRPNO)
+        if 'trip_id' in trip.keys():
+            self.trip_id = int(trip.trip_id)
+        else:
+            self.trip_id = int(trip.TRPNO)
+
         self.escort_pers = (
             []
         )  # store the id(s) of hh members being picked up at the trip's origin or dropped off at the trip's destination

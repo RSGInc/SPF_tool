@@ -33,19 +33,25 @@ SUMMARIES:
     - hhSizeDist
     - hhsizeJoint
     - inmSummary_vis
-    # jointComp
-    # jointCompPartySize
-    # jointPartySize
-    # jointToursHHSize
+    - jointSummary
+    - jointComp
+    - jointCompPartySize
+    - jointPartySize
+    - jointToursHHSize
     - jtf
-    # mtfSummary_vis
-    # pertypeDistbn
-    # stopDC_vis
-    # stopfreqDir_vis
-    # stoppurpose_tourpurpose_vis
-    # stopTripDep_vis
-    # todProfile_vis
-    # totals
-    # total_tours_by_pertype_vis
-    # trips_flow
+    - mtfSummary_vis
+    - pertypeDistbn
+    - stopDC_vis
+    - stopfreqDir_vis
+    - stoppurpose_tourpurpose_vis
+    - stopTripDep_vis
+    - todProfile_vis
+    - totals
+    - total_tours_by_pertype_vis
+    # - wfh_summary
+    - workTLFD
+    # - univTLFD
+    # - schlTLFD
+    # - countyFlows
+    # - mandTripLengths
 

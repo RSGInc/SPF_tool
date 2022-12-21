@@ -128,7 +128,7 @@ vec2df <- function(v, rev=FALSE) {
 dap_types = DAP_TYPES
 
 timePeriods = names(TIME_PERIODS)
-timePeriodBreaks = c(0, TIME_PERIODS)
+timePeriodBreaks = c(TIME_PERIODS, Inf)
 
 durBins = dur_df$name
 jtf_alternatives = names(JTF_ALTS)
@@ -163,13 +163,13 @@ lapply(SYSTEM_REPORT_PKGS, library, character.only = TRUE)
 ### Read Target and Output Summary files
 # Base data
 base_data <- lapply(list.files(VIS_BASE_DATA_DIR, full.names = TRUE), fread)
-base_csv_names <- gsub('.csv','', list.files(VIS_BASE_DATA_DIR))
-names(base_data) <- base_csv_names
+base_data_names <- gsub('.csv','', list.files(VIS_BASE_DATA_DIR))
+names(base_data) <- base_data_names
 
 # Build data
 build_data <- lapply(list.files(VIS_BUILD_DATA_DIR, full.names = TRUE), fread)
-build_csv_names <- gsub('.csv','', list.files(VIS_BUILD_DATA_DIR))
-names(build_data) <- build_csv_names
+build_data_names <- gsub('.csv','', list.files(VIS_BUILD_DATA_DIR))
+names(build_data) <- build_data_names
 
 
 

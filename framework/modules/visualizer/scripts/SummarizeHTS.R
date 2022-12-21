@@ -352,7 +352,7 @@ hh[xwalk, on = .(HHTAZ=OLDZONE), HDISTRICT := i.NAME_GROUP]
 
 #per$PERTYPE <- processedPerson$ptype[match(per$SAMPN*100+per$PERNO, processedPerson$HHID*100+processedPerson$PERID)]
 per$HHTAZ <- hh$HHTAZ[match(per$SAMPN, hh$SAMPN)]
-per$HHAZ <- hh$HHMAZ[match(per$SAMPN, hh$SAMPN)]
+per$HHMAZ <- hh$HHMAZ[match(per$SAMPN, hh$SAMPN)]
 per$HDISTRICT <- hh$HDISTRICT[match(per$SAMPN, hh$SAMPN)]
 
 per[xwalk, on = .(WTAZ=OLDZONE), WDISTRICT := i.NAME_GROUP]
@@ -1731,6 +1731,7 @@ todArrProfile_vis <- todArrProfile_vis[order(todArrProfile_vis$timebin, todArrPr
 todDurProfile_vis <- todDurProfile_vis[order(todDurProfile_vis$timebin, todDurProfile_vis$PURPOSE), ]
 todProfile_vis <- data.frame(todDepProfile_vis, todArrProfile_vis$freq, todDurProfile_vis$freq)
 colnames(todProfile_vis) <- c("id", "purpose", "freq_dep", "freq_arr", "freq_dur")
+
 fwrite(todProfile_vis, file.path(outdir, "todProfile_vis.csv"), row.names = F)
 
 

@@ -419,7 +419,7 @@ Base Highlights {data-width=90}
 ```{r Run_Date1_ValueBox}
 sample_rate <- ifelse(IS_BASE_SURVEY=="Yes", "-", paste(as.character(BASE_SAMPLE_RATE*100), "%"))
 valueBox(BASE_SCENARIO_NAME, paste("Sample Rate: ", sample_rate, sep = ""), color = "DarkOrange")
-base_pos <- which(base_csv_names=="totals")
+base_pos <- which(base_data_names=="totals")
 base_df <- base_data[[base_pos]]
 ```
 
@@ -462,7 +462,7 @@ Build Highlights {data-width=90}
 
 ```{r Run_Date2_ValueBox}
 valueBox(BUILD_SCENARIO_NAME, paste("Sample Rate: ", BUILD_SAMPLE_RATE*100, "%", sep = ""), color = "DarkOrange")
-build_pos <- which(build_csv_names=="totals")
+build_pos <- which(build_data_names=="totals")
 build_df <- build_data[[build_pos]]
 ```
 
@@ -501,13 +501,13 @@ Chart Column 1 {data-width=275}
 --------------------------------------------
 ### Person Type Distribution
 ```{r Chart_Person_Type}
-base_pos <- which(base_csv_names=="pertypeDistbn")
+base_pos <- which(base_data_names=="pertypeDistbn")
 base_df <- base_data[[base_pos]]
-base_df$PERNAME <- person_type_df$name[match(base_df$PERTYPE, person_type_df$code)]
+base_df$PERNAME <- person_type_df$name[match(base_df$PERSONTYPE, person_type_df$code)]
 base_df$PERNAME <- factor(base_df$PERNAME, levels = person_type_char)
-build_pos <- which(build_csv_names=="pertypeDistbn")
+build_pos <- which(build_data_names=="pertypeDistbn")
 build_df <- build_data[[build_pos]]
-build_df$PERNAME <- person_type_df$name[match(build_df$PERTYPE, person_type_df$code)]
+build_df$PERNAME <- person_type_df$name[match(build_df$PERSONTYPE, person_type_df$code)]
 build_df$PERNAME <- factor(build_df$PERNAME, levels = person_type_char)
 
 colnames(build_df) <- colnames(base_df)
@@ -520,9 +520,9 @@ p
 
 ### Household Size Distribution
 ```{r Chart_HHSize}
-base_pos <- which(base_csv_names=="hhSizeDist")
+base_pos <- which(base_data_names=="hhSizeDist")
 base_df <- base_data[[base_pos]]
-build_pos <- which(build_csv_names=="hhSizeDist")
+build_pos <- which(build_data_names=="hhSizeDist")
 build_df <- build_data[[build_pos]]
 
 colnames(build_df) <- colnames(base_df)
@@ -540,7 +540,7 @@ Base Highlights2 {data-width=90}
 
 ```{r Run_Date3_ValueBox}
 valueBox(BASE_SCENARIO_NAME, "", color = "DarkOrange")
-base_pos <- which(base_csv_names=="totals")
+base_pos <- which(base_data_names=="totals")
 base_df <- base_data[[base_pos]]
 ```
 
@@ -589,7 +589,7 @@ Build Highlights2 {data-width=90}
 
 ```{r Run_Date4_ValueBox}
 valueBox(BUILD_SCENARIO_NAME, "", color = "DarkOrange")
-build_pos <- which(build_csv_names=="totals")
+build_pos <- which(build_data_names=="totals")
 build_df <- build_data[[build_pos]]
 ```
 
@@ -649,14 +649,14 @@ Chart Column 1 {data-width=200}
 ### Auto Ownership - Total Vehicles{data-height=150}
 ```{r Chart_Auto_Ownership}
 # cat("Census source: ", AO_CENSUS_LONG)
-base_pos <- which(base_csv_names=="autoOwnership")
+base_pos <- which(base_data_names=="autoOwnership")
 base_df <- base_data[[base_pos]]
-build_pos <- which(build_csv_names=="autoOwnership")
+build_pos <- which(build_data_names=="autoOwnership")
 build_df <- build_data[[build_pos]]
 
 colnames(build_df) <- colnames(base_df)
 
-std_DF <- get_standardDF(data_df1 = base_df, data_df2 = build_df, x = "HHVEH", y = c("freq"))
+std_DF <- get_standardDF(data_df1 = base_df, data_df2 = build_df, x = "HH_VEH", y = c("freq"))
 
 p <- plotly_bar_plotter(data = std_DF, xlabel = "Number of Vehicles", ylabel = "Percent", ynames = c(AO_CENSUS_SHORT, BUILD_SCENARIO_NAME), percent = T, height = 175)
 p
@@ -664,9 +664,9 @@ p
 
 <!-- ### Auto Ownership - Autonomous Vehicles{data-height=150} -->
 <!-- ```{r Chart_AV_Ownership} -->
-<!-- base_pos <- which(base_csv_names=="autoOwnership_AV") -->
+<!-- base_pos <- which(base_data_names=="autoOwnership_AV") -->
 <!-- base_df <- base_data[[base_pos]] -->
-<!-- build_pos <- which(build_csv_names=="autoOwnership_AV") -->
+<!-- build_pos <- which(build_data_names=="autoOwnership_AV") -->
 <!-- build_df <- build_data[[build_pos]] -->
 
 <!-- colnames(build_df) <- colnames(base_df) -->
@@ -681,11 +681,11 @@ p
 ```{r Gauge_WFH1}
 #cat("Working from home: ACS 2015 1 YR", " vs. ", BUILD_SCENARIO_NAME)
 
-#base_df <- base_data[[which(base_csv_names=="wfh_summary_region")]]
+#base_df <- base_data[[which(base_data_names=="wfh_summary_region")]]
 #rate <- base_df$WFH/base_df$Workers
 #gauge1 <- gauge(round(rate*100, 1), min = 0, max = 100, symbol = '%', gaugeSectors(danger =  c(0,1), colors = c("Green", "Green", "Green")))
 
-#build_df <- build_data[[which(build_csv_names=="wfh_summary_region")]]
+#build_df <- build_data[[which(build_data_names=="wfh_summary_region")]]
 #rate <- build_df$WFH/build_df$Workers
 #gauge2 <- gauge(round(rate*100, 1), min = 0, max = 100, symbol = '%', gaugeSectors(danger =  c(0,1), colors = c("Green", "Green", "Green")))
 
@@ -698,17 +698,17 @@ p
 
 ### Percentage Working From Home{data-height=175}
 ```{r Chart_WFH}
-base_df <- base_data[[which(base_csv_names=="wfh_summary")]]
-base_df$share <- base_df$WFH/base_df$Workers
-
-build_df <- build_data[[which(build_csv_names=="wfh_summary")]]
-build_df$share <- build_df$WFH/build_df$Workers
-
-std_DF <- cbind(base_df[,c("District", "share")], build_df[,c("share")])
-colnames(std_DF) <- c("xvar", "prop1", "prop2")
-
-p <- plotly_bar_plotter(data = std_DF, xlabel = "District", ylabel = "Percent WFH", ynames = c(BASE_SCENARIO_NAME, BUILD_SCENARIO_NAME), percent = T, height = 200)
-p
+# base_df <- base_data[[which(base_data_names=="wfh_summary")]]
+# base_df$share <- base_df$WFH/base_df$Workers
+#
+# build_df <- build_data[[which(build_data_names=="wfh_summary")]]
+# build_df$share <- build_df$WFH/build_df$Workers
+#
+# std_DF <- cbind(base_df[,c("District", "share")], build_df[,c("share")])
+# colnames(std_DF) <- c("xvar", "prop1", "prop2")
+#
+# p <- plotly_bar_plotter(data = std_DF, xlabel = "District", ylabel = "Percent WFH", ynames = c(BASE_SCENARIO_NAME, BUILD_SCENARIO_NAME), percent = T, height = 200)
+# p
 
 ```
 
@@ -720,37 +720,37 @@ Chart Column 2 {data-width=350}
 
 ### Mandatory TLFD{data-height=475}
 ```{r mandatoryTLFD}
-base_df1 <- base_data[[which(base_csv_names=="workTLFD")]]
+base_df1 <- base_data[[which(base_data_names=="workTLFD")]]
 base_df1 <- melt(base_df1, id = c("distbin"))
 
-base_df2 <- base_data[[which(base_csv_names=="univTLFD")]]
+base_df2 <- base_data[[which(base_data_names=="univTLFD")]]
 base_df2 <- melt(base_df2, id = c("distbin"))
 
-base_df3 <- base_data[[which(base_csv_names=="schlTLFD")]]
+base_df3 <- base_data[[which(base_data_names=="schlTLFD")]]
 base_df3 <- melt(base_df3, id = c("distbin"))
 
 base_df <- cbind(base_df1, base_df2$value, base_df3$value)
 colnames(base_df) <- c("distbin","variable","value1","value2","value3")
 
-build_df1 <- build_data[[which(build_csv_names=="workTLFD")]]
+build_df1 <- build_data[[which(build_data_names=="workTLFD")]]
 build_df1 <- melt(build_df1, id = c("distbin"))
 
-build_df2 <- build_data[[which(build_csv_names=="univTLFD")]]
+build_df2 <- build_data[[which(build_data_names=="univTLFD")]]
 build_df2 <- melt(build_df2, id = c("distbin"))
 
-build_df3 <- build_data[[which(build_csv_names=="schlTLFD")]]
+build_df3 <- build_data[[which(build_data_names=="schlTLFD")]]
 build_df3 <- melt(build_df3, id = c("distbin"))
 
 build_df <- cbind(build_df1, build_df2$value, build_df3$value)
 colnames(build_df) <- c("distbin","variable","value1","value2","value3")
 
-sd.purpose <- get_sharedData(data_df1 = build_df, data_df2 = base_df, run1_name = BUILD_SCENARIO_NAME, 
+sd.purpose <- get_sharedData(data_df1 = build_df, data_df2 = base_df, run1_name = BUILD_SCENARIO_NAME,
                              run2_name = BASE_SCENARIO_NAME, x = "distbin", y = c("value1", "value2", "value3"), grp = "variable")
 
 p1 <- plotly_density_plotter(sd.purpose, index = "one", xlabel = "Miles to Work", percent = T, tickvals = seq(1,40,5), ticktext = seq(0,40,5), height = 240)
 p2 <- plotly_density_plotter(sd.purpose, index = "two", xlabel = "Miles to University", percent = T, tickvals = seq(1,40,5), ticktext = seq(0,40,5), height = 240)
 p3 <- plotly_density_plotter(sd.purpose, index = "three", xlabel = "Miles to School", percent = T, tickvals = seq(1,40,5), ticktext = seq(0,40,5), height = 240)
-	
+
 bscols(widths=c(12),
   list(filter_select("Purpose_County", "Select District", sd.purpose, ~grp_var,multiple=F),
   p1,
@@ -786,7 +786,7 @@ Chart Column 1
 ```{r Table1_CountyFlows}
 cat("District - District Flow of Workers")
 
-base_pos <- which(base_csv_names=="countyFlows")
+base_pos <- which(base_data_names=="countyFlows")
 base_df <- base_data[[base_pos]]
 base_df[,2:length(names(base_df))] <- base_df[,2:length(names(base_df))]/BASE_SAMPLE_RATE
 t1 <- kable(base_df, format = 'html', caption = DISTRICT_FLOW_CENSUS, digits = 0, row.names = F, align = 'r', format.args = list(big.mark = ',')) %>%
@@ -798,7 +798,7 @@ t1
 ```{r Table1_MandTripLengths}
 cat("Average Mandatory Tour Lengths")
 
-base_df <- base_data[[which(base_csv_names=="mandTripLengths")]]
+base_df <- base_data[[which(base_data_names=="mandTripLengths")]]
 df <- base_df
 colnames(df) <- c("Home District", "Work","University","School")
 
@@ -816,7 +816,7 @@ Chart Column 1
 ```{r Table2_CountyFlows}
 cat("District-District Flow of Workers")
 
-build_pos <- which(build_csv_names=="countyFlows")
+build_pos <- which(build_data_names=="countyFlows")
 build_df <- build_data[[build_pos]]
 build_df[,2:length(names(build_df))] <- build_df[,2:length(names(build_df))]/BUILD_SAMPLE_RATE
 t2 <- kable(build_df, format = 'html', caption = BUILD_SCENARIO_NAME, digits = 0, row.names = F, align = 'r', format.args = list(big.mark = ',')) %>%
@@ -828,7 +828,7 @@ t2
 ```{r Table2_MandTripLengths}
 cat("Average Mandatory Tour Lengths")
 
-build_df <- build_data[[which(build_csv_names=="mandTripLengths")]]
+build_df <- build_data[[which(build_data_names=="mandTripLengths")]]
 df <- build_df
 colnames(df) <- c("Home District", "Work","University","School")
 
@@ -878,15 +878,15 @@ Chart Column 1 {data-width=160}
 
 ### Daily Activity Pattern{data-height=500}
 ```{r Hist_DAP}
-base_df <- base_data[[which(base_csv_names=="dapSummary_vis")]]
-base_df$PERNAME <- person_type_df$name[match(base_df$PERTYPE, person_type_df$code)]
-base_df[tolower(PERTYPE)=='total' & is.na(PERNAME),]$PERNAME <- 'Total'
+base_df <- base_data[[which(base_data_names=="dapSummary_vis")]]
+base_df$PERNAME <- person_type_df$name[match(base_df$PERSONTYPE, person_type_df$code)]
+base_df[tolower(PERSONTYPE)=='total' & is.na(PERNAME),]$PERNAME <- 'Total'
 base_df$PERNAME <- factor(base_df$PERNAME, levels = person_type_char)
 base_df$DAP <- factor(base_df$DAP, levels = dap_types)
 
-build_df <- build_data[[which(build_csv_names=="dapSummary_vis")]]
-build_df$PERNAME <- person_type_df$name[match(build_df$PERTYPE, person_type_df$code)]
-build_df[tolower(PERTYPE)=='total' & is.na(PERNAME),]$PERNAME <- 'Total'
+build_df <- build_data[[which(build_data_names=="dapSummary_vis")]]
+build_df$PERNAME <- person_type_df$name[match(build_df$PERSONTYPE, person_type_df$code)]
+build_df[tolower(PERSONTYPE)=='total' & is.na(PERNAME),]$PERNAME <- 'Total'
 build_df$PERNAME <- factor(build_df$PERNAME, levels = person_type_char)
 build_df$DAP <- factor(build_df$DAP, levels = dap_types)
 
@@ -907,14 +907,14 @@ bscols(widths=c(3,9),
 
 ### Percentage of Households with a Joint Tour{data-height=300}
 ```{r Hist_Presence_Joint}
-base_pos <- which(base_csv_names=="hhsizeJoint")
+base_pos <- which(base_data_names=="hhsizeJoint")
 base_df <- base_data[[base_pos]]
 base_df <- base_df %>%
   group_by(HHSIZE) %>%
   mutate(percent = prop.table(freq)) %>%
   filter(JOINT==1) %>%
   ungroup()
-build_pos <- which(build_csv_names=="hhsizeJoint")
+build_pos <- which(build_data_names=="hhsizeJoint")
 build_df <- build_data[[build_pos]]
 build_df <- build_df %>%
   group_by(HHSIZE) %>%
@@ -932,22 +932,22 @@ p
 
 ### Mandatory Tour Frequency{data-height=500}
 ```{r Hist_MTF}
-base_pos <- which(base_csv_names=="mtfSummary_vis")
+base_pos <- which(base_data_names=="mtfSummary_vis")
 base_df <- base_data[[base_pos]]
-base_df$PERNAME <- person_type_df$name[match(base_df$PERTYPE, person_type_df$code)]
+base_df$PERNAME <- person_type_df$name[match(base_df$PERSONTYPE, person_type_df$code)]
 base_df$PERNAME <- factor(base_df$PERNAME, levels = person_type_char)
 base_df$mtf_name <- mtf_df$name[match(base_df$MTF, mtf_df$code)]
 base_df$mtf_name <- factor(base_df$mtf_name, levels = mtf_names)
-build_pos <- which(build_csv_names=="mtfSummary_vis")
+build_pos <- which(build_data_names=="mtfSummary_vis")
 build_df <- build_data[[build_pos]]
-build_df$PERNAME <- person_type_df$name[match(build_df$PERTYPE, person_type_df$code)]
+build_df$PERNAME <- person_type_df$name[match(build_df$PERSONTYPE, person_type_df$code)]
 build_df$PERNAME <- factor(build_df$PERNAME, levels = person_type_char)
 build_df$mtf_name <- mtf_df$name[match(build_df$MTF, mtf_df$code)]
 build_df$mtf_name <- factor(build_df$mtf_name, levels = mtf_names)
 colnames(build_df) <- colnames(base_df)
 
-base_df[PERTYPE=='Total' & is.na(PERNAME), PERNAME:= 'Total']
-build_df[PERTYPE=='Total' & is.na(PERNAME), PERNAME:= 'Total']
+base_df[PERSONTYPE=='Total' & is.na(PERNAME), PERNAME:= 'Total']
+build_df[PERSONTYPE=='Total' & is.na(PERNAME), PERNAME:= 'Total']
 
 sd.pertype <- get_standardDF(data_df1=base_df, data_df2=build_df, x="mtf_name", y = c("freq"), grp = "PERNAME", shared = T)
 p <- plotly_bar_plotter(data = sd.pertype, height = 250, xlabel = "MTF Choice", ylabel = "Percent", ynames = c(BASE_SCENARIO_NAME, BUILD_SCENARIO_NAME), percent = T, tickangle = -30, bottom_offset = 50)
@@ -964,18 +964,18 @@ Chart Column 1 {data-width=150}
 --------------------------------------------
 ### Total Tour Rate (only active Persons)
 ```{r Hist_totaltours}
-base_df <- base_data[[which(base_csv_names=="total_tours_by_pertype_vis")]]
-base_df$PERNAME <- person_type_df$name[match(base_df$PERTYPE, person_type_df$code)]
+base_df <- base_data[[which(base_data_names=="total_tours_by_pertype_vis")]]
+base_df$PERNAME <- person_type_df$name[match(base_df$PERSONTYPE, person_type_df$code)]
 base_df$PERNAME <- factor(base_df$PERNAME, levels = person_type_char)
-base_df1 <- base_data[[which(base_csv_names=="activePertypeDistbn")]]
-base_df$persons <- base_df1$freq[match(base_df$PERTYPE, base_df1$PERTYPE)]
+base_df1 <- base_data[[which(base_data_names=="activePertypeDistbn")]]
+base_df$persons <- base_df1$freq[match(base_df$PERSONTYPE, base_df1$PERSONTYPE)]
 base_df$tourrate <- round(base_df$freq/base_df$persons,2)
 
-build_df <- build_data[[which(build_csv_names=="total_tours_by_pertype_vis")]]
-build_df$PERNAME <- person_type_df$name[match(build_df$PERTYPE, person_type_df$code)]
+build_df <- build_data[[which(build_data_names=="total_tours_by_pertype_vis")]]
+build_df$PERNAME <- person_type_df$name[match(build_df$PERSONTYPE, person_type_df$code)]
 build_df$PERNAME <- factor(build_df$PERNAME, levels = person_type_char)
-build_df1 <- build_data[[which(build_csv_names=="activePertypeDistbn")]]
-build_df$persons <- build_df1$freq[match(build_df$PERTYPE, build_df1$PERTYPE)]
+build_df1 <- build_data[[which(build_data_names=="activePertypeDistbn")]]
+build_df$persons <- build_df1$freq[match(build_df$PERSONTYPE, build_df1$PERSONTYPE)]
 build_df$tourrate <- round(build_df$freq/build_df$persons,2)
 
 colnames(build_df) <- colnames(base_df)
@@ -990,18 +990,18 @@ p
 
 ### Persons by Individual Non-Mandatory Tours
 ```{r Hist_INM}
-base_df <- base_data[[which(base_csv_names=="inmSummary_vis")]]
-base_df$PERNAME <- person_type_df$name[match(base_df$PERTYPE, person_type_df$code)]
+base_df <- base_data[[which(base_data_names=="inmSummary_vis")]]
+base_df$PERNAME <- person_type_df$name[match(base_df$PERSONTYPE, person_type_df$code)]
 base_df$PERNAME <- factor(base_df$PERNAME, levels = person_type_char)
 
-build_df <- build_data[[which(build_csv_names=="inmSummary_vis")]]
-build_df$PERNAME <- person_type_df$name[match(build_df$PERTYPE, person_type_df$code)]
+build_df <- build_data[[which(build_data_names=="inmSummary_vis")]]
+build_df$PERNAME <- person_type_df$name[match(build_df$PERSONTYPE, person_type_df$code)]
 build_df$PERNAME <- factor(build_df$PERNAME, levels = person_type_char)
 
 colnames(build_df) <- colnames(base_df)
 
-base_df[PERTYPE=='Total' & is.na(PERNAME), PERNAME:= 'Total']
-build_df[PERTYPE=='Total' & is.na(PERNAME), PERNAME:= 'Total']
+base_df[PERSONTYPE=='Total' & is.na(PERNAME), PERNAME:= 'Total']
+build_df[PERSONTYPE=='Total' & is.na(PERNAME), PERNAME:= 'Total']
 
 sd.pertype <- get_standardDF(data_df1=base_df, data_df2=build_df, x="nmtours", y = c("freq"), grp = "PERNAME", shared = T)
 #p <- plotly_bar_plotter(data = sd.pertype, height = 340, xlabel = "Number of Tours", ylabel = "Percent", ynames = c(BASE_SCENARIO_NAME, #BUILD_SCENARIO_NAME), percent = T, tickvals = c(seq(0,2), "3pl"), ticktext = c("0", "1", "2", "3pl"))
@@ -1028,8 +1028,8 @@ Chart Column 1 {data-width=380}
 ### Escortee{data-height=400}
 ```{r schesc7}
 
-base_df <- base_data[[which(base_csv_names=="esctype_by_childtype")]]
-build_df <- build_data[[which(build_csv_names=="esctype_by_childtype")]]
+base_df <- base_data[[which(base_data_names=="esctype_by_childtype")]]
+build_df <- build_data[[which(build_data_names=="esctype_by_childtype")]]
 
 base_df$grp <- BASE_SCENARIO_ALT
 build_df$grp <- BUILD_SCENARIO_NAME
@@ -1059,8 +1059,8 @@ _PureEscort_: The student is dropped off or picked up by a driver who is traveli
 ### Chauffeur{data-height=300}
 ```{r schesc8}
 
-base_df <- base_data[[which(base_csv_names=="esctype_by_chauffeurtype")]]
-build_df <- build_data[[which(build_csv_names=="esctype_by_chauffeurtype")]]
+base_df <- base_data[[which(base_data_names=="esctype_by_chauffeurtype")]]
+build_df <- build_data[[which(build_data_names=="esctype_by_chauffeurtype")]]
 
 base_df$grp <- BASE_SCENARIO_ALT
 build_df$grp <- BUILD_SCENARIO_NAME
@@ -1116,7 +1116,7 @@ bscols(widths=c(12),
 
 ### {data-height=300}
 ```{r schesc3}
-base_df <- data.frame(base_data[[which(base_csv_names=="worker_school_escorting")]])
+base_df <- data.frame(base_data[[which(base_data_names=="worker_school_escorting")]])
 nums <- vapply(base_df, is.numeric, FUN.VALUE = logical(1))
 base_df[,nums] <- base_df[,nums]/BASE_SAMPLE_RATE
 base_df[,nums] <- round(base_df[,nums])
@@ -1151,7 +1151,7 @@ p6
 
 ### {data-height=300}
 ```{r schesc6}
-build_df <- as.data.frame(build_data[[which(build_csv_names=="worker_school_escorting")]])
+build_df <- as.data.frame(build_data[[which(build_data_names=="worker_school_escorting")]])
 nums <- vapply(build_df, is.numeric, FUN.VALUE = logical(1))
 build_df[,nums] <- build_df[,nums]/BUILD_SAMPLE_RATE
 build_df[,nums] <- round(build_df[,nums])
@@ -1204,8 +1204,8 @@ Chart Column 1 {data-width=150}
 --------------------------------------------
 ### Joint Tour Frequency{data-height=675}
 ```{r jtf}
-base_df <- base_data[[which(base_csv_names=="jtf")]]
-build_df <- build_data[[which(build_csv_names=="jtf")]]
+base_df <- base_data[[which(base_data_names=="jtf")]]
+build_df <- build_data[[which(build_data_names=="jtf")]]
 # remove no joint tours option
 base_df <- base_df[-1,]
 build_df <- build_df[-1,]
@@ -1221,9 +1221,9 @@ p
 
 ### Joint Tour Composition
 ```{r jtf_comp}
-base_df <- base_data[[which(base_csv_names=="jointComp")]]
+base_df <- base_data[[which(base_data_names=="jointComp")]]
 names(base_df)[names(base_df)=="tour_composition"] <- "COMPOSITION"
-build_df <- build_data[[which(build_csv_names=="jointComp")]]
+build_df <- build_data[[which(build_data_names=="jointComp")]]
 colnames(build_df) <- colnames(base_df)
 
 p1 <- plotly_pie_chart(data = base_df, label_var = "COMPOSITION", value_var = "freq", height = 250, title = BASE_SCENARIO_NAME, top_offset = 50)
@@ -1240,8 +1240,8 @@ Chart Column 1 {data-width=150}
 
 ### Joint Tours By Number of Household Members
 ```{r jtf_partysize}
-base_df <- base_data[[which(base_csv_names=="jointPartySize")]]
-build_df <- build_data[[which(build_csv_names=="jointPartySize")]]
+base_df <- base_data[[which(base_data_names=="jointPartySize")]]
+build_df <- build_data[[which(build_data_names=="jointPartySize")]]
 colnames(build_df) <- colnames(base_df)
 
 build_df$freq[build_df$NUMBER_HH==5] <- sum(build_df$freq[build_df$NUMBER_HH>=5])
@@ -1255,14 +1255,14 @@ p
 
 ### Joint Tours by Household Size
 ```{r jtf_byhhsize}
-base_pos <- which(base_csv_names=="jointToursHHSize")
+base_pos <- which(base_data_names=="jointToursHHSize")
 base_df <- base_data[[base_pos]]
 
-build_pos <- which(build_csv_names=="jointToursHHSize")
+build_pos <- which(build_data_names=="jointToursHHSize")
 build_df <- build_data[[build_pos]]
 colnames(build_df) <- colnames(base_df)
 
-sd.pertype <- get_standardDF(data_df1=base_df, data_df2=build_df, x="jointTours", y = c("freq"), grp = "hhsize", shared = T)
+sd.pertype <- get_standardDF(data_df1=base_df, data_df2=build_df, x="JOINT_CAT", y = c("freq"), grp = "HHSIZE", shared = T)
 p <- plotly_bar_plotter(data = sd.pertype, height = 225, xlabel = "Number of Joint Tours", ylabel = "Percent", ynames = c(BASE_SCENARIO_NAME, BUILD_SCENARIO_NAME), percent = T)
 
 bscols(widths=c(3,9),
@@ -1275,11 +1275,11 @@ bscols(widths=c(3,9),
 
 ### Party Size Distribution by Joint Tour Composition
 ```{r jtf_comppartysize}
-base_df <- base_data[[which(base_csv_names=="jointCompPartySize")]]
-build_df <- build_data[[which(build_csv_names=="jointCompPartySize")]]
+base_df <- base_data[[which(base_data_names=="jointCompPartySize")]]
+build_df <- build_data[[which(build_data_names=="jointCompPartySize")]]
 colnames(build_df) <- colnames(base_df)
 
-sd.pertype <- get_standardDF(data_df1=base_df, data_df2=build_df, x="partysize", y = c("freq"), grp = "comp", shared = T)
+sd.pertype <- get_standardDF(data_df1=base_df, data_df2=build_df, x="NUMBER_HH", y = c("freq"), grp = "COMPOSITION", shared = T)
 p <- plotly_bar_plotter(data = sd.pertype, height = 225, xlabel = "Joint Party Size", ylabel = "Percent", ynames = c(BASE_SCENARIO_NAME, BUILD_SCENARIO_NAME), percent = T)
 
 bscols(widths=c(3,9),
@@ -1312,8 +1312,8 @@ Chart Column 1 {data-width=100}
 --------------------------------------------
 ### Non-Mandatory Tour Length Distribution{data-height=350}
 ```{r nm_tlfd}
-base_df <- base_data[[which(base_csv_names=="tourDistProfile_vis")]]
-build_df <- build_data[[which(build_csv_names=="tourDistProfile_vis")]]
+base_df <- base_data[[which(base_data_names=="tourDistProfile_vis")]]
+build_df <- build_data[[which(build_data_names=="tourDistProfile_vis")]]
 colnames(build_df) <- colnames(base_df)
 
 # change purpose names to standard format
@@ -1336,8 +1336,8 @@ bscols(widths=c(2,10),
 
 ### Average Non-Mandatory Tour Lengths (Miles){data-height=250}
 ```{r Table1_nonMandTripLength}
-base_df <- base_data[[which(base_csv_names=="nonMandTripLengths")]]
-build_df <- build_data[[which(build_csv_names=="nonMandTripLengths")]]
+base_df <- base_data[[which(base_data_names=="nonMandTripLengths")]]
+build_df <- build_data[[which(build_data_names=="nonMandTripLengths")]]
 df <- data.frame(base_df, build_df[,-1])
 colnames(df) <- c("Purpose", BASE_SCENARIO_NAME, BUILD_SCENARIO_NAME)
 df$Purpose <- purpose_type_df$name[match(df$Purpose, purpose_type_df$code)]
@@ -1384,22 +1384,22 @@ Chart Column 1 {.tabset}
 --------------------------------------------
 ### Tour Departure-Arrival Profile
 ```{r tour_tod}
-base_df <- base_data[[which(base_csv_names=="todProfile_vis")]]
-base_df$tod_bin <- tod_df$bin[match(base_df$id, tod_df$id)]
-base_df$dur_bin <- dur_df$bin[match(base_df$id, dur_df$id)]
-build_df <- build_data[[which(build_csv_names=="todProfile_vis")]]
-build_df$tod_bin <- tod_df$bin[match(build_df$id, tod_df$id)]
-build_df$dur_bin <- dur_df$bin[match(build_df$id, dur_df$id)]
+base_df <- base_data[[which(base_data_names=="todProfile_vis")]]
+base_df$tod_bin <- tod_df$bin[match(base_df$TIME_BIN, tod_df$TIME_BIN)]
+base_df$dur_bin <- dur_df$bin[match(base_df$TIME_BIN, dur_df$TIME_BIN)]
+build_df <- build_data[[which(build_data_names=="todProfile_vis")]]
+build_df$tod_bin <- tod_df$bin[match(build_df$TIME_BIN, tod_df$TIME_BIN)]
+build_df$dur_bin <- dur_df$bin[match(build_df$TIME_BIN, dur_df$TIME_BIN)]
 colnames(build_df) <- colnames(base_df)
 
 # change purpose names to standard format
-base_df$purpose <- as.character(base_df$purpose)
-build_df$purpose <- as.character(build_df$purpose)
-base_df$purpose <- purpose_type_df$name[match(base_df$purpose, purpose_type_df$code)]
-build_df$purpose <- purpose_type_df$name[match(build_df$purpose, purpose_type_df$code)]
+base_df$PURPOSE <- as.character(base_df$PURPOSE)
+build_df$PURPOSE <- as.character(build_df$PURPOSE)
+# base_df$PURPOSE <- purpose_type_df$name[match(base_df$PURPOSE, purpose_type_df$code)]
+# build_df$PURPOSE <- purpose_type_df$name[match(build_df$PURPOSE, purpose_type_df$code)]
 
 sd.purpose <- get_sharedData(data_df1 = base_df, data_df2 = build_df, run1_name = BASE_SCENARIO_NAME, 
-                             run2_name = BUILD_SCENARIO_NAME, x = "id", y = c("freq_dep", "freq_arr", "freq_dur"), grp = "purpose")
+                             run2_name = BUILD_SCENARIO_NAME, x = "TIME_BIN", y = c("FREQ_DEP", "FREQ_ARR", "FREQ_DUR"), grp = "PURPOSE")
 
 p1 <- plotly_density_plotter(sd.purpose, index = "one", xlabel = "Tour Departure", percent = T, left_offset = 25, 
                              tickvals = seq(1,40), ticktext = todBins, bottom_offset = 150, tickangle = 315, height = 275)
@@ -1418,28 +1418,28 @@ bscols(widths=c(2,10),
 
 ### Tour Aggregate Departure-Arrival Profile
 ```{r tour_tod_agg}
-base_df <- base_data[[which(base_csv_names=="todProfile_vis")]]
-base_df$tod_agg <- cut(base_df$id, breaks = timePeriodBreaks, labels = timePeriods, right = FALSE)
+base_df <- base_data[[which(base_data_names=="todProfile_vis")]]
+base_df$tod_agg <- cut(base_df$TIME_BIN, breaks = timePeriodBreaks, labels = timePeriods, right = FALSE)
 base_df <- base_df %>%
-  group_by(purpose, tod_agg) %>%
-  summarise(freq_dep = sum(freq_dep), freq_arr = sum(freq_arr), freq_dur = sum(freq_dur)) %>%
+  group_by(PURPOSE, tod_agg) %>%
+  summarise(FREQ_DEP = sum(FREQ_DEP), FREQ_ARR = sum(FREQ_ARR), FREQ_DUR = sum(FREQ_DUR)) %>%
   ungroup()
 
-build_df <- build_data[[which(build_csv_names=="todProfile_vis")]]
-build_df$tod_agg <- cut(build_df$id, breaks = timePeriodBreaks, labels = timePeriods, right = FALSE)
+build_df <- build_data[[which(build_data_names=="todProfile_vis")]]
+build_df$tod_agg <- cut(build_df$TIME_BIN, breaks = timePeriodBreaks, labels = timePeriods, right = FALSE)
 build_df <- build_df %>%
-  group_by(purpose, tod_agg) %>%
-  summarise(freq_dep = sum(freq_dep), freq_arr = sum(freq_arr), freq_dur = sum(freq_dur)) %>%
+  group_by(PURPOSE, tod_agg) %>%
+  summarise(FREQ_DEP = sum(FREQ_DEP), FREQ_ARR = sum(FREQ_ARR), FREQ_DUR = sum(FREQ_DUR)) %>%
   ungroup()
 colnames(build_df) <- colnames(base_df)
 
 # change purpose names to standard format
-base_df$purpose <- as.character(base_df$purpose)
-build_df$purpose <- as.character(build_df$purpose)
-base_df$purpose <- purpose_type_df$name[match(base_df$purpose, purpose_type_df$code)]
-build_df$purpose <- purpose_type_df$name[match(build_df$purpose, purpose_type_df$code)]
+base_df$PURPOSE <- as.character(base_df$PURPOSE)
+build_df$PURPOSE <- as.character(build_df$PURPOSE)
+# base_df$PURPOSE <- purpose_type_df$name[match(base_df$PURPOSE, purpose_type_df$code)]
+# build_df$PURPOSE <- purpose_type_df$name[match(build_df$PURPOSE, purpose_type_df$code)]
 
-sd.purpose <- get_standardDF(data_df1=base_df, data_df2=build_df, x="tod_agg", y = c("freq_dep", "freq_arr", "freq_dur"), grp = "purpose", shared = T)
+sd.purpose <- get_standardDF(data_df1=base_df, data_df2=build_df, x="tod_agg", y = c("FREQ_DEP", "FREQ_ARR", "FREQ_DUR"), grp = "PURPOSE", shared = T)
 
 p1 <- plotly_bar_plotter(data = sd.purpose, height = 350, xlabel = "Tour Departure", ylabel = "Percent", ynames = c(BASE_SCENARIO_NAME, BUILD_SCENARIO_NAME), percent = T)
 p2 <- plotly_bar_plotter(data = sd.purpose, height = 350, xlabel = "Tour Arrival", ylabel = "Percent", ynames = c(BASE_SCENARIO_NAME, BUILD_SCENARIO_NAME), percent = T, index = 2)
@@ -1464,10 +1464,10 @@ Chart Column 1{data-width=150}
 
 ### Tour Mode Choice
 ```{r tourMode}
-base_df <- base_data[[which(base_csv_names=="tmodeProfile_vis")]]
+base_df <- base_data[[which(base_data_names=="tmodeProfile_vis")]]
 base_df$purpose <- as.character(base_df$purpose)
 base_df$purpose <- purpose_type_df$name[match(base_df$purpose, purpose_type_df$code)]
-build_df <- build_data[[which(build_csv_names=="tmodeProfile_vis")]]
+build_df <- build_data[[which(build_data_names=="tmodeProfile_vis")]]
 build_df$purpose <- as.character(build_df$purpose)
 build_df$purpose <- purpose_type_df$name[match(build_df$purpose, purpose_type_df$code)]
 colnames(build_df) <- colnames(base_df)
@@ -1538,18 +1538,18 @@ Chart Column 1 {data-width=200}
 --------------------------------------------
 ### Stop Frequency - Directional
 ```{r stopfreq_dir}
-base_df <- base_data[[which(base_csv_names=="stopfreqDir_vis")]]
-build_df <- build_data[[which(build_csv_names=="stopfreqDir_vis")]]
+base_df <- base_data[[which(base_data_names=="stopfreqDir_vis")]]
+build_df <- build_data[[which(build_data_names=="stopfreqDir_vis")]]
 colnames(build_df) <- colnames(base_df)
 
 # change purpose names to standard format
-base_df$purpose <- as.character(base_df$purpose)
-build_df$purpose <- as.character(build_df$purpose)
-base_df$purpose <- purpose_type_df$name[match(base_df$purpose, purpose_type_df$code)]
-build_df$purpose <- purpose_type_df$name[match(build_df$purpose, purpose_type_df$code)]
+base_df$PURPOSE <- as.character(base_df$PURPOSE)
+build_df$PURPOSE <- as.character(build_df$PURPOSE)
+# base_df$purpose <- purpose_type_df$name[match(base_df$purpose, purpose_type_df$code)]
+# build_df$purpose <- purpose_type_df$name[match(build_df$purpose, purpose_type_df$code)]
 
 
-sd.pertype1 <- get_standardDF(data_df1=base_df, data_df2=build_df, x="nstops", y = c("freq_out", "freq_inb"), grp = "purpose", shared = T)
+sd.pertype1 <- get_standardDF(data_df1=base_df, data_df2=build_df, x="NSTOPS", y = c("freq_out", "freq_inb"), grp = "PURPOSE", shared = T)
 p1 <- plotly_bar_plotter(data = sd.pertype1, height = 325, xlabel = "Number of Stops - Outbound", ylabel = "Percent", ynames = c(BASE_SCENARIO_NAME, BUILD_SCENARIO_NAME), percent = T, tickvals = seq(1,4), ticktext = c("0", "1", "2", "3pl"))
 p2 <- plotly_bar_plotter(data = sd.pertype1, height = 325, xlabel = "Number of Stops - Inbound", ylabel = "Percent", ynames = c(BASE_SCENARIO_NAME, BUILD_SCENARIO_NAME), percent = T, tickvals = seq(1,4), ticktext = c("0", "1", "2", "3pl"), index = 2)
 bscols(widths=c(12),
@@ -1567,8 +1567,8 @@ Chart Column 1 {data-width=300}
 --------------------------------------------
 ### Stop Frequency - Total{data-height=250}
 ```{r stopfreq_total}
-base_df <- base_data[[which(base_csv_names=="stopfreq_total_vis")]]
-build_df <- build_data[[which(build_csv_names=="stopfreq_total_vis")]]
+base_df <- base_data[[which(base_data_names=="stopfreq_total_vis")]]
+build_df <- build_data[[which(build_data_names=="stopfreq_total_vis")]]
 colnames(build_df) <- colnames(base_df)
 
 # change purpose names to standard format
@@ -1590,18 +1590,18 @@ bscols(widths=c(3,9),
 
 ### Stop Purpose by Tour Purpose{data-height=250}
 ```{r stoppurp_tourpurp}
-base_df <- base_data[[which(base_csv_names=="stoppurpose_tourpurpose_vis")]]
-build_df <- build_data[[which(build_csv_names=="stoppurpose_tourpurpose_vis")]]
+base_df <- base_data[[which(base_data_names=="stoppurpose_tourpurpose_vis")]]
+build_df <- build_data[[which(build_data_names=="stoppurpose_tourpurpose_vis")]]
 colnames(build_df) <- colnames(base_df)
 
 # change purpose names to standard format
 base_df$purpose <- as.character(base_df$purpose)
 build_df$purpose <- as.character(build_df$purpose)
-base_df$purpose <- purpose_type_df$name[match(base_df$purpose, purpose_type_df$code)]
-build_df$purpose <- purpose_type_df$name[match(build_df$purpose, purpose_type_df$code)]
+# base_df$purpose <- purpose_type_df$name[match(base_df$purpose, purpose_type_df$code)]
+# build_df$purpose <- purpose_type_df$name[match(build_df$purpose, purpose_type_df$code)]
 
 
-sd.pertype3 <- get_standardDF(data_df1=base_df, data_df2=build_df, x="stop_purp", y = c("freq"), grp = "purpose", shared = T)
+sd.pertype3 <- get_standardDF(data_df1=base_df, data_df2=build_df, x="stop_purpose", y = c("freq"), grp = "purpose", shared = T)
 p1 <- plotly_bar_plotter(data = sd.pertype3, height = 350, xlabel = "Stop Purpose", ylabel = "Percent", ynames = c(BASE_SCENARIO_NAME, BUILD_SCENARIO_NAME), percent = T, tickvals = seq(1,10), ticktext = stopPurposes)
 
 bscols(widths=c(3,9),
@@ -1636,15 +1636,15 @@ Chart Column 1 {data-width=800}
 
 ### Stop Location - Out of Direction Distance{data-height=350}
 ```{r stopDC}
-base_df <- base_data[[which(base_csv_names=="stopDC_vis")]]
-build_df <- build_data[[which(build_csv_names=="stopDC_vis")]]
+base_df <- base_data[[which(base_data_names=="stopDC_vis")]]
+build_df <- build_data[[which(build_data_names=="stopDC_vis")]]
 colnames(build_df) <- colnames(base_df)
 
 # change purpose names to standard format
 base_df$PURPOSE <- as.character(base_df$PURPOSE)
 build_df$PURPOSE <- as.character(build_df$PURPOSE)
-base_df$PURPOSE <- purpose_type_df$name[match(base_df$PURPOSE, purpose_type_df$code)]
-build_df$PURPOSE <- purpose_type_df$name[match(build_df$PURPOSE, purpose_type_df$code)]
+# base_df$PURPOSE <- purpose_type_df$name[match(base_df$PURPOSE, purpose_type_df$code)]
+# build_df$PURPOSE <- purpose_type_df$name[match(build_df$PURPOSE, purpose_type_df$code)]
 
 
 sd.purpose <- get_sharedData(data_df1 = base_df, data_df2 = build_df, run1_name = BASE_SCENARIO_NAME, 
@@ -1663,8 +1663,8 @@ Chart Column 1 {data-width=300}
 
 ### Average Out of Direction Distance (Miles){data-height=250}
 ```{r Table1_outOfDir}
-base_df <- base_data[[which(base_csv_names=="avgStopOutofDirectionDist_vis")]]
-build_df <- build_data[[which(build_csv_names=="avgStopOutofDirectionDist_vis")]]
+base_df <- base_data[[which(base_data_names=="avgStopOutofDirectionDist_vis")]]
+build_df <- build_data[[which(build_data_names=="avgStopOutofDirectionDist_vis")]]
 df <- data.frame(base_df, build_df[,-1])
 colnames(df) <- c("Tour_Purpose", BASE_SCENARIO_NAME, BUILD_SCENARIO_NAME)
 df$Tour_Purpose <- purpose_type_df$name[match(df$Tour_Purpose, purpose_type_df$code)]
@@ -1707,16 +1707,16 @@ Chart Column 1 {.tabset}
 
 ### Stop & Trip Departure{data-height=650}
 ```{r stopDep}
-base_df <- base_data[[which(base_csv_names=="stopTripDep_vis")]]
-build_df <- build_data[[which(build_csv_names=="stopTripDep_vis")]]
-colnames(base_df) <- c("timebin", "purpose", "freq_stop", "freq_trip")
+base_df <- base_data[[which(base_data_names=="stopTripDep_vis")]]
+build_df <- build_data[[which(build_data_names=="stopTripDep_vis")]]
+colnames(base_df) <- c('index', "timebin", "purpose", "freq_stop", "freq_trip")
 colnames(build_df) <- colnames(base_df)
 
 # change purpose names to standard format
 base_df$purpose <- as.character(base_df$purpose)
 build_df$purpose <- as.character(build_df$purpose)
-base_df$purpose <- purpose_type_df$name[match(base_df$purpose, purpose_type_df$code)]
-build_df$purpose <- purpose_type_df$name[match(build_df$purpose, purpose_type_df$code)]
+# base_df$purpose <- purpose_type_df$name[match(base_df$purpose, purpose_type_df$code)]
+# build_df$purpose <- purpose_type_df$name[match(build_df$purpose, purpose_type_df$code)]
 
 
 sd.purpose <- get_sharedData(data_df1 = base_df, data_df2 = build_df, run1_name = BASE_SCENARIO_NAME, 
@@ -1735,28 +1735,28 @@ bscols(widths=c(2,10),
 
 ### Aggregate Stop & Trip Departure
 ```{r trip_tod_agg}
-base_df <- base_data[[which(base_csv_names=="stopTripDep_vis")]]
-colnames(base_df) <- c("id","purpose","freq_stop","freq_trip")
-base_df$tod_agg <- cut(base_df$id, breaks = timePeriodBreaks, labels = timePeriods, right = FALSE)
+base_df <- base_data[[which(base_data_names=="stopTripDep_vis")]]
+# colnames(base_df) <- c("id","purpose", 'timebin',"freq_stop","freq_trip")
+base_df$tod_agg <- cut(base_df$timebin, breaks = timePeriodBreaks, labels = timePeriods, right = FALSE)
 base_df <- base_df %>%
   group_by(purpose, tod_agg) %>%
   summarise(freq_stop = sum(freq_stop), freq_trip = sum(freq_trip)) %>%
   ungroup()
 
-build_df <- build_data[[which(build_csv_names=="stopTripDep_vis")]]
-colnames(build_df) <- c("id","purpose","freq_stop","freq_trip")
-build_df$tod_agg <- cut(build_df$id, breaks = timePeriodBreaks, labels = timePeriods, right = FALSE)
+build_df <- build_data[[which(build_data_names=="stopTripDep_vis")]]
+# colnames(base_df) <- c("id","purpose", 'timebin',"freq_stop","freq_trip")
+build_df$tod_agg <- cut(build_df$timebin, breaks = timePeriodBreaks, labels = timePeriods, right = FALSE)
 build_df <- build_df %>%
   group_by(purpose, tod_agg) %>%
   summarise(freq_stop = sum(freq_stop), freq_trip = sum(freq_trip)) %>%
   ungroup()
-colnames(build_df) <- colnames(base_df)
+# colnames(build_df) <- colnames(base_df)
 
 # change purpose names to standard format
 base_df$purpose <- as.character(base_df$purpose)
 build_df$purpose <- as.character(build_df$purpose)
-base_df$purpose <- purpose_type_df$name[match(base_df$purpose, purpose_type_df$code)]
-build_df$purpose <- purpose_type_df$name[match(build_df$purpose, purpose_type_df$code)]
+# base_df$purpose <- purpose_type_df$name[match(base_df$purpose, purpose_type_df$code)]
+# build_df$purpose <- purpose_type_df$name[match(build_df$purpose, purpose_type_df$code)]
 
 sd.purpose <- get_standardDF(data_df1=base_df, data_df2=build_df, x="tod_agg", y = c("freq_stop", "freq_trip"), grp = "purpose", shared = T)
 
@@ -1791,8 +1791,8 @@ Distribution of trips by trip mode and tour mode, which constrains the availabil
 
 ### Trip Mode Choice
 ```{r tripMode}
-base_df <- base_data[[which(base_csv_names=="tripModeProfile_vis")]]
-build_df <- build_data[[which(build_csv_names=="tripModeProfile_vis")]]
+base_df <- base_data[[which(base_data_names=="tripModeProfile_vis")]]
+build_df <- build_data[[which(build_data_names=="tripModeProfile_vis")]]
 colnames(build_df) <- colnames(base_df)
 
 # change purpose names to standard format

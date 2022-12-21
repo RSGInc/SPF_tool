@@ -10,10 +10,38 @@ from collections import defaultdict
 
 class JSONEncoder(json.JSONEncoder):
     def default(self, obj):
+        """Pandas and Numpy have some specific types that we want to ensure
+        are coerced to Python types, for JSON generation purposes. This attempts
+        to do so where applicable.
+        """
+        # Pandas dataframes have a to_json() method, so we'll check for that and
+        # return it if so.
         if hasattr(obj, 'to_json'):
-            return obj.to_json(orient='records')
-        return json.JSONEncoder.default(self, obj)
+            return obj.to_json(orient='records', indent=2)
 
+        # Numpy objects report themselves oddly in error logs, but this generic
+        # type mostly captures what we're after.
+        if isinstance(obj, np.generic):
+            return np.asscalar(obj)
+
+        # ndarray -> list, pretty straightforward.
+        if isinstance(obj, np.ndarray):
+            return obj.to_list()
+
+        if isinstance(obj, type({}.keys())):
+            return list(obj)
+
+        # If none of the above apply, we'll default back to the standard JSON encoding
+        # routines and let it work normally.
+        return super().default(obj)
+
+# class JSONEncoder(json.JSONEncoder):
+#     def default(self, obj):
+#         if hasattr(obj, 'to_json'):
+#             return obj.to_json(orient='records')
+#         if isinstance(obj, type({}.keys())):
+#             return obj
+#         return json.JSONEncoder.default(self, obj)
 
 def read_mappings(**file_paths):
     def get_defaultdict(map):
@@ -54,42 +82,105 @@ def read_config(file_path):
 
 
 def load_pipeline_tables(kwargs):
-    input_tables = {}
-
+    # Check for any data inputs
     if not kwargs.get("data"):
-        return input_tables
+        return {}
 
     if kwargs.get("from_pipeline", True) and kwargs.get("pipeline").get(kwargs.get("data_directory")) is not None:
         assert kwargs.get("pipeline").get(
             kwargs.get("data_directory")
         ), f"{kwargs.get('data_directory')} not found in pipeline."
 
-        input_tables = kwargs.get("pipeline").get(kwargs.get("data_directory"))
+        return kwargs.get("pipeline").get(kwargs.get("data_directory"))
 
     else:
-        for table_name, table_params in kwargs.get("data").items():
+        return read_tables_recursively(kwargs.get("data"))
+
+def read_tables_recursively(file_dict):
+
+    def read_tables(table_dir, index_col):
+        # Check if multiple found
+        if isinstance(table_dir, list):
+            assert len(table_dir) == 1, (
+                f'{len(table_dir)} files found for "{table_dir}" input!'
+                "If >1, check for multiple files in data folders."
+                "If 0, check if correct folder specified, or is empty!"
+            )
+            table_dir = table_dir[0]
+
+        if not table_dir:
+            print('ddd')
+
+        return pd.read_csv(table_dir, index_col=index_col)
+
+    def scan_tables(file_dict, inner_dict={}):
+        if not inner_dict:
+            inner_dict = file_dict
+        for table_name, table_params in inner_dict.items():
             if isinstance(table_params, dict) and not table_params.get("read_csv", True):
                 continue
 
             if isinstance(table_params, str) and '.csv' in table_params:
                 table_dir = table_params
                 index_col = None
-            else:
+                file_dict[table_name] = read_tables(table_dir, index_col)
+
+            elif isinstance(table_params, dict) and table_params.get("file"):
                 table_dir = table_params.get("file")
-                index_col = table_params.get("index")
+                index_col = table_params.get("index", None)
+                file_dict[table_name] = read_tables(table_dir, index_col)
 
-            # Check if multiple found
-            if isinstance(table_dir, list):
-                assert len(table_dir) == 1, (
-                    f'{len(table_dir)} files found for "{table_dir}" input!'
-                    "If >1, check for multiple files in data folders."
-                    "If 0, check if correct folder specified, or is empty!"
-                )
-                table_dir = table_dir[0]
+            else:
+                file_dict[table_name] = scan_tables(table_params, table_params)
 
-            input_tables[table_name] = pd.read_csv(table_dir, index_col=index_col)
+        return file_dict
 
-    return input_tables
+    data = scan_tables(file_dict)
+
+    return data
+
+
+def find_source_root(file, sources):
+    if not os.path.isabs(file):
+        if not isinstance(sources, list):
+            sources = [sources]
+        path = [
+            os.path.join(dir, file)
+            for dir in sources
+            if os.path.isfile(os.path.join(dir, file))
+        ]
+
+        assert (
+            len(path) == 1
+        ), f'{len(path)} files found for "{file}" input! Expecting only 1. Is there a typo or duplicate files?'
+        if len(path) == 1:
+            file = path[0]
+    return file
+
+def recursive_file_dict(file_dict, root_dir, nesting = False):
+    def flatten(d, root_dir, fd={}):
+        for k, v in d.items():
+            if isinstance(v, str):
+                fd[k] = find_source_root(v, root_dir)
+            elif v.get('file'):
+                v['file'] = find_source_root(v.get('file'), root_dir)
+                fd[k] = v
+            else:
+                root_dir = os.path.join(root_dir, k) if nesting else root_dir
+                flatten(v, root_dir, fd)
+        return fd
+
+    if isinstance(file_dict, str):
+        return find_source_root(file_dict, root_dir)
+
+    if file_dict.get('file'):
+        file_dict['file'] = find_source_root(file_dict.get('file'), root_dir)
+        file_dict['index'] = file_dict.get('index')
+        return file_dict
+
+    flat_dict = flatten(file_dict, root_dir)
+
+    return flat_dict
 
 
 def distance_on_unit_sphere(lat1, long1, lat2, long2):
@@ -179,65 +270,3 @@ def summarize(table, stat_codebook, weight_col=None):
         )
 
     return stats
-
-
-def find_source_root(file, sources):
-    if not os.path.isabs(file):
-        if not isinstance(sources, list):
-            sources = [sources]
-        path = [
-            os.path.join(dir, file)
-            for dir in sources
-            if os.path.isfile(os.path.join(dir, file))
-        ]
-
-        assert (
-            len(path) <= 1
-        ), f'{len(path)} files found for "{file}" input! Expecting only 1.'
-        if len(path) == 1:
-            file = path[0]
-    return file
-
-# def recursive_file_dict(file_dict, root_dir, flat_dict={}):
-#     for k, v in file_dict.items():
-#         if isinstance(v, str):
-#             flat_dict[k] = find_source_root(v, root_dir)
-#         elif v.get('file'):
-#             v['file'] = find_source_root(v.get('file'), root_dir)
-#             flat_dict[k] = v
-#         else:
-#             recursive_file_dict(v, os.path.join(root_dir, k), flat_dict)
-#
-#     return flat_dict
-
-def recursive_file_dict(file_dict, root_dir):
-    flat_dict = {}
-    def flatten(d, root_dir, fd={}):
-        for k, v in d.items():
-            if isinstance(v, str):
-                fd[k] = find_source_root(v, root_dir)
-            elif v.get('file'):
-                v['file'] = find_source_root(v.get('file'), root_dir)
-                fd[k] = v
-            else:
-                flatten(v, os.path.join(root_dir, k), fd)
-        return fd
-
-    flat_dict = flatten(file_dict, root_dir)
-
-    return flat_dict
-
-# def recursive_file_dict(file_dict, root_dir):
-#     def flatten(key, value, root_dir):
-#         if isinstance(value, str):
-#             return (key, find_source_root(value, root_dir))
-#         elif value.get('file'):
-#             value['file'] = find_source_root(value.get('file'), root_dir)
-#             return (key, value)
-#         else:
-#             return [(k, v) for k, v in recursive_file_dict(value, os.path.join(root_dir, key)).items()]
-#
-#     # flat = {k: v for k, v in file_dict.items()}
-#     items = [item for k, v in file_dict.items() for item in flatten(k, v, root_dir)]
-#
-#     return dict(items)

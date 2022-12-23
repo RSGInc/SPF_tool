@@ -32,7 +32,7 @@ person,EMPLY,INT,categorical,Employment Category,2,Part-time,person.occ.isin([2]
 person,EMPLY,INT,categorical,Employment Category,3,Unemployed,person.occ.isin([8])
 person,EMPLY,INT,categorical,Employment Category,4,Non-worker,"~person.occ.isin([1,2,8])"
 person,AGE,INT,continuous,Age of person,,,person.age
-person,AGE_CAT,INT,continuous,Age of person,,,"pd.cut(person.age, bins=[0,5,15,17,24,34,44,49,54,59,64,74,79,84,999], include_lowest=True, labels=False).astype(str)"
+person,AGE_CAT,INT,continuous,Age of person,,,"pd.cut(person.age, bins=list(self.constants.get('AGE_BINS').values()) + [999], include_lowest=True, labels=False).astype(str)"
 person,HOURS_CAT,INT,continuous,Age of person,,,"pd.Series(None, index=person.index)"
 person,PER_GENDER,INT,categorical,Gender of person,1,Male,person.gender.isin([1])
 person,PER_GENDER,INT,categorical,Gender of person,2,Female,person.gender.isin([2])
@@ -40,7 +40,19 @@ person,EMPLY_LOC_TYPE,INT,categorical,Employment location type,1,fixed,"person.o
 person,EMPLY_LOC_TYPE,INT,categorical,Employment location type,2,works from home,"person.occ.isin([1,2]) & person.reset_index().merge(trip[trip.trip_purp.isin([1])].groupby('person_id').dest_latlon.size().reset_index(), how='left').set_index('person_id').isnull().dest_latlon"
 person,EMPLY_LOC_TYPE,INT,categorical,Employment location type,3,varies,"person.occ.isin([1,2]) & person.reset_index().merge((trip[trip.trip_purp.isin([1])].groupby('person_id').dest_latlon.size()>1).reset_index(), how='left').set_index('person_id').fillna(False).dest_latlon"
 person,EMPLY_LOC_TYPE,INT,categorical,Employment location type,0,Not a worker,"~person.occ.isin([1,2])"
-person,PERTYPE,INT,continuous,Person type,,,"person.reset_index().merge(trip[['household_id','person_num','person_group']].drop_duplicates(), on=['household_id','person_num'], how='left').set_index('person_id').person_group.fillna(0).astype(int)"
+# person,PERTYPE,INT,continuous,Person type,,,"person.reset_index().merge(trip[['household_id','person_num','person_group']].drop_duplicates(), on=['household_id','person_num'], how='left').set_index('person_id').person_group.fillna(0).astype(int)"
+person,PERSONTYPE,INT,categorical,Person type,1,'Full-time Emirati worker',"(person.is_labourer==0) & person.nationality.isin([1]) & (person.age >= 16) & person.occ.isin([1])"
+person,PERSONTYPE,INT,categorical,Person type,2,'Full-time non-Emirati worker',"(person.is_labourer==0) & ~person.nationality.isin([1]) & (person.age >= 16) & person.occ.isin([1])"
+person,PERSONTYPE,INT,categorical,Person type,3,'Labourer',"(person.is_labourer==1) & (person.age >= 16) & person.occ.isin([1,2,3])"
+person,PERSONTYPE,INT,categorical,Person type,4,'Part-time Emirati worker',"(person.is_labourer==0) & person.nationality.isin([1]) & (person.age >= 16) & person.occ.isin([2])"
+person,PERSONTYPE,INT,categorical,Person type,5,'Part-time non-Emirati worker',"(person.is_labourer==0) & ~person.nationality.isin([1]) & (person.age >= 16) & person.occ.isin([2])"
+person,PERSONTYPE,INT,categorical,Person type,6,'University student',"(person.is_labourer==0) & (person.age > 16) & person.occ.isin([3,4,5])"
+person,PERSONTYPE,INT,categorical,Person type,7,'Non-working and non-student',"person.age.isin(range(16,65)) & person.occ.isin([7,8,9])"
+person,PERSONTYPE,INT,categorical,Person type,8,'Non-working senior',"(person.age >= 65) & person.occ.isin([6,7,8,9]) | person.occ.isin([6])"
+person,PERSONTYPE,INT,categorical,Person type,9,'K-12 Emirati student',"(person.nationality.isin([1]) & person.age.isin(range(6,17)) & person.occ.isin([3,4,5,7,8]))"
+person,PERSONTYPE,INT,categorical,Person type,10,'K-12 non-Emirati student',"~person.nationality.isin([1]) & person.age.isin(range(6,17)) & person.occ.isin([3,4,5,7,8])"
+person,PERSONTYPE,INT,categorical,Person type,11,'Pre-school',"person.age.isin(range(0,6)) & person.occ.isin([3,4,5,7])"
+person,IS_EMIRATI,INT,continuous,Person type,,,"person.nationality.isin([1]).astype(int)"
 trip,trip_id,INT,continuous,dataframe index,,,"pd.Series(trip.index, index=trip.index)"
 trip,SAMPN,INT,continuous,Household ID,,,trip.household_id
 trip,PERNO,INT,continuous,Person ID,,,trip.person_num
@@ -66,18 +78,18 @@ trip,TPURP,INT,categorical,Trip Purpose,13,Other,trip.trip_purp.isin([9])
 # trip,MODE,INT,categorical,Surveyed Trip Mode,1,SOV,"(trip.mode_mainline.isin([2,11,12,13]) & (pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)==0))"
 # trip,MODE,INT,categorical,Surveyed Trip Mode,2,HOV2,"(trip.mode_mainline.isin([2,3,11,12,13]) & (pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)==1)) | (trip.mode_mainline.isin([3]) & (pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)==0))"
 # trip,MODE,INT,categorical,Surveyed Trip Mode,3,HOV3+,"(trip.mode_mainline.isin([2,3,11,12,13]) & (pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)>1))"
-trip,MODE,INT,categorical,Surveyed Trip Mode,1,SOV,"self.get_hov('SOV',trip, trip_hhcompanions_pnum)"
-trip,MODE,INT,categorical,Surveyed Trip Mode,2,HOV2,"self.get_hov('HOV2',trip, trip_hhcompanions_pnum)"
-trip,MODE,INT,categorical,Surveyed Trip Mode,3,HOV3+,"self.get_hov('HOV3+',trip, trip_hhcompanions_pnum)"
+trip,MODE,INT,categorical,Surveyed Trip Mode,1,SOV,"self.get_hov('SOV')"
+trip,MODE,INT,categorical,Surveyed Trip Mode,2,HOV2,"self.get_hov('HOV2')"
+trip,MODE,INT,categorical,Surveyed Trip Mode,3,HOV3+,"self.get_hov('HOV3+')"
 trip,MODE,INT,categorical,Surveyed Trip Mode,4,Walk,"trip.mode_mainline.isin([1])"
 trip,MODE,INT,categorical,Surveyed Trip Mode,5,Bike,"trip.mode_mainline.isin([14])"
 trip,MODE,INT,categorical,Surveyed Trip Mode,6,TNC / Taxi,"trip.mode_mainline.isin([8,9])"
-trip,MODE,INT,categorical,Surveyed Trip Mode,7,WALK-BUS,"self.get_transit_type('WALK-BUS', trip)"
-trip,MODE,INT,categorical,Surveyed Trip Mode,8,WALK-METRO,"self.get_transit_type('WALK-METRO', trip)"
-trip,MODE,INT,categorical,Surveyed Trip Mode,9,PNR-BUS,"self.get_transit_type('PNR-BUS', trip)"
-trip,MODE,INT,categorical,Surveyed Trip Mode,10,PNR-METRO,"self.get_transit_type('PNR-METRO', trip)"
-trip,MODE,INT,categorical,Surveyed Trip Mode,11,KNR-BUS,"self.get_transit_type('KNR-BUS', trip)"
-trip,MODE,INT,categorical,Surveyed Trip Mode,12,KNR-METRO,"self.get_transit_type('KNR-METRO', trip)"
+trip,MODE,INT,categorical,Surveyed Trip Mode,7,WALK-BUS,"self.get_transit_type('WALK-BUS')"
+trip,MODE,INT,categorical,Surveyed Trip Mode,8,WALK-METRO,"self.get_transit_type('WALK-METRO')"
+trip,MODE,INT,categorical,Surveyed Trip Mode,9,PNR-BUS,"self.get_transit_type('PNR-BUS')"
+trip,MODE,INT,categorical,Surveyed Trip Mode,10,PNR-METRO,"self.get_transit_type('PNR-METRO')"
+trip,MODE,INT,categorical,Surveyed Trip Mode,11,KNR-BUS,"self.get_transit_type('KNR-BUS')"
+trip,MODE,INT,categorical,Surveyed Trip Mode,12,KNR-METRO,"self.get_transit_type('KNR-METRO')"
 trip,MODE,INT,categorical,Surveyed Trip Mode,13,Company-Bus,"trip.mode_mainline.isin([6])"
 trip,MODE,INT,categorical,Surveyed Trip Mode,14,Schoolbus," trip.mode_mainline.isin([7])"
 trip,MODE,INT,categorical,Surveyed Trip Mode,15,Other,"trip.mode_mainline.isin([10,15])"
@@ -90,7 +102,7 @@ trip,DRIVER,INT,categorical,Flag to indicate whether the person was driving,2,Pa
 trip,TOLL_NO,INT,categorical,Toll Payed on Trip,1,Yes,~trip.car_salikgates.isnull()
 trip,TOLL_NO,INT,categorical,Toll Payed on Trip,2,No,trip.car_salikgates.isnull()
 trip,TOTTR,INT,continuous,Total Travellers on Trip,,,"pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)"
-trip,TOTTR_NEXT,INT,continuous,Total Travellers on subsequent trip (0 if last trip),,,"self.get_TOTTR_NEXT(trip, trip_hhcompanions_pnum)"
+trip,TOTTR_NEXT,INT,continuous,Total Travellers on subsequent trip (0 if last trip),,,"self.get_TOTTR_NEXT()"
 trip,HHMEM,INT,continuous,Number of household members on the trip,,,"trip.trip_hhcompanions_pnum.str.split(',').explode().groupby('trip_id').size()-1"
 trip,PER1,INT,continuous,Person ID of first additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(0).astype(str).reindex(trip.index)
 trip,PER2,INT,continuous,Person ID of second additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(1).astype(str).reindex(trip.index)
@@ -100,10 +112,10 @@ trip,PER5,INT,continuous,Person ID of fifth additional household member on trip,
 trip,PER6,INT,continuous,Person ID of sixth additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(5).astype(str).reindex(trip.index)
 trip,XCORD,INT,continuous,X Coordinate (longitude),,,"self.get_XYCORD('LON', trip.dest_latlon)"
 trip,YCORD,INT,continuous,Y Coordinate (latitude),,,"self.get_XYCORD('LAT', trip.dest_latlon)"
-trip,WXCORD,INT,continuous,Work X Coordinate (longitude),,,"self.get_fixed_XYCORD('LON', trip, [1])"
-trip,WYCORD,INT,continuous,Work Y Coordinate (latitude),,,"self.get_fixed_XYCORD('LAT', trip, [1])"
-trip,SXCORD,INT,continuous,Work X Coordinate (longitude),,,"self.get_fixed_XYCORD('LON', trip, [3])"
-trip,SYCORD,INT,continuous,Work Y Coordinate (latitude),,,"self.get_fixed_XYCORD('LAT', trip, [3])"
+trip,WXCORD,INT,continuous,Work X Coordinate (longitude),,,"self.get_fixed_XYCORD('LON', [1])"
+trip,WYCORD,INT,continuous,Work Y Coordinate (latitude),,,"self.get_fixed_XYCORD('LAT', [1])"
+trip,SXCORD,INT,continuous,Work X Coordinate (longitude),,,"self.get_fixed_XYCORD('LON', [3])"
+trip,SYCORD,INT,continuous,Work Y Coordinate (latitude),,,"self.get_fixed_XYCORD('LAT', [3])"
 trip,DISTANCE,REAL,continuous,Trip distance in km,,,"trip.trip_dist_km + trip.trip_dist_m/1000"
 # trip,BUFFER_DIST,REAL,continuous,Trip distance in km,,,"self.get_buffer_dist(trip)"
 # place,place_id,INT,continuous,dataframe index,,,"pd.Series(trip.index, index=trip.index)"

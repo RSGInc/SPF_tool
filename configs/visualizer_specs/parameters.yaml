@@ -41,6 +41,7 @@ SUMMARIES:
     - jtf
     - mtfSummary_vis
     - pertypeDistbn
+    - tourDistProfile_vis
     - stopDC_vis
     - stopfreqDir_vis
     - stoppurpose_tourpurpose_vis
@@ -48,10 +49,19 @@ SUMMARIES:
     - todProfile_vis
     - totals
     - total_tours_by_pertype_vis
-    # - wfh_summary
     - workTLFD
-    # - univTLFD
-    # - schlTLFD
-    # - countyFlows
-    # - mandTripLengths
+    - univTLFD
+    - schlTLFD
+    - countyFlows
+    - mandTripLengths
+    - nonMandTripLengths
+    - stoppurpose_tourpurpose_vis
+    - stopfreq_total_vis
+    - tmodeProfile_vis
+    - tripModeProfile_vis
+    #### below are not done ####
+    - esctype_by_childtype
+    - esctype_by_chauffeurtype
+    - worker_school_escorting
+    # - wfh_summary
 

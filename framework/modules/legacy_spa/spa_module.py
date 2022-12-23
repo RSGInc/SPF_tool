@@ -3,7 +3,6 @@ import time
 import pandas as pd
 
 import sys
-from core import utils
 from core import base
 from modules.legacy_spa import households, persons, tours, trips, joint_tours, joint_ultrips
 
@@ -19,8 +18,8 @@ class SPAToolModule(base.BaseModule):
             vals = sorted(vals)
             return dict(zip(vals, vals))
 
-        if not self.constants.get("SurveyTpurp2Purp"):
-            self.constants["SurveyTpurp2Purp"] = default_map(
+        if not self.constants.get("SURVEY_PURP_TO_PURP"):
+            self.constants["SURVEY_PURP_TO_PURP"] = default_map(
                 self.input_tables["trip"].TPURP.unique()
             )
 
@@ -32,10 +31,10 @@ class SPAToolModule(base.BaseModule):
         # Legacy Constants
         self.t_start = time.time()
         OUT_DIR = self.kwargs.get('output_dir')
-        SurveyWorkPurp = self.constants.get("SurveyWorkPurp")
-        SurveyWorkRelatedPurp = self.constants.get("SurveyWorkRelatedPurp")
-        SurveyHomeCode = self.constants.get("SurveyHomeCode")
-        SurveyChangeModeCode = self.constants.get("SurveyChangeModeCode")
+        WORK_PURP = self.constants.get("WORK_PURP")
+        WORK_RELATED_PURP = self.constants.get("WORK_RELATED_PURP")
+        HOME_CODE = self.constants.get("HOME_CODE")
+        CHANGE_MODE_CODE = self.constants.get("CHANGE_MODE_CODE")
         WORK_LOCATION_BUFFER = self.constants.get("WORK_LOCATION_BUFFER")
         PARTIAL_TOUR = self.constants.get("PARTIAL_TOUR")
 
@@ -108,7 +107,7 @@ class SPAToolModule(base.BaseModule):
                     # both X and Y coordinates for work location are found
                     for row_index, row in df_psn_places.iterrows():
                         # check place coordinates against work coordinates if TPURP is work or other activities at work
-                        if row["TPURP"] == SurveyWorkPurp:
+                        if row["TPURP"] == WORK_PURP:
                             xcord = row["XCORD"]
                             ycord = row["YCORD"]
                             buffer_dist = 0
@@ -119,7 +118,7 @@ class SPAToolModule(base.BaseModule):
                                 # not the place of work -> recode TPURP to work-related
                                 df_psn_places.loc[
                                     row_index, "TPURP"
-                                ] = SurveyWorkRelatedPurp
+                                ] = WORK_RELATED_PURP
                                 psn.log_recode(
                                     "work activity reported for PLANO={}, "
                                     "which is not the primary work location; "
@@ -159,15 +158,15 @@ class SPAToolModule(base.BaseModule):
 
                     # true if next PLACE marks the start of a different tour
                     new_tour = (
-                        df_psn_places["TPURP"].iloc[cur_row + 1] == SurveyHomeCode
+                        df_psn_places["TPURP"].iloc[cur_row + 1] == HOME_CODE
                     )
                     # TPURP codes 0 mean 'home'
                     new_trip = (
-                        df_psn_places["TPURP"].iloc[cur_row + 1] != SurveyChangeModeCode
+                        df_psn_places["TPURP"].iloc[cur_row + 1] != CHANGE_MODE_CODE
                     ) | (
                         (
                             df_psn_places["TPURP"].iloc[cur_row + 1]
-                            == SurveyChangeModeCode
+                            == CHANGE_MODE_CODE
                         )
                         & (cur_row + 1 == max_row)
                     )
@@ -465,3 +464,22 @@ class SPAToolModule(base.BaseModule):
         )
         print("{} households contain error.".format(num_err_hh))
         print("{} persons contain error.".format(num_err_perons))
+
+
+if __name__ == "__main__":
+    import argparse
+    from core.run import add_run_args
+
+    # For testing
+    parser = argparse.ArgumentParser()
+    add_run_args(parser)
+    args = parser.parse_args()
+
+    # manually inject args
+    args.configs = "C:\\gitclones\\Dubai_survey_processing\\configs"
+    args.data = "C:\\gitclones\\Dubai_survey_processing\\data"
+
+    # Fetch data from the database
+    VIZ = SPAToolModule(args)
+    VIZ.run()
+

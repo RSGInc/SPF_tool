@@ -139,10 +139,10 @@ class Tour:
 
     def _calc_tour_mode(self):
         TRANSIT_MODES = self.constants.get("TRANSIT_MODES")
-        TRIP_MODE = self.constants.get("TRIP_MODE")
+        TRIP_MODE = self.constants.get("TRIPMODE")
 
         # List is used for potential grouping implementation
-        TOUR_MODE = self.constants.get("TOUR_MODE")
+        TOUR_MODE = self.constants.get("TOURMODE")
         # TOUR_MODE = {k: v if isinstance(v, list) else [v] for k, v in self.constants.get("TOUR_MODE").items()}
 
         TRIP_MODE_INVERSE = {v: k for k, v in TRIP_MODE.items()}
@@ -665,6 +665,7 @@ class Tour:
     def set_escorting_fields(self):
         ESCORT_EVENT = self.constants.get("ESCORT_EVENT")
         ESCORT_TYPE = self.constants.get("ESCORT_TYPE")
+        MAND_TYPES = self.constants.get('MAND_PERSONTYPES')
 
         # initialize set of escorted hh members to empty set
         _escort_pers_set = set()
@@ -697,11 +698,11 @@ class Tour:
                 _out_escort_type = ESCORT_TYPE["RIDE_SHARING"]
             elif (_tour_purp > 3) & (_tour_purp < 10):
                 _out_escort_type = ESCORT_TYPE["PURE_ESCORT"]
-        elif ((_pertype == 4) | (_pertype == 5)) & (_out_escorting > 0):
+        elif (_pertype in MAND_TYPES) & (_out_escorting > 0):
+        # elif ((_pertype == 4) | (_pertype == 5)) & (_out_escorting > 0):
             _out_escort_type = ESCORT_TYPE["PURE_ESCORT"]
-        elif (((_pertype > 0) & (_pertype <= 3)) | (_pertype == 6)) & (
-            _out_escorting > 0
-        ):
+        elif (_pertype not in MAND_TYPES) & (_out_escorting > 0):
+        # elif (((_pertype > 0) & (_pertype <= 3)) | (_pertype == 6)) & (_out_escorting > 0):
             _out_escort_type = ESCORT_TYPE["RIDE_SHARING"]
         else:
             _out_escort_type = ESCORT_TYPE["NO_ESCORT"]

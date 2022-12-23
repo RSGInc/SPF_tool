@@ -33,7 +33,9 @@ class LongExpressions:
         return xy[coord_type].squeeze()
 
 
-    def get_WXYCORD(self, coord_type, trip):
+    def get_WXYCORD(self, coord_type):
+        trip = self.input_tables['trip']
+
         # Get fixed work locations
         worktrips = trip[trip.trip_purp.isin([1])]
         fixed_work_trips_idx = worktrips[
@@ -52,7 +54,8 @@ class LongExpressions:
         return person_trips_xy.squeeze()
 
 
-    def get_fixed_XYCORD(self, coord_type, trip, purposes):
+    def get_fixed_XYCORD(self, coord_type, purposes):
+        trip = self.input_tables['trip']
 
         purposes = purposes if isinstance(purposes, list) else [purposes]
         # Get fixed work locations
@@ -73,7 +76,10 @@ class LongExpressions:
         )
         return person_trips_xy.squeeze()
 
-    def get_TOTTR_NEXT(self, trip, trip_hhcompanions_pnum):
+    def get_TOTTR_NEXT(self):
+        trip = self.input_tables['trip']
+        trip_hhcompanions_pnum = self.input_tables['trip_hhcompanions_pnum']
+
         n_companions = pd.concat(
             [
                 trip[["trip_companions", "person_id"]],
@@ -90,7 +96,9 @@ class LongExpressions:
         return n_companions
 
 
-    def get_buffer_dist(self, trip):
+    def get_buffer_dist(self):
+        trip = self.input_tables['trip']
+
         work_latlon = self.get_WXYCORD(["LAT", "LON"], trip).rename(
             columns={"LAT": "WLAT", "LON": "WLON"}
         )
@@ -104,7 +112,10 @@ class LongExpressions:
         return dist
 
 
-    def get_hov(self, hov_type, trip, trip_hhcompanions_pnum):
+    def get_hov(self, hov_type):
+        trip = self.input_tables['trip']
+        trip_hhcompanions_pnum = self.input_tables['trip_hhcompanions_pnum']
+
         # Person is driver in auto
         is_driver = trip.mode_mainline.isin([2, 11, 12, 13])
 
@@ -155,8 +166,9 @@ class LongExpressions:
             return (is_driver & twomore_pax) | (is_pax & twomore_pax)
 
 
-    def get_transit_type(self, mode, trip):
+    def get_transit_type(self, mode):
 
+        trip = self.input_tables['trip']
         access_mode, transit_mode = mode.split("-")
 
         # Other transit modes preceding mainline mode are 'walk'

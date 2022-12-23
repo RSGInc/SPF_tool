@@ -23,7 +23,8 @@ class Person:
         for col in set(df.columns).intersection(PERSON_COLUMNS.values()):
             self.fields[col] = df[col].values[0]
 
-        self.set_per_type(self._calc_per_type(df))  # errors are logged to the hh obj
+        # FIXME PERTYPE DETERMINED IN PREPROCESSOR
+        # self.set_per_type(self._calc_per_type(df))  # errors are logged to the hh obj
         self.tours = []
         self.error_flag = False
 
@@ -431,16 +432,17 @@ class Person:
         return self.per_id
 
     def get_is_adult(self):
-        PERTYPE = self.constants.get("PERTYPE")
+        return self.fields['AGE'] > 17
 
-        ptype = self.get_per_type()
-        return ptype in [
-            PERTYPE["FW"],
-            PERTYPE["PW"],
-            PERTYPE["US"],
-            PERTYPE["NW"],
-            PERTYPE["RE"],
-        ]
+        # PERTYPE = self.constants.get("PERTYPE")
+        # ptype = self.get_per_type()
+        # return ptype in [
+        #     PERTYPE["FW"],
+        #     PERTYPE["PW"],
+        #     PERTYPE["US"],
+        #     PERTYPE["NW"],
+        #     PERTYPE["RE"],
+        # ]
 
     def set_per_type(self, ptype):
         self.fields["PERSONTYPE"] = ptype

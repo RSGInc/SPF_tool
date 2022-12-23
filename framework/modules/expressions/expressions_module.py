@@ -97,6 +97,9 @@ class ExpressionPreProcess(base.BaseModule, long_expressions.LongExpressions):
                             print(
                                 f"Expression failed: {expr_.Expression} for field {field} in table {exp_table_name}"
                             )
+                            result = eval(expr_.Expression)
+                            assert isinstance(result, pd.Series),\
+                                f'Expression result for {expr_.Field} is not a Series!'
                             field_vals[val] = eval(expr_.Expression)
 
                 if len(field_vals) > 0:
@@ -110,7 +113,7 @@ class ExpressionPreProcess(base.BaseModule, long_expressions.LongExpressions):
                             print(
                                 f"Multiple value records are for rows:\n {locals()[exp_table_name].loc[concat.sum(axis=1) > 1].head()}"
                             )
-                            print(concat[concat.sum(axis=1) != 1].head())
+                            print(concat[concat.sum(axis=1) > 1].head())
 
                         if any(concat.sum(axis=1) < 1):
                             print(
@@ -119,7 +122,7 @@ class ExpressionPreProcess(base.BaseModule, long_expressions.LongExpressions):
                             print(
                                 f"Missing records are for rows:\n {locals()[exp_table_name].loc[concat.sum(axis=1) < 1].head()}"
                             )
-                            print(concat[concat.sum(axis=1) != 1].head())
+                            print(concat[concat.sum(axis=1) < 1].head())
 
                         assert not any(concat.sum(axis=1) != 1)
 

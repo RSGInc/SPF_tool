@@ -13,13 +13,14 @@ START_OF_DAY_MIN: 180       #3:00am
 TIME_WINDOW_BIN_MIN: 30     #bin width in minutes
 WORK_LOCATION_BUFFER: 0.25  # distance buffer to check if activity location is primary work location
 INDEX_JTRIP_BY_DEPTIME: 0   #1 if index by trip departure time at origin, 0 if by trip arrival time at destination
-SurveyChangeModeCode: 12
-SurveyHomeCode: 0
+CHANGE_MODE_CODE: 12
+HOME_CODE: 0
 SURVEY_DO_PURP_CODE: 8
 SURVEY_PU_PURP_CODE: 9
-SurveySchoolPurp: [2,3]
-SurveyWorkPurp: 1
-SurveyWorkRelatedPurp: 10
+SCHOOL_PURP: 2
+UNIV_PURP: 3
+WORK_PURP: 1
+WORK_RELATED_PURP: 10
 
 
 N_TIME_PERIODS: 48
@@ -29,13 +30,13 @@ TIME_PERIODS:
     AM: 10
     MD: 23
     PM: 30
-    EV: 41
+    EV: 49
 
 DAP_TYPES: ["M", "N", "H"]
 
 
 # map mode name to mode code
-TRIP_MODE:
+TRIPMODE:
     'SOV': 1
     'HOV2':  2
     'HOV3+': 3
@@ -54,7 +55,7 @@ TRIP_MODE:
 
 # Map trip modes to tour modes
 # use list to aggregate multiple (e.g., pnr-bus pnr-metro -> pnr)
-TOUR_MODE:
+TOURMODE:
     'SOV': 1
     'HOV2':  2
     'HOV3+': 3
@@ -113,7 +114,7 @@ PURPOSE:
     'OTHER':         13
     
 #TODO convert to integers?
-TOUR_PURPOSE:
+TOURPURP:
     'atwork': 1 # 'At-Work'
     'esc': 2    # 'Escorting'
     'esco': 3   # 'Escorting'
@@ -192,17 +193,29 @@ ESCORT_TYPE:
     'PURE_ESCORT': 2
     'NO_ESCORT': 3
 
-PERTYPE:
-    'FW' : 1
-    'PW' : 2
-    'US' : 3
-    'NW' : 4
-    'RE' : 5
-    'DS' : 6
-    'ND' : 7
-    'PS' : 8
+PERSONTYPE:
+    'Full-time Emirati worker': 1
+    'Full-time non-Emirati worker': 2
+    'Labourer': 3
+    'Part-time Emirati worker': 4
+    'Part-time non-Emirati worker': 5
+    'University Student': 6
+    'Non-worker and non-student': 7
+    'Non-working senior': 8
+    'K-12 Emirati Student': 9
+    'K-12 non-Emirati Student': 10
+    'Pre-school': 11
 
-PERTYPE_SURVEY:
+MAND_PERSONTYPES: [1, 2, 3, 6, 8, 9, 10, 11]
+UNIV_TYPES: 6    
+K12_TYPES: [9, 10]
+PRESCHOOL_TYPES: 11
+PARTTIME_TYPES: [4, 5]
+NONWORKER_TYPES: [7, 8]
+EMIRATI_TYPES: [1, 3, 4, 6, 7, 8, 9, 11]
+NONEMIRATI_TYPES: [2, 3, 5, 6, 7, 8, 10, 11]
+
+PERSONTYPE_SURVEY:
     "None": 0
     Local_male: 1
     Local_female: 2
@@ -282,4 +295,19 @@ OCC_TYPE:
     'Military': 6
     'Total': 7
 
+AGE_BINS:
+    '0-5': 0        #1
+    '5-15': 5       #2
+    '15-7': 15      #3
+    '17-24': 17     #4
+    '24-34': 24     #5
+    '34-44': 34     #6
+    '44-49': 44     #7
+    '49-54': 49     #8
+    '54-59': 54     #9
+    '59-64': 59     #10
+    '64-74': 64     #11
+    '74-79': 74     #12
+    '79-84': 79     #13
+    '84-999': 84    #14
 

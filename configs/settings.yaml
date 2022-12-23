@@ -1,5 +1,5 @@
 # Declare the custom processing steps to run here
-START_FROM: SPAToolModule
+START_FROM: ExpressionPreProcess
 
 PROCESSING_STEPS:
     ReadMSAccessDB:

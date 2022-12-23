@@ -215,7 +215,8 @@ class Joint_ultrip:
         )
         # write out IDs of people in the travel party
         _party = sorted(self.travel_party)
-        for _i in range(0, self.number_hh):
+        # Max out at 9
+        for _i in range(0, np.clip(self.number_hh, 0, 9)):
             fp.write(",{}".format(_party[_i]))
         # fill nan up to person 9
         for _i in range(self.number_hh, 9):

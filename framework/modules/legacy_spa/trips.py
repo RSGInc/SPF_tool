@@ -439,31 +439,44 @@ class Trip:
         return _auto_occ
 
     def _calc_purpose(
-        self, old_purp_code, old_place_no, old_place_name, dur_hr, dur_min
+        self, purp_code, old_place_no, old_place_name, dur_hr, dur_min
     ):
         """
         derive the new purpose code from input data purpose code;
         resolve inconsistencies between activity purpose and person status
         """
 
-        SurveySchoolPurp = self.constants.get("SurveySchoolPurp")
         STUDENT = self.constants.get("STUDENT")
-        PERTYPE = self.constants.get("PERTYPE")
+        PERTYPE = self.constants.get("PERSONTYPES")
         PURPOSE = self.constants.get("PURPOSE")
         EMPLOYMENT = self.constants.get("EMPLOYMENT")
         MAX_VOLUNTEER_MINUTES = self.constants.get("MAX_VOLUNTEER_MINUTES")
 
+        NONEMIRATI_TYPES = self.constants.get('NONEMIRATI_TYPES', self.constants.get('PERSONTYPES'))
+        EMIRATI_TYPES = self.constants.get('EMIRATI_TYPES', self.constants.get('PERSONTYPES'))
+
+        PARTTIME_TYPES = self.constants.get("PARTTIME_TYPES")
+
+        UNIV_TYPES = self.constants.get("UNIV_TYPES")
+        PRESCHOOL_TYPES = self.constants.get("PRESCHOOL_TYPES")
+
+        UNIV_TYPES = [UNIV_TYPES] if not isinstance(UNIV_TYPES, list) else UNIV_TYPES
+        PRESCHOOL_TYPES = [PRESCHOOL_TYPES] if not isinstance(PRESCHOOL_TYPES, list) else PRESCHOOL_TYPES
+
         _new_purp = -1
-        if old_purp_code in SurveySchoolPurp:
+
+        _pertype = self.per_obj.get_per_type()
+        _is_emirati = True if _pertype not in NONEMIRATI_TYPES else False
+
+        if purp_code in [PURPOSE['UNIVERSITY'], PURPOSE['SCHOOL']]:
             # school related activity
-            _pertype = self.per_obj.get_per_type()
-            if _pertype == PERTYPE["US"]:
+            if _pertype in UNIV_TYPES:
                 # person is an university student
                 _new_purp = PURPOSE["UNIVERSITY"]
-            elif _pertype in [PERTYPE["DS"], PERTYPE["ND"]]:
+            elif _pertype in self.constants.get("K12_TYPES"):
                 # person is a driving or non-driving age student
                 _new_purp = PURPOSE["SCHOOL"]
-            elif _pertype == PERTYPE["PS"]:
+            elif _pertype in PRESCHOOL_TYPES:
                 # person is a pre-schooler, who may or may not be a student
                 _new_purp = PURPOSE["SCHOOL"]
                 if self.per_obj.get_student_category() == STUDENT["NON-STUDENT"]:
@@ -481,13 +494,19 @@ class Trip:
                         old_place_no, old_place_name, _pertype
                     ),
                 )
-                if _pertype in [
-                    PERTYPE["PW"],
-                    PERTYPE["NW"],
-                    PERTYPE["RE"],
-                ]:  # person types PW,NW,RE by definition are not supposed to have school activities
+
+                _tmp_types = list([self.constants.get("PARTTIME_TYPES"), self.constants.get("NONWORKER_TYPES")])
+                _tmp_types = [num for sublist in _tmp_types for num in sublist]
+
+                # Get new person type for the nationality
+                if _is_emirati:
+                    _new_pertype = set(UNIV_TYPES).intersection(EMIRATI_TYPES).pop()
+                else:
+                    _new_pertype = set(UNIV_TYPES).intersection(NONEMIRATI_TYPES).pop()
+
+                if _pertype in _tmp_types:  # person types PW,NW,RE by definition are not supposed to have school activities
                     self.per_obj.recode_per_type(
-                        PERTYPE["US"],
+                        _new_pertype,
                         "found school activity (PLANO={}, PNAME={}) for Pertype={}; reset PERSONTYPE to US".format(
                             old_place_no, old_place_name, _pertype
                         ),
@@ -495,12 +514,19 @@ class Trip:
 
         else:
             # _new_purp = SurveyTpurp2Purp[old_purp_code]
-            _new_purp = old_purp_code
+            _new_purp = purp_code
             if _new_purp in [PURPOSE["WORK"], PURPOSE["WORK-RELATED"]]:
                 # found work or work-related activity, check if worker
-                _pertype = self.per_obj.get_per_type()
-                if _pertype in [PERTYPE["NW"], PERTYPE["RE"]]:
+                if _pertype in self.constants.get("NONWORKER_TYPES"):
                     if convert2minutes(dur_hr, dur_min) > MAX_VOLUNTEER_MINUTES:
+
+
+                        # Get new person type for the nationality
+                        if _is_emirati:
+                            _new_pertype = set(PARTTIME_TYPES).intersection(NONEMIRATI_TYPES).pop()
+                        else:
+                            _new_pertype = set(PARTTIME_TYPES).intersection(NONEMIRATI_TYPES).pop()
+
                         # if duration of work activity is over xxx hours, recode person as a part time worker and emp category as part time
                         self.per_obj.recode_emp_category(
                             EMPLOYMENT["PARTTIME"],
@@ -509,7 +535,7 @@ class Trip:
                             ),
                         )
                         self.per_obj.recode_per_type(
-                            PERTYPE["PW"],
+                            _new_pertype,
                             "found work or work-related activity (PLANO={}, PNAME={}) for Pertype={}; reset PERSONTYPE to PW".format(
                                 old_place_no, old_place_name, _pertype
                             ),
@@ -517,7 +543,7 @@ class Trip:
                     else:
                         # consider this as volunteer work, recode to discretionary purpose
                         _new_purp = PURPOSE["DISCRETIONARY"]
-                if _pertype in [PERTYPE["ND"], PERTYPE["PS"]]:
+                if _pertype in self.constants['K12_TYPES']:
                     # found work activity for non-driving age child; tag as an error
                     # self.per_obj.log_error("found work or work-related activity (PLANO={}, PNAME={}) for non-driving age child".format(old_place_no, old_place_name, _pertype))
                     # consider this as volunteer work, recode to discretionary purpose
@@ -541,7 +567,7 @@ class Trip:
     def populate_attributes(self, df):
         """determine trip attributes based on PLACE records in a DataFrame object"""
         TRANSIT_MODES = self.constants.get("TRANSIT_MODES")
-        TRIP_MODE = self.constants.get("TRIP_MODE")
+        TRIP_MODE = self.constants.get("TRIPMODE")
         DRIVER = self.constants.get("DRIVER")
         PURPOSE = self.constants.get("PURPOSE")
         SURVEY_PU_PURP_CODE = self.constants.get("SURVEY_PU_PURP_CODE")

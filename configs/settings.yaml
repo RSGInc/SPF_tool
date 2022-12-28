@@ -108,10 +108,12 @@ PROCESSING_STEPS:
                 zones:
                     file: raw/zone.csv
                     index: zone_id
-                preprocessed:
-                    pre_place:
-                        file: preprocessed/place.csv
-                        index: place_id
+                pre_person:
+                    file: preprocessed/person.csv
+                    index: person_id
+                pre_place:
+                    file: preprocessed/place.csv
+                    index: place_id
                 spa_output:
                     spa_household: spa_output/households.csv
                     spa_person: spa_output/persons.csv

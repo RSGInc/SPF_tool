@@ -17,10 +17,10 @@ IS_BASE_SURVEY: Yes
 # VIS_ABM_DIR: C:\projects\metc-asim-model\activitysim\output
 # VIS_ABM_SUMMARIES_DIR: C:\projects\metc-asim-model\Visualizer\data\calibration_runs\summarized
 # VIS_ZONE_DIR: C:\projects\metc-asim-model\Visualizer/data/SHP
-VIS_BASE_DATA_DIR: data\visualizer\summaries
-VIS_BUILD_DATA_DIR: data\visualizer\summaries
+# VIS_BASE_DATA_DIR: data\visualizer\summaries
+# VIS_BUILD_DATA_DIR: data\visualizer\summaries
 # VIS_ZONE_FILE: TAZ2010.shp
-VIS_DIR: data\visualizer
+# VIS_DIR: data\visualizer
 # CENSUS_DATA_PATH: C:\projects\metc-asim-model\Visualizer/data/census
 # ASSIGNED: 1
 

@@ -6,352 +6,31 @@ but still be able to use them in the Visualizer class.
 
 """
 
+import os
 import pandas as pd
 import numpy as np
-from core import utils
 from copy import deepcopy
-
-
-class VisualizerHelperFunctions:
-
-    def setup_intermediate_data(self):
-        """
-         Setup any intermediate data / calculations in here.
-
-         This is useful to avoid repeating calculations, but want to keep this separate
-         from the main model and input tables to avoid cross-contaminating our data.
-
-        """
-        self.setup_weights()
-        self.setup_households()
-        self.setup_person_day()
-        self.setup_household_day()
-        self.setup_joint_household()
-        self.setup_faux_skims()
-        self.setup_stops()
-
-
-    # Internal functions
-    def setup_tour_type_counts(self):
-        tours = deepcopy(self.scenario_data.get('spa_tours'))
-        tours[['HH_ID', 'PER_ID']] = tours[['HH_ID', 'PER_ID']].astype(int)
-
-        # Ensure all persons/days are included
-        person_idx = self.scenario_data.get('spa_person')[['HH_ID', 'PER_ID']]
-        person_idx = person_idx.astype(int).drop_duplicates().reset_index(drop=True)
-
-        # Find all possible person-days
-        _index = pd.MultiIndex.from_product([person_idx.index, tours.DAYNO.unique()],
-                                              names=['HH_ID-PER_ID', 'DAYNO'])
-        perdays_idx = pd.DataFrame(index=_index).reset_index()
-        perdays_idx = perdays_idx.join(person_idx).drop(columns='HH_ID-PER_ID')
-
-        # Get tour counts
-        grp_cols = ["HH_ID", "PER_ID", "DAYNO"]
-        tour_type_counts = {}
-
-        joint_purp_list = self.get_joint_purp_list()
-
-        # First define the filters
-        # [excluding at work subtours]. joint work tours should be considered individual mandatory tours
-        tour_type_counts['work'] = tours[(tours.TOURPURP == 1) & (tours.IS_SUBTOUR==0)]
-        tour_type_counts['atwork'] = tours[(tours.TOURPURP == 20) & (tours.IS_SUBTOUR == 1)]
-        tour_type_counts['schl'] = tours[tours.TOURPURP.isin([2, 3])]
-        tour_type_counts['inm'] = tours[
-            (tours.TOURPURP.isin([4] + joint_purp_list) &
-             (tours.FULLY_JOINT == 0) & (tours.IS_SUBTOUR == 0)) |
-            ((tours.TOURPURP == 4) & (tours.FULLY_JOINT == 1))
-            ]
-        tour_type_counts['itour'] = tours[
-            ((tours.TOURPURP <= 9) & (tours.IS_SUBTOUR == 0) & (tours.FULLY_JOINT == 0)) |
-            ((tours.TOURPURP <= 4) & (tours.FULLY_JOINT == 1))
-            ]
-        tour_type_counts['jtour'] = tours[
-            (tours.TOURPURP.isin(joint_purp_list) &
-             (tours.IS_SUBTOUR == 0) &
-             (tours.FULLY_JOINT == 1))
-            ]
-
-        for tour_type, tour_type_df in tour_type_counts.items():
-            tour_type_df = tour_type_df.groupby(grp_cols).size().to_frame(tour_type + '_count')
-            tour_type_df = perdays_idx.set_index(grp_cols).join(tour_type_df).fillna(0)
-            tour_type_counts[tour_type] = tour_type_df.astype(int)
-
-        self.intermediate_data['tour_type_counts'] = pd.concat(tour_type_counts, axis=1).droplevel(0, axis=1)
-        # return tour_type_counts
-
-    def setup_households(self):
-        # Truncate HH_SIZE to 5 plus
-        self.scenario_data['spa_household']['HH_SIZE_trunc'] = self.scenario_data['spa_household'].HH_SIZE.clip(1, 5)
-
-    def setup_person_day(self):
-
-        self.setup_tour_type_counts()
-
-        person_day = deepcopy(self.scenario_data.get('spa_person'))
-        tour_counts = deepcopy(self.intermediate_data['tour_type_counts'])
-
-        # Merge counts onto person_day table
-        person_day = person_day.merge(tour_counts.reset_index(), on=['HH_ID', 'PER_ID'])
-
-        # Assign activity pattern
-        person_day['num_tours'] = person_day[['itour_count', 'jtour_count']].sum(axis=1)
-        person_day['DAP'] = 'H'
-        person_day.loc[(person_day.work_count > 0) | (person_day.schl_count > 0), 'DAP'] = 'M'
-        person_day.loc[(person_day.num_tours > 0) & (person_day.DAP == 'H'), 'DAP'] = 'N'
-        person_day.loc[person_day.PERSONTYPE.isin([4, 5]) | (person_day.DAP == "M"), 'DAP'] = 'N'
-
-        # Get location attributes
-        df_hh = self.scenario_data['spa_household'][['HH_ID', 'HH_ZONE_ID', 'HXCORD', 'HYCORD']]
-        person_day = person_day.merge(df_hh, on='HH_ID')
-
-        # Output
-        self.intermediate_data['person_day'] = person_day
-
-    def setup_faux_skims(self):
-        grp_cols = ['SAMPN', 'PERNO', 'DAYNO']
-        skim_cols = ['TAZ', 'XCORD', 'YCORD', 'DISTANCE']
-        place = deepcopy(self.scenario_data['pre_place'][grp_cols + skim_cols])
-        place = place[place.TAZ != 0] # 0 TAZ was fillna(0)
-
-        # Setup zone data
-        # FIXME The zone file is not aligned with TAZs?
-        #  Going to use mean XY from place file instead
-        # zones = self.scenario_data['zones']
-        # zones = zones.loc[~zones.OLDZONE.isnull(), ['OLDZONE', 'X', 'Y']]
-        # zones = zones.rename(columns={'OLDZONE': 'TAZ', 'X': 'XCORD', 'Y': 'YCORD'})
-        # zones.TAZ = zones.TAZ.astype(int)
-        # set(zones.TAZ.unique()).difference(place.TAZ.unique())
-        # set(place.TAZ.unique()).difference(zones.TAZ.unique())
-        zones = place.groupby('TAZ')[['XCORD', 'YCORD']].mean()
-        zones = zones[~zones.index.isin([0])].reset_index()
-
-        # The XY cord for destination is the current place and origin is the previous place,
-        # shifting place down 1 for each person-day, and drop the first place in each.
-        _dests = place[skim_cols].rename(columns={'TAZ': 'dTAZ', 'XCORD': 'dX', 'YCORD': 'dY'})
-        _origins = place.groupby(['SAMPN', 'PERNO', 'DAYNO']).shift(1)
-        _origins = _origins.rename(columns={'TAZ': 'oTAZ', 'XCORD': 'oX', 'YCORD': 'oY'}).drop(columns='DISTANCE')
-
-        # Left join, dropping NA home places
-        place_skims = _origins[~_origins.oTAZ.isnull()].join(_dests)
-        place_skims.oTAZ = place_skims.oTAZ.astype(int)
-
-        # Drop duplicates, take median for repeat OD pairs to avoid outliers
-        place_skims = place_skims.drop_duplicates()
-        place_skims = place_skims.groupby(['oTAZ', 'dTAZ']).median()
-
-        # Create cartesian product to find missing ODs
-        TAZ_list = place.TAZ.unique()
-        _index = pd.MultiIndex.from_product([TAZ_list, TAZ_list], names=['oTAZ', 'dTAZ'])
-        _skims = pd.DataFrame(index=_index).reset_index()
-        _skims = _skims.merge(place_skims, on=['oTAZ', 'dTAZ'], how='left').drop_duplicates()
-
-        # Separate NA skim ODs
-        na_skims = _skims.loc[_skims.DISTANCE.isnull(), ['oTAZ', 'dTAZ']]
-        ok_skims = _skims[~_skims.DISTANCE.isnull()]
-
-        # Fill in missing XY from zone data
-        na_skims = na_skims.merge(zones.rename(columns={'TAZ': 'oTAZ', 'XCORD': 'oX', 'YCORD': 'oY'}), on='oTAZ')
-        na_skims = na_skims.merge(zones.rename(columns={'TAZ': 'dTAZ', 'XCORD': 'dX', 'YCORD': 'dY'}), on='dTAZ')
-
-        # Calculate distance
-        na_skims['DISTANCE'] = utils.distance_on_unit_sphere(
-            lat1=na_skims.oY, long1=na_skims.oX, lat2=na_skims.dY, long2=na_skims.dX
-        )
-
-        # Recombine
-        faux_skims = pd.concat([na_skims, ok_skims], axis=0).set_index(['oTAZ', 'dTAZ'])
-        assert not any(faux_skims.reset_index().duplicated()), 'Duplicate TAZ pairs in faux skims'
-
-        if not faux_skims[faux_skims.duplicated()].empty:
-            print('Some OD data appears duplicated?')
-            # print(faux_skims[faux_skims.duplicated()])
-
-        self.intermediate_data['faux_skims'] = faux_skims
-
-    def setup_stops(self):
-        tours = deepcopy(self.scenario_data['spa_tours'])
-        trips = deepcopy(self.scenario_data['spa_trips'])
-
-        # TODO maybe use real skim distances?
-        skims = deepcopy(self.intermediate_data['faux_skims'])
-
-        # Merge TOUR OD TAZ to trips
-        tours = tours.rename(columns={'ORIG_TAZ': 'TOUROTAZ', 'DEST_TAZ': 'TOURDTAZ'}).reset_index()
-        trips = trips.merge(
-            tours[['HH_ID', 'PER_ID', 'TOUR_ID', 'DAYNO', 'TOUROTAZ', 'TOURDTAZ']],
-            how='left',
-            on=['HH_ID', 'PER_ID', 'TOUR_ID', 'DAYNO']
-        )
-
-        # Pull out stops & drop NA taz
-        stops = trips[(trips.DEST_PURP > 0) & (trips.DEST_IS_TOUR_DEST == 0)]
-        # stops = stops[~trips.DEST_PURP.isin([0, 11, 12])]
-        stops = stops[(stops.ORIG_TAZ != 0) & (stops.DEST_TAZ != 0) &
-                      (stops.TOURDTAZ != 0) & (stops.TOUROTAZ != 0)]
-
-        # Assign final taz
-        stops.loc[stops.IS_INBOUND == 0, 'FINAL_TAZ'] = stops.loc[stops.IS_INBOUND == 0, 'TOURDTAZ']
-        stops.loc[stops.IS_INBOUND == 1, 'FINAL_TAZ'] = stops.loc[stops.IS_INBOUND == 1, 'TOUROTAZ']
-
-        # Get Origin final Destination dist (OD), origin to stop dist (OS), Stop to final dest dist (SD)
-        od = list(zip(stops.ORIG_TAZ, stops.FINAL_TAZ.astype(int)))
-        os = list(zip(stops.ORIG_TAZ, stops.DEST_TAZ.astype(int)))
-        sd = list(zip(stops.DEST_TAZ, stops.FINAL_TAZ.astype(int)))
-
-        # Assign distances from skim matrix
-        stops['OD_DIST'] = skims.loc[od].DISTANCE.to_list()
-        stops['OS_DIST'] = skims.loc[os].DISTANCE.to_list()
-        stops['SD_DIST'] = skims.loc[sd].DISTANCE.to_list()
-        stops['OUT_DIR_DIST'] = (stops.OS_DIST + stops.SD_DIST) - stops.OD_DIST
-
-        self.intermediate_data['stops'] = stops
-
-    def get_joint_purp_list(self):
-        stop_purposes = self.constants.get('STOP_PURPOSES')['JOINT']
-        return  [x for _, sublist in stop_purposes.items() for x in sublist]
-
-    def setup_household_day(self):
-        df_perday = deepcopy(self.intermediate_data['person_day'])
-        df_hh = deepcopy(self.scenario_data['spa_household'])
-
-        # Create hhday table
-        df_hhday = df_hh.merge(df_perday[['HH_ID', 'DAYNO']].drop_duplicates(), on='HH_ID', how='right')
-        # df_hhday.HH_ID = df_hhday.HH_ID.astype(int)
-        df_hhday = df_hhday.set_index('HH_ID')
-
-        # Calc NDAYS per household to normalize the hhday weight
-        df_hhday = df_hhday.join(df_hhday.groupby(['HH_ID', 'DAYNO']).size().to_frame('NDAYS'))
-        df_hhday['HHDAY_WEIGHT'] = df_hhday.HH_WEIGHT / df_hhday.NDAYS
-
-        self.intermediate_data['household_day'] = df_hhday
-
-    def setup_joint_household(self):
-        df_hhday = deepcopy(self.intermediate_data['household_day'])
-        df_jtours = deepcopy(self.scenario_data['spa_jtours'])
-        JT_PURPS = self.get_joint_purp_list()
-
-        # Get relevant joint purposes
-        jt_purp_freq = deepcopy(df_jtours[df_jtours.JOINT_PURP.isin(JT_PURPS)])
-        jt_purp_freq.JOINT_PURP = jt_purp_freq.JOINT_PURP.astype(int)
-
-        # Get counts by joint purpose
-        jt_purp_freq = jt_purp_freq.groupby(['HH_ID', 'DAYNO', 'JOINT_PURP']).size().to_frame('FREQ')
-        jt_purp_freq = jt_purp_freq.reset_index().pivot(index=['HH_ID', 'DAYNO'], columns='JOINT_PURP', values='FREQ')
-
-        # Add in non-joint hh_ids
-        jt_purp_freq = jt_purp_freq.reindex(index=df_hhday.index).fillna(0).astype(int)
-
-        # Col names and Total column as binary
-        prefix = jt_purp_freq.columns.name
-        jt_purp_freq.columns = [jt_purp_freq.columns.name + str(x) for x in jt_purp_freq.columns]
-        jt_purp_freq['JTOURS'] = jt_purp_freq.apply(lambda x: x.sum(), axis=1)
-        jt_purp_freq['JOINT'] = (jt_purp_freq['JTOURS'] > 0).astype(int)
-
-        # Assign JTF alt codes
-        jt_purp_freq.loc[jt_purp_freq.JOINT == 0, 'JTF'] = 1
-
-        # Setup multi-purpose sequence
-        multi_purps = [(a, b) for i, a in enumerate(JT_PURPS) for b in JT_PURPS[(i+1):]]
-
-        for i, purp in enumerate(JT_PURPS):
-            purp_x, purp_y = multi_purps[i]
-            id = i + 1
-            jt_purp_freq.loc[jt_purp_freq[prefix + str(purp)] == 1, 'JTF'] = id
-            jt_purp_freq.loc[jt_purp_freq[prefix + str(purp)] > 1, 'JTF'] = id + len(JT_PURPS) + 1
-            jt_purp_freq.loc[(jt_purp_freq[prefix + str(purp_x)] > 0) &
-                             (jt_purp_freq[prefix + str(purp_y)] > 0), 'JTF'] = id + 2*len(JT_PURPS) + 1
-
-        df_hhday = df_hhday.join(jt_purp_freq[['JOINT', 'JTF', 'JTOURS']])
-        df_hhday.JTF = df_hhday.JTF.astype(int)
-        df_hhday['JOINT_CAT'] = df_hhday.JTOURS.clip(0, 3)
-
-        self.intermediate_data['household_day'] = df_hhday
-
-    def setup_weights(self):
-        """
-        Adds necessary weights to associated files
-        """
-
-        # Tour weights
-        if 'TOUR_WEIGHT' not in self.scenario_data['spa_tours'].columns:
-            tour_id_cols = ['HH_ID', 'PER_ID', 'TOUR_ID', 'DAYNO']
-            df_tours = self.scenario_data['spa_tours'].merge(
-                self.scenario_data['spa_trips'].groupby(tour_id_cols).TRIP_WEIGHT.mean(),
-                on=tour_id_cols
-            ).rename(columns={'TRIP_WEIGHT': 'TOUR_WEIGHT'})
-            self.scenario_data['spa_tours'] = df_tours
-
-        # Joint tour weights
-        if 'TOUR_WEIGHT' not in self.scenario_data['spa_jtours'].columns:
-            jtours_id_cols = ['HH_ID', 'JTOUR_ID', 'DAYNO']
-            df_jtours = self.scenario_data['spa_jtours'].merge(
-                df_tours.groupby(jtours_id_cols).TOUR_WEIGHT.mean(),
-                on=jtours_id_cols
-            )
-            self.scenario_data['spa_jtours'] = df_jtours
-
-    def flatten_joint_purposes(self):
-        # Create joint purpose key map
-        purpose_groups = deepcopy(self.constants.get('STOP_PURPOSES'))
-
-        # Make the joint purposes identifiable
-        purpose_groups['JOINT'] = {k: [x+100 for x in v] for k, v in purpose_groups['JOINT'].items()}
-        purpose_groups = {k: v if isinstance(v, list) else [v] for
-                          _, sublist in purpose_groups.items()
-                          for k, v in sublist.items()}
-        purpose_map = {val: key for key, lst in purpose_groups.items() for val in lst}
-
-        return purpose_map
-
-    def map_joint_purposes(self, df):
-        # Create joint purpose key map
-        joint_purp_list = self.get_joint_purp_list()
-        purpose_map = self.flatten_joint_purposes()
-        work_related = [code for code, label in purpose_map.items() if label == 'WORK-RELATED'][0]
-
-        if 'SUBTOUR' in df.columns:
-            df['IS_SUBTOUR'] = df.SUBTOUR
-
-        # Make joint/subtour purposes identiable
-        df['JOINT_TOURPURP'] = df.TOURPURP
-        df.loc[df.JOINT_TOURPURP.isin(joint_purp_list) &
-                     (df.FULLY_JOINT == 0), 'JOINT_TOURPURP'] += 100
-        df.loc[df.IS_SUBTOUR == 1, 'JOINT_TOURPURP'] = work_related
-
-        # Remap to tourpurp groups
-        df['JOINT_TOURPURP'] = df.JOINT_TOURPURP.map(purpose_map)
-
-        return df
-
-    def map_to_df(self, d):
-        return pd.DataFrame({'name': d.keys(), 'code': d.values()})
-
-    def get_weighted_sum(self, df, grp_cols, wt_col):
-        # Get the groupby count sum
-        df_sum = df.groupby(grp_cols)[wt_col].sum()
-        df_sum = df_sum.reset_index().rename(columns={wt_col: 'freq'})
-
-        return df_sum
-
 
 class VisualizerSummaries:
     # FIXME a lot of these groupby summaries are repetive and can be parameterized
     def activePertypeDistbn(self):
-        return self.get_weighted_sum(
+        active_pertype = self.get_weighted_sum(
             df=self.intermediate_data['person_day'],
             grp_cols='PERSONTYPE',
-            wt_col='PER_WEIGHT'
+            wt_col='PER_WEIGHT',
+            label_cols='PERSONTYPE'
         )
+        return active_pertype
+
 
     def autoOwnership(self):
         hhveh_count = self.get_weighted_sum(
             df=self.scenario_data.get('spa_household'),
-            grp_cols='HH_VEH',
+            grp_cols='HH_VEH_trunc',
             wt_col='HH_WEIGHT'
         )
-        hhveh_count.HH_VEH = hhveh_count.HH_VEH.astype(int)
-        return hhveh_count
+        hhveh_count.HH_VEH_trunc = hhveh_count.HH_VEH_trunc.astype(int)
+        return hhveh_count.rename(columns={'HH_VEH_trunc': 'HH_VEH'})
 
     def avgStopOutofDirectionDist_vis(self):
         stops = deepcopy(self.intermediate_data['stops'])
@@ -382,13 +61,10 @@ class VisualizerSummaries:
         dap_summary = self.get_weighted_sum(
             df=self.intermediate_data.get('person_day'),
             grp_cols=['PERSONTYPE', 'DAP'],
-            wt_col='PER_WEIGHT'
+            wt_col='PER_WEIGHT',
+            label_cols='PERSONTYPE',
+            total_along='PERSONTYPE'
         )
-
-        # Get totals
-        # margins = dap_summary.groupby('DAP').sum().reset_index()
-        # margins['PERSONTYPE'] = 'Total'
-        # dap_summary = pd.concat([dap_summary, margins])
 
         return dap_summary
 
@@ -400,9 +76,10 @@ class VisualizerSummaries:
         )
 
     def hhsizeJoint(self):
-        return self.get_weighted_sum(df=self.intermediate_data['household_day'],
-                                     grp_cols=['HH_SIZE_trunc', 'JOINT'],
-                                     wt_col='HH_WEIGHT').rename(
+        return self.get_weighted_sum(
+            df=self.intermediate_data['household_day'],
+            grp_cols=['HH_SIZE_trunc', 'JOINT'],
+            wt_col='HH_WEIGHT').rename(
             columns={'HH_SIZE_trunc': 'HHSIZE'}
         )
 
@@ -422,7 +99,18 @@ class VisualizerSummaries:
         # Aggregate tour counts by person type and tour frequency
         perday.nmtours = perday.nmtours.clip(0, 3)
         inm_summary = perday.groupby(['PERSONTYPE', 'nmtours']).PER_WEIGHT.sum().reset_index()
-        return inm_summary.rename(columns={'PER_WEIGHT': 'freq'})
+        inm_summary = inm_summary.rename(columns={'PER_WEIGHT': 'freq'})
+
+        # add labels
+        inm_summary = self.add_labels(inm_summary, ['PERSONTYPE'])
+        _index = pd.MultiIndex.from_product([inm_summary.PERSONTYPE.unique(), inm_summary.nmtours.unique()],
+                                            names=['PERSONTYPE', 'nmtours'])
+        inm_summary = inm_summary.set_index(['PERSONTYPE', 'nmtours']).reindex(index=_index).fillna(0).reset_index()
+
+        # Get totals
+        inm_summary = self.get_total_along(inm_summary, total_along='PERSONTYPE', index_cols=['PERSONTYPE', 'nmtours'])
+
+        return inm_summary.reset_index()
 
     def jointSummary(self):
         return self.get_weighted_sum(df=self.intermediate_data['household_day'],
@@ -458,12 +146,18 @@ class VisualizerSummaries:
         return self.get_weighted_sum(df=df_jtours, grp_cols='NUMBER_HH', wt_col='TOUR_WEIGHT')
 
     def jointToursHHSize(self):
-        return self.get_weighted_sum(
-            df=self.intermediate_data['household_day'],
+
+        joint_hhsize = self.intermediate_data['household_day']
+        joint_hhsize.HH_SIZE_trunc = joint_hhsize.HH_SIZE_trunc.astype(int)
+
+        joint_hhsize = self.get_weighted_sum(
+            df=joint_hhsize,
             grp_cols=['HH_SIZE_trunc', 'JOINT_CAT'],
-            wt_col='HHDAY_WEIGHT').rename(
-            columns={'HH_SIZE_trunc': 'HHSIZE'}
-        )
+            wt_col='HHDAY_WEIGHT',
+            label_cols='JOINT_CAT',
+            total_along='HH_SIZE_trunc')
+
+        return joint_hhsize.rename(columns={'HH_SIZE_trunc': 'HHSIZE'})
 
     def jtf(self):
         jtf = self.intermediate_data['household_day'].groupby('JTF').HH_WEIGHT.sum()
@@ -487,13 +181,21 @@ class VisualizerSummaries:
         # Get summary counts
         mtf_summary = self.get_weighted_sum(df=df_perday,
                                             grp_cols=['PERSONTYPE', 'MTF'],
-                                            wt_col='PER_WEIGHT')
-        return mtf_summary
+                                            wt_col='PER_WEIGHT',
+                                            label_cols=['PERSONTYPE', 'MTF'],
+                                            total_along='PERSONTYPE')
+
+        return mtf_summary.reset_index()
 
     def pertypeDistbn(self):
-        return self.get_weighted_sum(df=self.intermediate_data['person_day'],
-                                     grp_cols=['PERSONTYPE'],
-                                     wt_col='PER_WEIGHT')
+        pertype_dist = self.get_weighted_sum(df=self.intermediate_data['person_day'],
+                                             grp_cols=['PERSONTYPE'],
+                                             wt_col='PER_WEIGHT',
+                                             label_cols='PERSONTYPE',
+                                             total_along='PERSONTYPE')
+        # pertype_dist.loc[-1] = ('Total', pertype_dist.freq.sum())
+        return pertype_dist
+
 
     def stopDC_vis(self):
         df_stops = deepcopy(self.intermediate_data['stops'])
@@ -509,7 +211,8 @@ class VisualizerSummaries:
         stop_dist_freq = self.get_weighted_sum(
             df=df_stops,
             grp_cols=['JOINT_TOURPURP', 'distbin'],
-            wt_col='TRIP_WEIGHT'
+            wt_col='TRIP_WEIGHT',
+            total_along='JOINT_TOURPURP'
         ).rename(columns={'JOINT_TOURPURP': 'PURPOSE'})
 
         return stop_dist_freq
@@ -524,13 +227,15 @@ class VisualizerSummaries:
         stop_in_freq = self.get_weighted_sum(
             df=df_tours,
             grp_cols=['JOINT_TOURPURP', 'INBOUND_STOPS'],
-            wt_col='TOUR_WEIGHT'
+            wt_col='TOUR_WEIGHT',
+            total_along='JOINT_TOURPURP'
         ).rename(columns={'INBOUND_STOPS': 'NSTOPS'})
 
         stop_out_freq = self.get_weighted_sum(
             df=df_tours,
             grp_cols=['JOINT_TOURPURP', 'OUTBOUND_STOPS'],
-            wt_col='TOUR_WEIGHT'
+            wt_col='TOUR_WEIGHT',
+            total_along='JOINT_TOURPURP'
         ).rename(columns={'OUTBOUND_STOPS': 'NSTOPS'})
 
         # Merge
@@ -539,6 +244,11 @@ class VisualizerSummaries:
             on=['JOINT_TOURPURP', 'NSTOPS'],
             suffixes=['_inb', '_out']
         ).rename(columns={'JOINT_TOURPURP': 'PURPOSE'})
+
+
+        values = np.sort(stop_dir_freq.NSTOPS.unique())
+        value_map = {k: f'{k}p' if k==values.max() else str(k) for k in values}
+        stop_dir_freq.NSTOPS = stop_dir_freq.NSTOPS.map(value_map)
 
         return stop_dir_freq
 
@@ -555,14 +265,16 @@ class VisualizerSummaries:
         trip_dep_freq = self.get_weighted_sum(
             df=df_trips,
             grp_cols=['JOINT_TOURPURP', 'ORIG_DEP_BIN'],
-            wt_col='TRIP_WEIGHT'
+            wt_col='TRIP_WEIGHT',
+            total_along='JOINT_TOURPURP'
         ).rename(columns={'JOINT_TOURPURP': 'purpose', 'ORIG_DEP_BIN': 'timebin'})
 
         # Get stop dep counts
         stop_dep_freq = self.get_weighted_sum(
             df=df_stops,
             grp_cols=['JOINT_TOURPURP', 'ORIG_DEP_BIN'],
-            wt_col='TRIP_WEIGHT'
+            wt_col='TRIP_WEIGHT',
+            total_along='JOINT_TOURPURP'
         ).rename(columns={'JOINT_TOURPURP': 'purpose', 'ORIG_DEP_BIN': 'timebin'})
 
         # merge
@@ -582,10 +294,31 @@ class VisualizerSummaries:
         stop_purp_freq = self.get_weighted_sum(
             df=df_stops,
             grp_cols=['JOINT_TOURPURP', 'DEST_PURP'],
-            wt_col='TRIP_WEIGHT'
-        ).rename(columns={'JOINT_TOURPURP': 'purpose', 'DEST_PURP': 'stop_purpose'})
+            wt_col='TRIP_WEIGHT',
+            total_along='JOINT_TOURPURP'
+        ).rename(columns={'JOINT_TOURPURP': 'TOUR_PURPOSE', 'DEST_PURP': 'PURPOSE'})
+
+        # Add labels
+        stop_purp_freq = self.add_labels(stop_purp_freq, 'PURPOSE')
 
         return stop_purp_freq
+
+    def stopfreq_total_vis(self):
+        df_tours = deepcopy(self.scenario_data['spa_tours'])
+
+        # Map joint purposes
+        df_tours = self.map_joint_purposes(df_tours)
+
+        # Get counts
+        stop_freq_total = self.get_weighted_sum(
+            df=df_tours,
+            grp_cols=['JOINT_TOURPURP', 'TOTAL_STOPS'],
+            wt_col='TOUR_WEIGHT',
+            total_along='JOINT_TOURPURP'
+        ).rename(columns={'INBOUND_STOPS': 'NSTOPS',
+                          'JOINT_TOURPURP': 'PURPOSE'})
+
+        return stop_freq_total
 
     def todProfile_vis(self):
             df_tours = deepcopy(self.scenario_data['spa_tours'])
@@ -594,15 +327,19 @@ class VisualizerSummaries:
             df_tours = self.map_joint_purposes(df_tours)
 
             def get_tod_profile(bin_col, freq_name):
-                return self.get_weighted_sum(
+                df_sum = self.get_weighted_sum(
                     df=df_tours[(df_tours[bin_col] > 0) & (df_tours.FULLY_JOINT == 0)],
                     grp_cols=[bin_col, 'JOINT_TOURPURP'],
-                    wt_col='TOUR_WEIGHT'
-                ).rename(
+                    wt_col='TOUR_WEIGHT',
+                    total_along='JOINT_TOURPURP')
+
+                df_sum = df_sum.rename(
                     columns={bin_col: 'TIME_BIN',
                              'JOINT_TOURPURP': 'PURPOSE',
                              'freq': freq_name}
-                ).set_index(['TIME_BIN', 'PURPOSE'])
+                )
+                df_sum = df_sum.set_index(['TIME_BIN', 'PURPOSE'])
+                return df_sum
 
             tod_params = [('ANCHOR_DEPART_BIN', 'FREQ_DEP'),
                           ('ANCHOR_ARRIVE_BIN', 'FREQ_ARR'),
@@ -614,7 +351,7 @@ class VisualizerSummaries:
             # Combine profiles
             tod_profiles = pd.concat(tod_profiles, axis=1).fillna(0)
 
-            return tod_profiles
+            return tod_profiles.reset_index()
 
     def totals(self):
         # only vmt modes
@@ -623,12 +360,12 @@ class VisualizerSummaries:
 
         # num_travel ?
         df_vmt['NUM_TRAVEL'] = df_vmt.TRIPMODE
-        df_vmt.loc[df_vmt.TRIPMODE==3, 'NUM_TRAVEL'] = 3.5
+        df_vmt.loc[df_vmt.TRIPMODE == 3, 'NUM_TRAVEL'] = 3.5
         # distance * trip weight / num_travel
 
         totals = {
             'total_population': self.pertypeDistbn().freq.sum(),
-            'total_household': self.scenario_data['spa_household'].HH_WEIGHT.sum(),
+            'total_households': self.scenario_data['spa_household'].HH_WEIGHT.sum(),
             'total_tours': self.scenario_data['spa_tours'].TOUR_WEIGHT.sum(),
             'total_trips': self.scenario_data['spa_trips'].TRIP_WEIGHT.sum(),
             'total_stops': self.intermediate_data['stops'].TRIP_WEIGHT.sum(),
@@ -636,59 +373,238 @@ class VisualizerSummaries:
             'total_population_for_rates': self.scenario_data['spa_person'].PER_WEIGHT.sum()
          }
 
-        return pd.DataFrame({'name':totals.keys(), 'value':totals.values()})
+        return pd.DataFrame({'name': totals.keys(), 'value': totals.values()})
 
     def total_tours_by_pertype_vis(self):
         df_tours = self.scenario_data['spa_tours']
-        return self.get_weighted_sum(df=df_tours[df_tours.TOURPURP.isin(range(0, 11))],
-                                     grp_cols=['PERSONTYPE'],
-                                     wt_col='TOUR_WEIGHT')
+        pertype_tours = self.get_weighted_sum(
+            df=df_tours[df_tours.TOURPURP.isin(range(0, 11))],
+            grp_cols=['PERSONTYPE'],
+            wt_col='TOUR_WEIGHT',
+            label_cols='PERSONTYPE')
 
-    # def wfh_summary(self):
-    #     df_person = deepcopy(self.scenario_data['pre_person'])
-    #     # #per$worker[is.na(per$worker)] <- 0
-    #     # per[EMPLY_LOC_TYPE==3, wfh := 1]
-    #     # per$wfh[is.na(per$wfh)] <- 0
-    #     # perday$worker[perday$PERTYPE<=2 | (perday$PERTYPE==3 & !is.na(perday$WTAZ))] <- 1
-    #     # perday$worker[is.na(perday$worker)] <- 0
-    #     # perday$wfh = per$wfh[match(paste(perday$SAMPN, perday$PERNO, sep = "-"),
-    #     #                            paste(per$SAMPN, per$PERNO, sep = "-"))]
-    #     # #perday$wfh[perday$PER_EMPLY_LOC_TYPE==3] <- 1
-    #     # perday$wfh[is.na(perday$wfh)] <- 0
-    #     #
-    #     # districtWorkers <- ddply(perday[perday$worker==1,c("HDISTRICT", "finalweight")], c("HDISTRICT"), summarise, workers = sum(finalweight))
-    #     # districtWorkers_df <- merge(x = data.frame(HDISTRICT = districtList), y = districtWorkers, by = "HDISTRICT", all.x = TRUE)
-    #     # districtWorkers_df[is.na(districtWorkers_df)] <- 0
-    #     #
-    #     # districtWfh     <- ddply(perday[perday$worker==1 & perday$wfh==1,c("HDISTRICT", "finalweight")], c("HDISTRICT"), summarise, wfh = sum(finalweight))
-    #     # districtWfh_df <- merge(x = data.frame(HDISTRICT = districtList), y = districtWfh, by = "HDISTRICT", all.x = TRUE)
-    #     # districtWfh_df[is.na(districtWfh_df)] <- 0
-    #     #
-    #     # wfh_summary     <- cbind(districtWorkers_df, districtWfh_df$wfh)
-    #     # colnames(wfh_summary) <- c("District", "Workers", "WFH")
-    #     # totalwfh        <- data.frame("Total", sum((perday$worker==1)*perday$finalweight), sum((perday$worker==1 & perday$wfh==1)*perday$finalweight))
-    #     # colnames(totalwfh) <- colnames(wfh_summary)
-    #     # wfh_summary <- rbind(wfh_summary, totalwfh)
-    #     # write.csv(wfh_summary, file.path(outdir, "wfh_summary.csv"), row.names = F)
+        return pertype_tours
 
     def workTLFD(self):
-        self.scenario_data['pre_person'][['EMPLY_LOC_TYPE', 'HDISTRICT', 'HDIST']]
+        df_perday = self.intermediate_data['person_day']
+        workers = deepcopy(df_perday[(df_perday.WTAZ > 0) & ~df_perday.HDISTRICT.isnull()])
+
+        dist_bin = self.constants['parameters'].get('distBin')
+        bin_breaks = [int(x.split('-')[0]) for x in dist_bin]
+
+        # Distance bins
+        workers['distbin'] = pd.cut(workers.WDIST, bins=bin_breaks + [np.inf], labels=False)
+
+        # Get weighted sum and cast to wide
+        df_tlfd = self.get_weighted_sum(df=workers, grp_cols=['HDISTRICT', 'distbin'], wt_col='PER_WEIGHT')
+        df_tlfd = df_tlfd.pivot(index='distbin', columns='HDISTRICT')
+        df_tlfd = df_tlfd.droplevel(level=0, axis=1).reset_index().set_index('distbin')
+        df_tlfd.columns.name = None
+
+        # Reindex to ensure all districts & bin breaks included
+        df_zones = self.scenario_data['zones']
+        district_list = df_zones.DISTRICT.dropna().unique()
+        df_tlfd = df_tlfd.reindex(index=bin_breaks)
+        df_tlfd = df_tlfd.T.reindex(index=district_list).T.fillna(0).reset_index()
+
+        df_tlfd['Total'] = df_tlfd.sum(axis=1)
+
+        return df_tlfd
+
+    def schlTLFD(self):
+        df_perday = self.intermediate_data['person_day']
+        students = deepcopy(df_perday[(df_perday.STAZ > 0) & (df_perday.STUDE == 1) & ~df_perday.HDISTRICT.isnull()])
+
+        dist_bin = self.constants['parameters'].get('distBin')
+        bin_breaks = [int(x.split('-')[0]) for x in dist_bin]
+
+        # Distance bins
+        students['distbin'] = pd.cut(students.SDIST, bins=bin_breaks + [np.inf], labels=False)
+
+        # Get weighted sum and cast to wide
+        df_tlfd = self.get_weighted_sum(df=students, grp_cols=['HDISTRICT', 'distbin'], wt_col='PER_WEIGHT')
+        df_tlfd = df_tlfd.pivot(index='distbin', columns='HDISTRICT')
+        df_tlfd = df_tlfd.fillna(0).droplevel(level=0, axis=1).reset_index().set_index('distbin')
+        df_tlfd.columns.name = None
+
+        # Reindex to ensure all districts included
+        df_zones = self.scenario_data['zones']
+        district_list = df_zones.DISTRICT.dropna().unique()
+        df_tlfd = df_tlfd.reindex(index=bin_breaks)
+        df_tlfd = df_tlfd.T.reindex(index=district_list).T.fillna(0).reset_index()
+
+        df_tlfd['Total'] = df_tlfd.sum(axis=1)
+
+        return df_tlfd
+
+    def univTLFD(self):
+        df_perday = self.intermediate_data['person_day']
+        univ = deepcopy(df_perday[(df_perday.STAZ > 0) & (df_perday.STUDE == 2) & ~df_perday.HDISTRICT.isnull()])
+
+        dist_bin = self.constants['parameters'].get('distBin')
+        bin_breaks = [int(x.split('-')[0]) for x in dist_bin]
+
+        # Distance bins
+        univ['distbin'] = pd.cut(univ.SDIST, bins=bin_breaks + [np.inf], labels=False)
+
+        # Get weighted sum and cast to wide
+        df_tlfd = self.get_weighted_sum(df=univ, grp_cols=['HDISTRICT', 'distbin'], wt_col='PER_WEIGHT')
+        df_tlfd = df_tlfd.pivot(index='distbin', columns='HDISTRICT')
+        df_tlfd = df_tlfd.fillna(0).droplevel(level=0, axis=1).reset_index().set_index('distbin')
+        df_tlfd.columns.name = None
+
+        # Reindex to ensure all districts included
+        df_zones = self.scenario_data['zones']
+        district_list = df_zones.DISTRICT.dropna().unique()
+        df_tlfd = df_tlfd.reindex(index=bin_breaks)
+        df_tlfd = df_tlfd.T.reindex(index=district_list).T.fillna(0).reset_index()
+
+        df_tlfd['Total'] = df_tlfd.sum(axis=1)
+
+        return df_tlfd
+
+    def countyFlows(self):
+        df_perday = self.intermediate_data['person_day']
+        workers = deepcopy(df_perday[(df_perday.WTAZ > 0)])
+
+        flows = pd.crosstab(index=workers.HDISTRICT, columns=workers.WDISTRICT,
+                            values=workers.PER_WEIGHT, aggfunc=sum,
+                            dropna=False, margins=True, margins_name='Total').fillna(0)
+
+        return flows.reset_index()
+
+    def tmodeProfile_vis(self):
+        df_tours = deepcopy(self.scenario_data['spa_tours'])
+        df_tours = self.map_joint_purposes(df_tours)
+
+        # Get number of tours by auto sufficiency, mode, and jointpurp/purp
+        tmode_profile = self.get_weighted_sum(
+            df=df_tours,
+            grp_cols=['AUTOSUFF', 'TOURMODE', 'JOINT_TOURPURP'],
+            wt_col='TOUR_WEIGHT',
+            label_cols='TOURMODE',
+            total_along='JOINT_TOURPURP'
+        )
+        # Recode as labels
+        keymap = {0: 'freq_as0', 1: 'freq_as1', 2: 'freq_as2'}
+        tmode_profile.AUTOSUFF = tmode_profile.AUTOSUFF.map(keymap)
+
+        # Pivot to wide, get sum column
+        tmode_profile = tmode_profile.pivot(index=['TOURMODE', 'JOINT_TOURPURP'],
+                                            columns='AUTOSUFF',
+                                            values='freq').fillna(0).reset_index()
+        tmode_profile = tmode_profile.rename_axis(None, axis=1).rename(columns={'JOINT_TOURPURP': 'PURPOSE'})
+        tmode_profile['freq_all'] = tmode_profile[keymap.values()].sum(axis=1)
+
+        return tmode_profile
+
+
+    # FIXME Just copying from R output for now
+    def esctype_by_childtype(self):
+        path = os.path.join(self.namespace.data,
+                            'visualizer/summaries',
+                            'esctype_by_childtype.csv')
+        return pd.read_csv(path)
+
+    def esctype_by_chauffeurtype(self):
+        path = os.path.join(self.namespace.data,
+                            'visualizer/summaries',
+                            'esctype_by_chauffeurtype.csv')
+        return pd.read_csv(path)
+
+    def worker_school_escorting(self):
+        path = os.path.join(self.namespace.data,
+                            'visualizer/summaries',
+                            'worker_school_escorting.csv')
+        return pd.read_csv(path)
+
+    def wfh_summary(self):
+        pass
+
+    def tourDistProfile_vis(self):
+        # Labels / Breaks
+        tour_purps = self.get_joint_purp_list()
+        dist_bin = self.constants['parameters'].get('distBin')
+        bin_breaks = [int(x.split('-')[0]) for x in dist_bin]
+
+        # The tours
+        df_tours = deepcopy(self.scenario_data['spa_tours'])
+
+        # Map joint purposes
+        df_tours = self.map_joint_purposes(df_tours)
+
+        # Distance bins
+        df_tours['distbin'] = pd.cut(df_tours.DIST, bins=bin_breaks + [np.inf], labels=False)
+
+        # Get counts
+        tour_dist = self.get_weighted_sum(
+            df=df_tours,
+            grp_cols=['JOINT_TOURPURP', 'distbin'],
+            wt_col='TOUR_WEIGHT',
+            total_along='JOINT_TOURPURP'
+        ).rename(columns={'JOINT_TOURPURP': 'PURPOSE'})
+
+        return tour_dist
+
+    def mandTripLengths(self):
         df_perday = self.intermediate_data['person_day']
 
-        df_workers = df_perday[(df_perday.WTAZ > 0) & (df_perday.EMPLY <= 2)]
+        workers = deepcopy(df_perday[(df_perday.WTAZ > 0)])
+        students = deepcopy(df_perday[(df_perday.STAZ > 0) & (df_perday.STUDE == 1)])
+        univ = deepcopy(df_perday[(df_perday.STAZ > 0) & (df_perday.STUDE == 2)])
 
-        #         # compute TLFDs by district and total
-        # tlfd_work <- ddply(workers[,c("HDISTRICT", "distbin", "finalweight")], c("HDISTRICT", "distbin"), summarise, work = sum((HDISTRICT>0)*finalweight))
-        # tlfd_work <- cast(tlfd_work, distbin~HDISTRICT, value = "work", sum)
-        # work_ditbins <- tlfd_work$distbin
-        # tlfd_work <- transpose(tlfd_work[,!colnames(tlfd_work) %in% c("distbin")], keep.names = 'id')
-        # # tlfd_work$id <- row.names(tlfd_work)
-        # tlfd_work <- merge(x = districtList_df, y = tlfd_work, by = "id", all.x = TRUE)
-        # tlfd_work[is.na(tlfd_work)] <- 0
-        # tlfd_work <- transpose(tlfd_work[,!colnames(tlfd_work) %in% c("id")])
-        # tlfd_work <- cbind(data.frame(distbin = work_ditbins), tlfd_work)
-        # tlfd_work$Total <- rowSums(tlfd_work[,!colnames(tlfd_work) %in% c("distbin")])
-        # names(tlfd_work) <- sub("V", "District_", names(tlfd_work))
-        # tlfd_work_df <- merge(x = distBinCat, y = tlfd_work, by = "distbin", all.x = TRUE)
-        # tlfd_work_df[is.na(tlfd_work_df)] <- 0
+        # Weighted mean
+        mand_trip_lengths = {
+            'Work': workers.groupby('HDISTRICT').apply(lambda x: (x.WDIST * x.PER_WEIGHT).mean()),
+            'Schl': students.groupby('HDISTRICT').apply(lambda x: (x.SDIST * x.PER_WEIGHT).mean()),
+            'Univ': univ.groupby('HDISTRICT').apply(lambda x: (x.SDIST * x.PER_WEIGHT).mean())
+        }
+        mand_trip_lengths = pd.concat(mand_trip_lengths, axis=1).fillna(0)
+
+        mand_trip_lengths.loc['Total'] = mand_trip_lengths.sum()
+
+        return mand_trip_lengths.reset_index()
+
+    def nonMandTripLengths(self):
+        # Labels / Breaks
+        tour_purps = self.get_joint_purp_list()
+
+        # The tours
+        df_tours = deepcopy(self.scenario_data['spa_tours'])
+        df_tours = df_tours[df_tours.TOURPURP.isin(tour_purps) & (df_tours.IS_SUBTOUR == 0)]
+
+        # Map joint purposes
+        df_tours = self.map_joint_purposes(df_tours)
+
+        # Get sum
+        tour_dist = df_tours.groupby('JOINT_TOURPURP').apply(lambda x: (x.DIST * x.TOUR_WEIGHT).mean())
+        tour_dist = tour_dist.to_frame('AvgTripLength')
+        tour_dist.loc['Total'] = tour_dist.sum()
+        tour_dist = tour_dist.reset_index().rename(columns = {'JOINT_TOURPURP': 'PURPOSE'})
+
+        return tour_dist
+
+    def tripModeProfile_vis(self):
+        df_trips = deepcopy(self.scenario_data['spa_trips'])
+
+        # Map joint tour purpose
+        tripmode_profile = self.map_joint_purposes(df_trips)
+
+        # Get number of trip modes by tour modes
+        tripmode_profile = self.get_weighted_sum(
+            df=tripmode_profile,
+            grp_cols=['TRIPMODE', 'TOURMODE', 'JOINT_TOURPURP'],
+            wt_col='TRIP_WEIGHT',
+            label_cols=['TRIPMODE', 'TOURMODE'],
+            total_along=['JOINT_TOURPURP'],
+        )
+
+        # Also sum along tour mode
+        tripmode_profile = self.get_total_along(tripmode_profile, total_along='TOURMODE',
+                                                index_cols=['TRIPMODE', 'TOURMODE', 'JOINT_TOURPURP'])
+
+        # Add grp_var
+        tripmode_profile['grp_var'] = tripmode_profile.groupby(['TOURMODE', 'JOINT_TOURPURP']).grouper.group_info[0]
+
+        return tripmode_profile.rename(columns={'JOINT_TOURPURP': 'PURPOSE'})
 

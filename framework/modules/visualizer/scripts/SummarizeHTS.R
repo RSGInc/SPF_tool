@@ -543,6 +543,7 @@ schlTripLengths_df[is.na(schlTripLengths_df)] <- 0
 
 mandTripLengths <- cbind(workTripLengths_df, univTripLengths_df$univ, schlTripLengths_df$schl)
 colnames(mandTripLengths) <- c("District", "Work", "Univ", "Schl")
+
 fwrite(mandTripLengths, file.path(outdir, "mandTripLengths.csv"), row.names = F)
 
 # Work from home [for each district and total]
@@ -1802,6 +1803,7 @@ tmode8_as0 <- wtd.hist(tours$TOURMODE[!is.na(tours$TOURMODE) & tours$IS_SUBTOUR=
 tmodeAS0Profile <- data.frame(tmode1_as0$counts, tmode2_as0$counts, tmode3_as0$counts, tmode4_as0$counts,
                               tmode5_as0$counts, tmode6_as0$counts, tmode7_as0$counts, tmode8_as0$counts)
 colnames(tmodeAS0Profile) <- c("work", "univ", "sch", "imain", "idisc", "jmain", "jdisc", "atwork")
+
 fwrite(tmodeAS0Profile, file.path(outdir, "tmodeAS0Profile.csv"))
 
 # Prepeare data for visualizer

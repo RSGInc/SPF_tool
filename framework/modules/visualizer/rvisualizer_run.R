@@ -8,17 +8,25 @@ parseJSON = function(json_obj) {
 
   # Check if dataframe object
   if (isDF) {
-    return( jsonlite::fromJSON(json_obj) )
+    return( data.table::as.data.table(jsonlite::fromJSON(json_obj)) )
   }
   else {
     return( json_obj )
   }
 }
 
+#! /usr/bin/Rscript
+args = commandArgs(trailingOnly=TRUE)
+if (length(args) == 0) {
+  working_dir = 'C:/gitclones/Dubai_survey_processing/data/visualizer'
+} else {
+  working_dir = args  
+}
+
 ### Load serialized data
-json_base = jsonlite::fromJSON('data/visualizer/summaries_base.json')
-json_build = jsonlite::fromJSON('data/visualizer/summaries_build.json')
-json_parameters = jsonlite::fromJSON('data/visualizer/summary_parameters.json')
+json_base = jsonlite::fromJSON(file.path(working_dir, 'summaries_base.json'))
+json_build = jsonlite::fromJSON(file.path(working_dir, 'summaries_build.json'))
+json_parameters = jsonlite::fromJSON(file.path(working_dir, 'summary_parameters.json'))
 
 ### Parse JSON data
 base_data = lapply(json_base, parseJSON)
@@ -48,13 +56,18 @@ lapply(SYSTEM_REPORT_PKGS, library, character.only = TRUE)
 
 
 ### Generate dashboard
-rmarkdown::render(TEMPLATE_PATH, output_dir = VIS_DIR,
-                  intermediates_dir = VIS_DIR, quiet = TRUE)
+rmarkdown::render(TEMPLATE_PATH, output_dir = working_dir,
+                  intermediates_dir = working_dir, quiet = TRUE)
 
 
-### Append result HTML file
-template.html = readLines(file.path(VIS_DIR, "template.html"))
+if ( grepl('.html', OUTPUT_HTML_NAME) ) {
+  OUTPUT_HTML_NAME = gsub('.html','',OUTPUT_HTML_NAME)
+}
+
+
+### Append result HTML file and rename
+template.html = readLines(file.path(working_dir, "template.html"))
 idx = which(template.html == "window.FlexDashboardComponents = [];")[1]
 template.html = append(template.html, "L_PREFER_CANVAS = true;", after = idx)
-writeLines(template.html, file.path(VIS_DIR, paste(OUTPUT_HTML_NAME, ".html", sep = "")))
-file.remove(file.path(VIS_DIR, "template.html"))
+writeLines(template.html, file.path(working_dir, paste(OUTPUT_HTML_NAME, ".html", sep = "")))
+file.remove(file.path(working_dir, "template.html"))[1]

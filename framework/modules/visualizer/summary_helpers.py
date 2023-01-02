@@ -9,8 +9,6 @@ class VisualizerInputData:
                 These functions are to modify the original data frames.
                 Should be done sparingly
         """
-        if drop_labourers:
-            self.drop_labourers()
 
         self.setup_zone_xwalk()
         self.setup_households()
@@ -71,19 +69,6 @@ class VisualizerInputData:
         # Return
         self.scenario_data['spa_tours'] = df_tours
 
-    def drop_labourers(self):
-        # Find labourers
-        df_pre_per = deepcopy(self.scenario_data['pre_person'])
-        df_nonlabour_per = df_pre_per[~df_pre_per.PERSONTYPE_SURVEY.isin([19, 20, 21, 22])][['SAMPN', 'PERNO']]
-        df_nonlabour_per = df_nonlabour_per.rename(columns={'SAMPN': 'HH_ID', 'PERNO': 'PER_ID'})
-
-        df_hh = self.scenario_data['spa_household']
-        self.scenario_data['spa_household'] = df_hh[df_hh.HH_ID.isin(df_nonlabour_per['HH_ID'].unique())]
-
-        for n in ['spa_person', 'spa_tours', 'spa_trips', 'spa_jultrips', 'spa_jtours']:
-            self.scenario_data[n] = self.scenario_data[n].merge(df_nonlabour_per, how='right')
-
-
 class VisualizerIntermediateData:
 
     def setup_intermediate_data(self):
@@ -122,14 +107,17 @@ class VisualizerIntermediateData:
         tour_type_counts = {}
 
         joint_purp_list = self.get_joint_purp_list()
+        work_purp = self.constants.get('PURPOSE')['WORK']
+        atwork = [v for k, v in self.constants.get('PURPOSE').items() if k in ['WORK', 'WORK-RELATED']]
+        schl = [v for k, v in self.constants.get('PURPOSE').items() if k in ['UNIVERSITY', 'SCHOOL']]
 
         # First define the filters
         # [excluding at work subtours]. joint work tours should be considered individual mandatory tours
-        tour_type_counts['work'] = tours[(tours.TOURPURP == 1) & (tours.IS_SUBTOUR==0)]
-        tour_type_counts['atwork'] = tours[(tours.TOURPURP == 20) & (tours.IS_SUBTOUR == 1)]
-        tour_type_counts['schl'] = tours[tours.TOURPURP.isin([2, 3])]
+        tour_type_counts['work'] = tours[(tours.TOURPURP == work_purp) & (tours.IS_SUBTOUR == 0)]
+        tour_type_counts['atwork'] = tours[tours.TOURPURP.isin(atwork) & (tours.IS_SUBTOUR == 1)]
+        tour_type_counts['schl'] = tours[tours.TOURPURP.isin(schl)]
         tour_type_counts['inm'] = tours[
-            (tours.TOURPURP.isin([4] + joint_purp_list) &
+            (tours.TOURPURP.isin( [4] + joint_purp_list ) &
              (tours.FULLY_JOINT == 0) & (tours.IS_SUBTOUR == 0)) |
             ((tours.TOURPURP == 4) & (tours.FULLY_JOINT == 1))
             ]
@@ -152,13 +140,23 @@ class VisualizerIntermediateData:
         # return tour_type_counts
 
     def setup_zone_xwalk(self):
-        # TODO UPDATE TO SECTORS
-        df_zones = self.scenario_data['zones']
+        xwalk = deepcopy(self.scenario_data['xwalk'])
+        zones = deepcopy(self.input_tables['shared_data']['zones_gis'])
+
+        # Fetch only the zones we need (no external ones)
+        xwalk = xwalk[xwalk.Sector.isin((zones.SEC_NUM//100).unique())]
+
+        # Labels
+        xwalk['DISTRICT'] = 'Sector_' + xwalk.Sector.astype(str)
+
+        # FIXME This can be deleted?
+        # df_zones = self.scenario_data['zones']
         # df_zones['DISTRICT'] = df_zones.NAME.str.split('_\\(', expand=True)[0]
-        df_zones['DISTRICT'] = 'Sector_' + df_zones.SECTOR.astype(str)
-        df_zones.loc[df_zones.SECTOR == 0, 'DISTRICT'] = None
-        xwalk = df_zones[['OLDZONE', 'DISTRICT']].rename(columns={'OLDZONE': 'TAZ'})
-        xwalk = xwalk[xwalk.TAZ > 0].drop_duplicates()
+        # df_zones['DISTRICT'] = 'Sector_' + df_zones.SECTOR.astype(str)
+        # df_zones.loc[df_zones.SECTOR == 0, 'DISTRICT'] = None
+        # xwalk = df_zones[['OLDZONE', 'DISTRICT']].rename(columns={'OLDZONE': 'TAZ'})
+        # xwalk = xwalk[xwalk.TAZ > 0].drop_duplicates()
+
         self.intermediate_data['xwalk'] = xwalk
 
     def setup_person_day(self):
@@ -212,7 +210,7 @@ class VisualizerIntermediateData:
         zones = place.groupby('TAZ')[['XCORD', 'YCORD']].mean()
         zones = zones[~zones.index.isin([0])].reset_index()
 
-        # The XY cord for destination is the current place and origin is the previous place,
+        # The XY cord for destination is the current place and origi                                            n is the previous place,
         # shifting place down 1 for each person-day, and drop the first place in each.
         _dests = place[skim_cols].rename(columns={'TAZ': 'dTAZ', 'XCORD': 'dX', 'YCORD': 'dY'})
         _origins = place.groupby(['SAMPN', 'PERNO', 'DAYNO']).shift(1)

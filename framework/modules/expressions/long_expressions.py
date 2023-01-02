@@ -1,4 +1,5 @@
 import pandas as pd
+from copy import deepcopy
 from core.utils import distance_on_unit_sphere
 
 class LongExpressions:
@@ -76,6 +77,17 @@ class LongExpressions:
         )
         return person_trips_xy.squeeze()
 
+    def get_TOTTR(self):
+        trip = self.input_tables['trip']
+        trip_hhcompanions_pnum = self.input_tables['trip_hhcompanions_pnum']
+
+        tottr = pd.concat([
+            trip.trip_companions,
+            trip_hhcompanions_pnum.groupby('trip_id').size()
+        ], axis=1).fillna(0).sum(axis=1).astype(int)
+
+        return tottr
+
     def get_TOTTR_NEXT(self):
         trip = self.input_tables['trip']
         trip_hhcompanions_pnum = self.input_tables['trip_hhcompanions_pnum']
@@ -93,6 +105,7 @@ class LongExpressions:
         n_companions = (
             n_companions.groupby("person_id").shift(1).fillna(0).astype(int).droplevel(1)
         )
+
         return n_companions
 
 
@@ -223,3 +236,115 @@ class LongExpressions:
                 )
 
         return res
+
+    def get_escort_type(self, event):
+        trip = deepcopy(self.input_tables['trip'])
+
+        # Total travelers on trip & next trip
+        trip['total_trip_companions'] = self.get_TOTTR()
+        trip['total_trip_companions_next'] = self.get_TOTTR_NEXT()
+
+        # Filter by only joint household trips
+        is_hhtrip = ~trip.trip_hhcompanions_pnum.isnull()
+
+        # Get the joint hh trips where someone gets dropped off
+        is_dropoff = (trip.total_trip_companions - trip.total_trip_companions_next) > 0
+        is_pickup = (trip.total_trip_companions - trip.total_trip_companions_next) < 0
+
+        # The person is the driver
+        is_driver = trip.mode_mainline.isin([2, 11, 12, 13])
+
+        # Purpose is school
+        is_school = trip.trip_purp.isin([3])
+
+        #
+        is_pu = is_hhtrip & is_driver & is_school & is_pickup & ~is_dropoff
+        is_do = is_hhtrip & is_driver & is_school & ~is_pickup & is_dropoff
+        is_pu_nonhh = ~is_hhtrip & is_driver & is_school & is_pickup & ~is_dropoff
+        is_do_nonhh = ~is_hhtrip & is_driver & is_school & ~is_pickup & is_dropoff
+        # is_neither = ~(is_hhtrip & is_driver & is_school & ~is_pickup & ~is_dropoff)
+        is_neither = ~(is_pu | is_do | is_pu_nonhh | is_do_nonhh)
+
+        if event == 'NEITHER':
+            return is_neither
+        if event == 'PICK_UP':
+            return is_pu
+        if event == 'DROP_OFF':
+            return is_do
+        if event == 'PICK_UP_NON_HH':
+            return is_pu_nonhh
+        if event == 'DROP_OFF_NON_HH':
+            return is_do_nonhh
+
+        # FIXME This isn't right, since it's at the trip level and should be a tour level
+        if event == 'BOTH_PUDO':
+            return is_hhtrip & is_driver & is_school & is_pickup & is_dropoff
+
+    def get_escort_trips(self):
+        trip = deepcopy(self.input_tables['trip'])
+
+        # Total travelers on trip & next trip
+        trip['total_trip_companions'] = self.get_TOTTR()
+        trip['total_trip_companions_next'] = self.get_TOTTR_NEXT()
+
+        # Filter by only joint household trips
+        is_hhtrip = ~trip.trip_hhcompanions_pnum.isnull()
+
+        # Get the joint hh trips where someone gets dropped off
+        is_dropoff = (trip.total_trip_companions - trip.total_trip_companions_next) > 0
+        is_pickup = (trip.total_trip_companions - trip.total_trip_companions_next) < 0
+
+        # The person is the driver
+        is_driver = trip.mode_mainline.isin([2, 11, 12, 13])
+
+        # Purpose is school
+        is_school = trip.trip_purp.isin([3])
+
+        # escort_trips = trip[is_hhtrip & is_driver & (is_pickup | is_dropoff)]
+        escort_trips = is_hhtrip & is_driver & is_school & (is_pickup | is_dropoff)
+
+        return escort_trips
+
+    def get_loop_trips(self):
+        trip = deepcopy(self.input_tables['trip'])
+        return (trip.trip_num == 1) & (trip.trip_purp == 8)
+
+
+    def convert_taz(self, old_taz):
+        zones = deepcopy(self.input_tables['zone']).reset_index()[['OLDZONE', 'zone_id']]
+        zones = zones[~zones.OLDZONE.isnull()]
+        zones.OLDZONE = zones.OLDZONE.astype(int)
+        taz_xwalk = zones[['OLDZONE', 'zone_id']]
+
+        # Add missing values
+        missing_taz = list(set(old_taz.unique()).difference(taz_xwalk.OLDZONE))
+        taz_xwalk = pd.concat([taz_xwalk, pd.DataFrame({'OLDZONE': missing_taz, 'zone_id': missing_taz})])
+        taz_xwalk = taz_xwalk.set_index('OLDZONE')
+
+        # Fetch the new taz ID by index value
+        new_taz = taz_xwalk.loc[old_taz]
+
+        # set the old index on the new
+        new_taz.index = old_taz.index
+        new_taz.index.name = old_taz.index.name
+
+        return new_taz.zone_id.astype(int)
+
+
+
+
+    def get_fixed_TAZ(self, purpose):
+        trip = deepcopy(self.input_tables['trip'])
+        person = deepcopy(self.input_tables['person'])
+        purpose = [purpose] if not isinstance(purpose, list) else purpose
+
+        taz = pd.merge(
+            person.reset_index(),
+            trip[trip.trip_purp.isin(purpose)].groupby('person_id')['dest_zone_id'].first().reset_index(),
+            how='left'
+        ).set_index('person_id').dest_zone_id.fillna('-9').astype(int)
+
+        taz = self.convert_taz(taz)
+
+        return taz
+

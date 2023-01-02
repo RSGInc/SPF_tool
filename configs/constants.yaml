@@ -36,42 +36,93 @@ TIME_PERIODS: # 48 periods, with period 1 starting at 3am,
 DAP_TYPES: ["M", "N", "H"]
 
 
+# Mode labels
+MODE_LABEL:
+    'SOV':          Drive alone
+    'HOV2':         Shared 2
+    'HOV3+':        Shared 2+
+    'WALK':         Walk
+    'BIKE':         Bike
+    # 'EBIKE':        Electric bike
+    # 'ESCOOT':       Electric scooter
+    'WALK-BUS':     Walk-access bus    
+    'WALK-METRO':   Walk-access rail/ferry
+    # 'WALK-ADVANCED':       Walk-access advanced air mobility/loop/high-speed rail
+    'PNR-BUS':      Drive and park bus
+    'PNR-METRO':    Drive and park rail/ferry
+    # 'PNR-ADVANCED':       Drive-access advanced air mobility/loop/high-speed rail
+    'KNR-BUS':      Ride to/from bus
+    'KNR-METRO':    Ride to/from rail/ferry
+    # 'PNR-ADVANCED':       Ride to/from advanced air mobility/loop/high-speed rail  
+    'TAXI': Traditional taxi
+    # 'TNC': Ride-hail service with mobile app such as Uber or Lyft    
+    'SCHOOLBUS': School bus
+    'COMPANY-BUS': Labour bus
+    'OTHER': Other
+
 # map mode name to mode code
 TRIPMODE:
-    'SOV': 1
-    'HOV2':  2
-    'HOV3+': 3
-    'WALK': 4
-    'BIKE': 5
-    'TNC / TAXI': 6
-    'WALK-BUS': 7    
-    'WALK-METRO': 8
-    'PNR-BUS': 9
-    'PNR-METRO': 10
-    'KNR-BUS': 11
-    'KNR-METRO': 12
-    'COMPANY-BUS': 13
-    'SCHOOLBUS': 14
-    'OTHER': 15
+    'Drive alone':                  1
+    'Shared 2':                     2
+    'Shared 3+':                    3
+    'Walk':                         4
+    'Bike':                         5
+    'E-Bike':                       6
+    'E-Scooter':                    7
+    'Walk-access bus':              8
+    'Walk-access rail/ferry':       9
+    'Walk-access to advanced mobility':    10
+    'Drive and park to bus':        11
+    'Drive and park to rail/ferry': 12
+    'Drive and park to advanced mobility': 13
+    'Ride to/from bus':             14
+    'Ride to/from rail/ferry':      15
+    'Ride to/from to advanced mobility':   16
+    'Taxi':         17
+    'TNC':          18
+    'School bus':   19
+    'Labour bus':   20    
+    'Other':        21
 
 # Map trip modes to tour modes
 # use list to aggregate multiple (e.g., pnr-bus pnr-metro -> pnr)
 TOURMODE:
-    'SOV': 1
-    'HOV2':  2
-    'HOV3+': 3
-    'WALK': 4
-    'BIKE': 5
-    'TNC / TAXI': 6
-    'WALK-BUS': 7    
-    'WALK-METRO': 8
-    'PNR-BUS': 9
-    'PNR-METRO': 10
-    'KNR-BUS': 11
-    'KNR-METRO': 12
-    'COMPANY-BUS': 13
-    'SCHOOLBUS': 14
-    'OTHER': 15
+    'Drive alone':                  1
+    'Shared 2':                     2
+    'Shared 3+':                    3
+    'Walk':                         4
+    'Bike':                         5
+    'E-Bike':                       6
+    'E-Scooter':                    7
+    'Walk-access bus':              8
+    'Walk-access rail/ferry':       9
+    'Walk-access to advanced mobility':    10
+    'Drive and park to bus':        11
+    'Drive and park to rail/ferry': 12
+    'Drive and park to advanced mobility': 13
+    'Ride to/from bus':             14
+    'Ride to/from rail/ferry':      15
+    'Ride to/from to advanced mobility':   16
+    'Taxi':         17
+    'TNC':          18
+    'School bus':   19
+    'Labour bus':   20    
+    'Other':        21
+    # 'SOV': 1
+    # 'HOV2':  2
+    # 'HOV3+': 3
+    # 'WALK': 4
+    # 'BIKE': 5
+    # 'TNC / TAXI': 6
+    # 'WALK-BUS': 7    
+    # 'WALK-METRO': 8
+    # 'PNR-BUS': 9
+    # 'PNR-METRO': 10
+    # 'KNR-BUS': 11
+    # 'KNR-METRO': 12
+    # 'COMPANY-BUS': 13
+    # 'SCHOOLBUS': 14
+    # 'OTHER': 15
 
 # survey definition for driver/passanger
 DRIVER:
@@ -182,12 +233,12 @@ PARTIAL_TOUR:
     'PARTIAL_END':      2   #last tour of the day not ending at home
 
 ESCORT_EVENT:
-    'NEITHER':  0  #neither pick up or drop off
-    'PICK_UP':  1  #pick up passenger
-    'DROP_OFF': 2   #drop off passenger
-    'PICK_UP_NON_HH':     3   #pick up non household member
-    'DROP_OFF_NON_HH':    4   #pick up non household member
-    'BOTH_PUDO':          5
+    'NEITHER':          0  #neither pick up or drop off
+    'PICK_UP':          1  #pick up passenger
+    'DROP_OFF':         2   #drop off passenger
+    'PICK_UP_NON_HH':   3   #pick up non household member
+    'DROP_OFF_NON_HH':  4   #pick up non household member
+    'BOTH_PUDO':        5
 
 ESCORT_TYPE:
     'RIDE_SHARING': 1

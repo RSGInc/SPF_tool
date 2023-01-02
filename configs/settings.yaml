@@ -83,11 +83,15 @@ PROCESSING_STEPS:
 #            spa_mapping:  spa_specs/variable_mapping.yaml
              
     Visualizer:
-        skip: True
+#        skip: True
         module: visualizer.visualizer_module
         from_pipeline: False
         output_dir: visualizer
         data:
+            # Shared data
+            shared_data:
+                zones_gis: mapping/spatial_zone_data.geojson
+            # Model specific data
             base:
                 zones:
                     file: raw/zone.csv
@@ -104,6 +108,7 @@ PROCESSING_STEPS:
                 spa_tours: spa_output/tours.csv
                 spa_jultrips: spa_output/unique_joint_ultrips.csv
                 spa_jtours: spa_output/unique_joint_tours.csv
+                xwalk: raw/geo_crosswalks.csv
             build:
                 zones:
                     file: raw/zone.csv
@@ -114,12 +119,13 @@ PROCESSING_STEPS:
                 pre_place:
                     file: preprocessed/place.csv
                     index: place_id
-                spa_output:
-                    spa_household: spa_output/households.csv
-                    spa_person: spa_output/persons.csv
-                    spa_trips: spa_output/trips.csv
-                    spa_tours: spa_output/tours.csv
-                    spa_jultrips: spa_output/unique_joint_ultrips.csv
-                    spa_jtours: spa_output/unique_joint_tours.csv
+                spa_household: spa_output/households.csv
+                spa_person: spa_output/persons.csv
+                spa_trips: spa_output/trips.csv
+                spa_tours: spa_output/tours.csv
+                spa_jultrips: spa_output/unique_joint_ultrips.csv
+                spa_jtours: spa_output/unique_joint_tours.csv
+                xwalk: raw/geo_crosswalks.csv
+                    
         configs:
             parameters:  visualizer_specs/parameters.yaml

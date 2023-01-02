@@ -226,7 +226,8 @@ get_sharedData <- function(data_df1, data_df2, run1_name = 'base', run2_name = '
 # number of elements in names list determines the number of series to be added 
 plotly_bar_plotter <- function(data, type = 'bar', xlabel = "", ylabel = "", percent = FALSE,
                                title = "", height = 0, width = 0, ynames = c(""), left_offset = 0, 
-                               bottom_offset = 0, tickformat = "", hoverformat = "", tickangle = 0, index = 1, tickvals = c(), ticktext = c()){
+                               bottom_offset = 0, tickformat = "", hoverformat = "", 
+                               tickangle = 0, index = 1, tickvals = c(), ticktext = c()){
   #initial setup
   start_pos <- 2*index - 1
   exp_tickvals <- ifelse(length(tickvals)>0, ', tickvals = tickvals', "")
@@ -276,13 +277,13 @@ plotly_density_plotter <- function(data_df, index = "one", colors=c("orange", "s
     ylab <- ifelse(ylabel=="", "Percent", ylabel)
     
     p <- switch(index, 
-                "one" = plot_ly(data=data_df,x = ~xvar, y = ~prop1, colors=c("steelblue", "orange"), color = ~run, fill=fill) %>%
+                "one" = plot_ly(data=data_df,x = ~xvar, y = ~prop1, colors=colors, color = ~run, fill=fill) %>%
                   add_lines(name=~run,alpha=alpha, line = list(shape = shape)) %>%
                   layout(title = "",xaxis = list(title=xlabel, tickvals = tickvals, ticktext = ticktext, tickangle = tickangle), yaxis = list(title=ylab, tickformat = ".0%"), showlegend = legend),
-                "two" = plot_ly(data=data_df,x = ~xvar, y = ~prop2, colors=c("steelblue", "orange"), color = ~run, fill=fill) %>%
+                "two" = plot_ly(data=data_df,x = ~xvar, y = ~prop2, colors=colors, color = ~run, fill=fill) %>%
                   add_lines(name=~run,alpha=alpha, line = list(shape = shape)) %>%
                   layout(title = "",xaxis = list(title=xlabel, tickvals = tickvals, ticktext = ticktext, tickangle = tickangle), yaxis = list(title=ylab, tickformat = ".0%"), showlegend = legend),
-                "three" = plot_ly(data=data_df,x = ~xvar, y = ~prop3, colors=c("steelblue", "orange"), color = ~run, fill=fill) %>%
+                "three" = plot_ly(data=data_df,x = ~xvar, y = ~prop3, colors=colors, color = ~run, fill=fill) %>%
                   add_lines(name=~run,alpha=alpha, line = list(shape = shape)) %>%
                   layout(title = "",xaxis = list(title=xlabel, tickvals = tickvals, ticktext = ticktext, tickangle = tickangle), yaxis = list(title=ylab, tickformat = ".0%"), showlegend = legend)
                 )
@@ -291,13 +292,13 @@ plotly_density_plotter <- function(data_df, index = "one", colors=c("orange", "s
     ylab <- ifelse(ylabel=="", "Frequency", ylabel)
     
     p <- switch(index,
-                "one" = plot_ly(data=data_df,x = ~xvar, y = ~yvar1, colors=c("steelblue", "orange"), color = ~run, fill=fill) %>%
+                "one" = plot_ly(data=data_df,x = ~xvar, y = ~yvar1, colors=colors, color = ~run, fill=fill) %>%
                   add_lines(name="",alpha=alpha, line = list(shape = shape)) %>%
                   layout(title = "",xaxis = list(title=xlabel, tickvals = tickvals, ticktext = ticktext, tickangle = tickangle), yaxis = list(title=ylab), showlegend = legend),
-                "two" = plot_ly(data=data_df,x = ~xvar, y = ~yvar2, colors=c("steelblue", "orange"), color = ~run, fill=fill) %>%
+                "two" = plot_ly(data=data_df,x = ~xvar, y = ~yvar2, colors=colors, color = ~run, fill=fill) %>%
                   add_lines(name="",alpha=alpha, line = list(shape = shape)) %>%
                   layout(title = "",xaxis = list(title=xlabel, tickvals = tickvals, ticktext = ticktext, tickangle = tickangle), yaxis = list(title=ylab), showlegend = legend),
-                "three" = plot_ly(data=data_df,x = ~xvar, y = ~yvar3, colors=c("steelblue", "orange"), color = ~run, fill=fill) %>%
+                "three" = plot_ly(data=data_df,x = ~xvar, y = ~yvar3, colors=colors, color = ~run, fill=fill) %>%
                   add_lines(name="",alpha=alpha, line = list(shape = shape)) %>%
                   layout(title = "",xaxis = list(title=xlabel, tickvals = tickvals, ticktext = ticktext, tickangle = tickangle), yaxis = list(title=ylab), showlegend = legend)
                 )
@@ -390,22 +391,29 @@ Note: Mozilla Firefox does not correctly render the images in this HTML file.
 Summary {data-width=600}
 --------------------------------------------
 
-<!-- ### Modeling Region -->
-<!-- ```{r model_region} -->
-<!-- bins <- c(0, 10, 20, 50, 100, 200, 500, 1000, Inf) -->
-<!-- pal <- colorBin("YlOrRd", domain = zone_shp$HH, bins = bins) -->
+### Modeling Region
+```{r model_region}
+# bins = c(0, 10, 20, 50, 100, 200, 500, 1000, Inf)
+# pal = colorBin("YlOrRd", domain = zone_map$SEC_NUM, bins = bins)
+# pal = colorFactor(topo.colors(length(unique(zone_map$SEC_NUM))), domain = factor(zone_map$SEC_NUM/100))
+pal = colorFactor(palette = 'Set1', domain = factor(zone_map$SEC_NUM/100))
 
-<!-- m <- leaflet(data = zone_shp)%>%  -->
-<!--   addTiles() %>%  -->
-<!--   addProviderTiles(providers$OpenStreetMap, group = "Background Map") %>% -->
-<!--   addLayersControl( -->
-<!--     overlayGroups = "Background Map", options = layersControlOptions(collapsed = FALSE) -->
-<!--   ) %>% -->
-<!--   addPolygons(weight = 0.5, opacity = 1) -->
-<!-- m -->
+m <- leaflet(data = zone_map)%>%
+  addTiles() %>%
+  addProviderTiles(providers$OpenStreetMap, group = "Background Map") %>%
+  addLayersControl(
+    overlayGroups = "Background Map", options = layersControlOptions(collapsed = FALSE)
+  ) %>%
+  addPolygons(weight = 0.9, opacity = 1, fillOpacity = 0.5, color = ~pal(SEC_NUM/100)) %>%
+  addLegend("bottomright", pal = pal, values = ~unique(SEC_NUM/100),
+    title = "Sector",
+    labFormat = labelFormat(prefix = "Sector "),
+    opacity = 1
+  )
+m
 
-<!-- #   -->
-<!-- ``` -->
+#
+```
 
 
 Overview
@@ -669,40 +677,40 @@ p
 <!-- p -->
 <!-- ``` -->
 
-### {data-height=140}
-```{r Gauge_WFH1}
-#cat("Working from home: ACS 2015 1 YR", " vs. ", BUILD_SCENARIO_NAME)
+<!-- ### {data-height=140} -->
+<!-- ```{r Gauge_WFH1} -->
+<!-- #cat("Working from home: ACS 2015 1 YR", " vs. ", BUILD_SCENARIO_NAME) -->
 
-#base_df <- base_data[[which(base_data_names=="wfh_summary_region")]]
-#rate <- base_df$WFH/base_df$Workers
-#gauge1 <- gauge(round(rate*100, 1), min = 0, max = 100, symbol = '%', gaugeSectors(danger =  c(0,1), colors = c("Green", "Green", "Green")))
+<!-- base_df <- base_data[[which(base_data_names=="wfh_summary_region")]] -->
+<!-- rate <- base_df$WFH/base_df$Workers -->
+<!-- gauge1 <- gauge(round(rate*100, 1), min = 0, max = 100, symbol = '%', gaugeSectors(danger =  c(0,1), colors = c("Green", "Green", "Green"))) -->
 
-#build_df <- build_data[[which(build_data_names=="wfh_summary_region")]]
-#rate <- build_df$WFH/build_df$Workers
-#gauge2 <- gauge(round(rate*100, 1), min = 0, max = 100, symbol = '%', gaugeSectors(danger =  c(0,1), colors = c("Green", "Green", "Green")))
+<!-- build_df <- build_data[[which(build_data_names=="wfh_summary_region")]] -->
+<!-- rate <- build_df$WFH/build_df$Workers -->
+<!-- gauge2 <- gauge(round(rate*100, 1), min = 0, max = 100, symbol = '%', gaugeSectors(danger =  c(0,1), colors = c("Green", "Green", "Green"))) -->
 
-#bscols(widths = c(6,6),
-#  gauge1,
-#  gauge2
-#)
+<!-- bscols(widths = c(6,6), -->
+<!--   gauge1, -->
+<!--   gauge2 -->
+<!-- ) -->
 
-```
+<!-- ``` -->
 
-### Percentage Working From Home{data-height=175}
-```{r Chart_WFH}
-# base_df <- base_data[[which(base_data_names=="wfh_summary")]]
-# base_df$share <- base_df$WFH/base_df$Workers
-#
-# build_df <- build_data[[which(build_data_names=="wfh_summary")]]
-# build_df$share <- build_df$WFH/build_df$Workers
-#
-# std_DF <- cbind(base_df[,c("District", "share")], build_df[,c("share")])
-# colnames(std_DF) <- c("xvar", "prop1", "prop2")
-#
-# p <- plotly_bar_plotter(data = std_DF, xlabel = "District", ylabel = "Percent WFH", ynames = c(BASE_SCENARIO_NAME, BUILD_SCENARIO_NAME), percent = T, height = 200)
-# p
+<!-- ### Percentage Working From Home{data-height=175} -->
+<!-- ```{r Chart_WFH} -->
+<!-- base_df <- base_data[[which(base_data_names=="wfh_summary")]] -->
+<!-- base_df$share <- base_df$WFH/base_df$Workers -->
 
-```
+<!-- build_df <- build_data[[which(build_data_names=="wfh_summary")]] -->
+<!-- build_df$share <- build_df$WFH/build_df$Workers -->
+
+<!-- std_DF <- cbind(base_df[,c("District", "share")], build_df[,c("share")]) -->
+<!-- colnames(std_DF) <- c("xvar", "prop1", "prop2") -->
+
+<!-- p <- plotly_bar_plotter(data = std_DF, xlabel = "District", ylabel = "Percent WFH", ynames = c(BASE_SCENARIO_NAME, BUILD_SCENARIO_NAME), percent = T, height = 200) -->
+<!-- p -->
+
+<!-- ``` -->
 
 
 
@@ -787,7 +795,9 @@ Chart Column 1
 ```{r Table1_CountyFlows}
 cat("District - District Flow of Workers")
 
-base_df <- base_data[["countyFlows"]]
+base_df <- copy(base_data[["countyFlows"]])
+setnames(base_df, 'HDISTRICT', 'Home \\\ Work')
+         
 base_df[,2:length(names(base_df))] <- base_df[,2:length(names(base_df))]/BASE_SAMPLE_RATE
 t1 <- kable(base_df, format = 'html', caption = DISTRICT_FLOW_CENSUS, digits = 0, row.names = F, align = 'r', format.args = list(big.mark = ',')) %>%
   kable_styling('striped', font_size = 10)
@@ -1013,152 +1023,152 @@ bscols(widths=c(3,9),
 ```
 
 
-School Escorting {data-navmenu="Tour Level"}
-============================================
+<!-- School Escorting {data-navmenu="Tour Level"} -->
+<!-- ============================================ -->
 
 
-Chart Column 1 {data-width=380}
---------------------------------------------
+<!-- Chart Column 1 {data-width=380} -->
+<!-- -------------------------------------------- -->
 
-### Escortee{data-height=400}
-```{r schesc7}
+<!-- ### Escortee{data-height=400} -->
+<!-- ```{r schesc7} -->
 
-base_df <- base_data[['esctype_by_childtype']]
-build_df <- build_data[["esctype_by_childtype"]]
+<!-- base_df <- base_data[['esctype_by_childtype']] -->
+<!-- build_df <- build_data[["esctype_by_childtype"]] -->
 
-base_df$grp <- BASE_SCENARIO_ALT
-build_df$grp <- BUILD_SCENARIO_NAME
-colnames(build_df) <- colnames(base_df)
+<!-- base_df$grp <- BASE_SCENARIO_ALT -->
+<!-- build_df$grp <- BUILD_SCENARIO_NAME -->
+<!-- colnames(build_df) <- colnames(base_df) -->
 
-sd.pertype <- get_standardDF(data_df1=base_df, data_df2=build_df, x="esc_type", y = c("freq_out", "freq_inb"), grp = "child_type", shared = T)
+<!-- sd.pertype <- get_standardDF(data_df1=base_df, data_df2=build_df, x="esc_type", y = c("freq_out", "freq_inb"), grp = "child_type", shared = T) -->
 
-p1 <- plotly_pie_chart(data = sd.pertype, label_var = "xvar", value_var = "yvar1", height = 260, title = BASE_SCENARIO_ALT, shared = T, top_offset = 80)
-p2 <- plotly_pie_chart(data = sd.pertype, label_var = "xvar", value_var = "yvar2", height = 260, title = BUILD_SCENARIO_NAME, shared = T, top_offset = 80)
-p3 <- plotly_pie_chart(data = sd.pertype, label_var = "xvar", value_var = "yvar3", height = 260, title = BASE_SCENARIO_ALT, shared = T, top_offset = 80)
-p4 <- plotly_pie_chart(data = sd.pertype, label_var = "xvar", value_var = "yvar4", height = 260, title = BUILD_SCENARIO_NAME, shared = T, top_offset = 80)
+<!-- p1 <- plotly_pie_chart(data = sd.pertype, label_var = "xvar", value_var = "yvar1", height = 260, title = BASE_SCENARIO_ALT, shared = T, top_offset = 80) -->
+<!-- p2 <- plotly_pie_chart(data = sd.pertype, label_var = "xvar", value_var = "yvar2", height = 260, title = BUILD_SCENARIO_NAME, shared = T, top_offset = 80) -->
+<!-- p3 <- plotly_pie_chart(data = sd.pertype, label_var = "xvar", value_var = "yvar3", height = 260, title = BASE_SCENARIO_ALT, shared = T, top_offset = 80) -->
+<!-- p4 <- plotly_pie_chart(data = sd.pertype, label_var = "xvar", value_var = "yvar4", height = 260, title = BUILD_SCENARIO_NAME, shared = T, top_offset = 80) -->
 
-bscols(widths=c(12),
-filter_select("Child_type", "Select Child Type", sd.pertype, ~grp_var,multiple=F)
-)
-```
+<!-- bscols(widths=c(12), -->
+<!-- filter_select("Child_type", "Select Child Type", sd.pertype, ~grp_var,multiple=F) -->
+<!-- ) -->
+<!-- ``` -->
 
-_Tour Level_ : Half tour leg of a school tour
+<!-- _Tour Level_ : Half tour leg of a school tour -->
 
-Distribution of outbound and inbound legs of school tours by escort type for each student.
+<!-- Distribution of outbound and inbound legs of school tours by escort type for each student. -->
 
-_Rideshare_:  The student is dropped off or picked up by a driver on their way to work or school or way back home. 
+<!-- _Rideshare_:  The student is dropped off or picked up by a driver on their way to work or school or way back home.  -->
 
-_PureEscort_: The student is dropped off or picked up by a driver who is traveling specifically for purposes of escorting the child, though the driver may make other non-escort stops.
-
-
-### Chauffeur{data-height=300}
-```{r schesc8}
-
-base_df <- base_data[["esctype_by_chauffeurtype"]]
-build_df <- build_data[["esctype_by_chauffeurtype"]]
-
-base_df$grp <- BASE_SCENARIO_ALT
-build_df$grp <- BUILD_SCENARIO_NAME
-colnames(build_df) <- colnames(base_df)
-
-sd.pertype <- get_standardDF(data_df1=base_df, data_df2=build_df, x="esc_type", y = c("freq_out", "freq_inb"), grp = "chauffeur", shared = T)
-p5 <- plotly_bar_plotter(data = sd.pertype, height = 200, xlabel = "School Escort Type", ylabel = "Percent", ynames = c(BASE_SCENARIO_ALT, BUILD_SCENARIO_NAME), percent = T)
-
-p6 <- plotly_bar_plotter(data = sd.pertype, height = 200, xlabel = "School Escort Type", ylabel = "Percent", ynames = c(BASE_SCENARIO_ALT, BUILD_SCENARIO_NAME), percent = T, index = 2)
-
-bscols(widths=c(12),
-  
-    filter_select("Chauffeur_type", "Select Chauffeur Type", sd.pertype, ~grp_var,multiple=F)
-    
-  )
-
-```
-
-_Tour Level_ : Half tour leg of a school tour
-
-Distribution of outbound and inbound legs of school tours by escort type for each chauffeur.
+<!-- _PureEscort_: The student is dropped off or picked up by a driver who is traveling specifically for purposes of escorting the child, though the driver may make other non-escort stops. -->
 
 
-### {data-height=300}
+<!-- ### Chauffeur{data-height=300} -->
+<!-- ```{r schesc8} -->
 
-_Person Level_ : FT/PT Workers
+<!-- base_df <- base_data[["esctype_by_chauffeurtype"]] -->
+<!-- build_df <- build_data[["esctype_by_chauffeurtype"]] -->
 
-Counts of workers who performed at least one _Rideshare_ or _PureEscort_ drop off or pick up. Only eligible workers (who go to work with children who go to school) are counted in the _None_ category.
+<!-- base_df$grp <- BASE_SCENARIO_ALT -->
+<!-- build_df$grp <- BUILD_SCENARIO_NAME -->
+<!-- colnames(build_df) <- colnames(base_df) -->
 
+<!-- sd.pertype <- get_standardDF(data_df1=base_df, data_df2=build_df, x="esc_type", y = c("freq_out", "freq_inb"), grp = "chauffeur", shared = T) -->
+<!-- p5 <- plotly_bar_plotter(data = sd.pertype, height = 200, xlabel = "School Escort Type", ylabel = "Percent", ynames = c(BASE_SCENARIO_ALT, BUILD_SCENARIO_NAME), percent = T) -->
 
-Chart Column 1 {data-width=750}
---------------------------------------------
+<!-- p6 <- plotly_bar_plotter(data = sd.pertype, height = 200, xlabel = "School Escort Type", ylabel = "Percent", ynames = c(BASE_SCENARIO_ALT, BUILD_SCENARIO_NAME), percent = T, index = 2) -->
 
-### Student school half-tours by escort type - Outbound{data-height=400}
-```{r schesc1}
+<!-- bscols(widths=c(12), -->
 
+<!--     filter_select("Chauffeur_type", "Select Chauffeur Type", sd.pertype, ~grp_var,multiple=F) -->
 
-bscols(widths=c(6,6),
-  p1, p2
-  )
+<!--   ) -->
 
-```
+<!-- ``` -->
 
-### Chauffeured school half-tours by escort type - Outbound{data-height=300}
-```{r schesc2}
+<!-- _Tour Level_ : Half tour leg of a school tour -->
 
-bscols(widths=c(12),
-  
-    p5
-  )
-
-```
-
-### {data-height=300}
-```{r schesc3}
-base_df <- data.frame(base_data[["worker_school_escorting"]])
-nums <- vapply(base_df, is.numeric, FUN.VALUE = logical(1))
-base_df[,nums] <- base_df[,nums]/BASE_SAMPLE_RATE
-base_df[,nums] <- round(base_df[,nums])
-
-#t1 <- datatable(base_df, options = list(pageLength = 4), height = 100, caption = "Workers with School Drops Offs and Pickups - #OHAS_Oregon")
-#t1
-
-t1 <- kable(base_df, caption = paste("Workers with School Drops Offs and Pickups -", BASE_SCENARIO_ALT), digits = 0, row.names = F, align = 'r', format.args = list(big.mark = ','))
-t1
-```
+<!-- Distribution of outbound and inbound legs of school tours by escort type for each chauffeur. -->
 
 
-Chart Column 1 {data-width=750}
---------------------------------------------
+<!-- ### {data-height=300} -->
 
-### Student school half-tours by escort type - Inbound{data-height=400}
-```{r schesc4}
+<!-- _Person Level_ : FT/PT Workers -->
 
-bscols(widths=c(6,6),
-  p3, p4
-  )
-
-```
-
-### Chauffeured school half-tours by escort type - Inbound{data-height=300}
-```{r schesc5}
-p6
-
-```
+<!-- Counts of workers who performed at least one _Rideshare_ or _PureEscort_ drop off or pick up. Only eligible workers (who go to work with children who go to school) are counted in the _None_ category. -->
 
 
+<!-- Chart Column 1 {data-width=750} -->
+<!-- -------------------------------------------- -->
 
-### {data-height=300}
-```{r schesc6}
-build_df <- as.data.frame(build_data[["worker_school_escorting"]])
-nums <- vapply(build_df, is.numeric, FUN.VALUE = logical(1))
-build_df[,nums] <- build_df[,nums]/BUILD_SAMPLE_RATE
-build_df[,nums] <- round(build_df[,nums])
+<!-- ### Student school half-tours by escort type - Outbound{data-height=400} -->
+<!-- ```{r schesc1} -->
 
 
-#t2 <- datatable(build_df, options = list(pageLength = 4), height = 100, caption = paste("Workers with School Drops Offs and Pickups - ", #BUILD_SCENARIO_NAME, sep = ""))
-#t2
+<!-- bscols(widths=c(6,6), -->
+<!--   p1, p2 -->
+<!--   ) -->
 
-t2 <- kable(build_df, caption = paste("Workers with School Drops Offs and Pickups -", BUILD_SCENARIO_NAME), digits = 0, row.names = F, align = 'r', format.args = list(big.mark = ','))
-t2
+<!-- ``` -->
 
-```
+<!-- ### Chauffeured school half-tours by escort type - Outbound{data-height=300} -->
+<!-- ```{r schesc2} -->
+
+<!-- bscols(widths=c(12), -->
+
+<!--     p5 -->
+<!--   ) -->
+
+<!-- ``` -->
+
+<!-- ### {data-height=300} -->
+<!-- ```{r schesc3} -->
+<!-- base_df <- data.frame(base_data[["worker_school_escorting"]]) -->
+<!-- nums <- vapply(base_df, is.numeric, FUN.VALUE = logical(1)) -->
+<!-- base_df[,nums] <- base_df[,nums]/BASE_SAMPLE_RATE -->
+<!-- base_df[,nums] <- round(base_df[,nums]) -->
+
+<!-- #t1 <- datatable(base_df, options = list(pageLength = 4), height = 100, caption = "Workers with School Drops Offs and Pickups - #OHAS_Oregon") -->
+<!-- #t1 -->
+
+<!-- t1 <- kable(base_df, caption = paste("Workers with School Drops Offs and Pickups -", BASE_SCENARIO_ALT), digits = 0, row.names = F, align = 'r', format.args = list(big.mark = ',')) -->
+<!-- t1 -->
+<!-- ``` -->
+
+
+<!-- Chart Column 1 {data-width=750} -->
+<!-- -------------------------------------------- -->
+
+<!-- ### Student school half-tours by escort type - Inbound{data-height=400} -->
+<!-- ```{r schesc4} -->
+
+<!-- bscols(widths=c(6,6), -->
+<!--   p3, p4 -->
+<!--   ) -->
+
+<!-- ``` -->
+
+<!-- ### Chauffeured school half-tours by escort type - Inbound{data-height=300} -->
+<!-- ```{r schesc5} -->
+<!-- p6 -->
+
+<!-- ``` -->
+
+
+
+<!-- ### {data-height=300} -->
+<!-- ```{r schesc6} -->
+<!-- build_df <- as.data.frame(build_data[["worker_school_escorting"]]) -->
+<!-- nums <- vapply(build_df, is.numeric, FUN.VALUE = logical(1)) -->
+<!-- build_df[,nums] <- build_df[,nums]/BUILD_SAMPLE_RATE -->
+<!-- build_df[,nums] <- round(build_df[,nums]) -->
+
+
+<!-- #t2 <- datatable(build_df, options = list(pageLength = 4), height = 100, caption = paste("Workers with School Drops Offs and Pickups - ", #BUILD_SCENARIO_NAME, sep = "")) -->
+<!-- #t2 -->
+
+<!-- t2 <- kable(build_df, caption = paste("Workers with School Drops Offs and Pickups -", BUILD_SCENARIO_NAME), digits = 0, row.names = F, align = 'r', format.args = list(big.mark = ',')) -->
+<!-- t2 -->
+
+<!-- ``` -->
 
 
 
@@ -1353,7 +1363,7 @@ Description {.sidebar data-width=200}
 
 Tour Time-of-day Choice Model results.
 
-Each tour is assigned a time period of departure (time leaving home or work) and arrival (time arriving back at home or work). The entire day is divided into 40 half-hour bins (the first bin includes 3:00 AM to 5:00 AM and the last bin includes 12:00 PM to 3:00 AM).
+Each tour is assigned a time period of departure (time leaving home or work) and arrival (time arriving back at home or work). The entire day is divided into 48 half-hour bins, starting at 3:00AM.
 
 Tour duration is calculated as a function of departure and arrival period. It includes travel time and time spent at the primary destination and all intermediate stops.
 
@@ -1363,15 +1373,19 @@ Results are shown for tours, filtered by tour purpose.
 
 **Aggregate Tour Arrival-Departure**
 
-_EA_: 3:00 AM to 6:00 AM
+_EA_: 3:00 AM to 7:00 AM
 
-_AM_: 6:00 AM to 9:00 AM
+_AM_: 7:00 AM to 9:00 AM
 
-_MD_: 9:00 AM to 3:30 PM
+_Midday-Pre-Lunch_: 9:00 AM to 1:00 PM
 
-_PM_: 3:30 PM to 7:00 PM
+_Midday-Lunch_: 1:00 PM to 3:00 PM
 
-_EV_: 7:00 PM to 3:00 AM
+_Midday-Post-Lunch_: 3:00 AM to 5:00 PM
+
+_PM_: 5:00 PM to 8:00 PM
+
+_EV_: 8:00 PM to 3:00 AM
 
 Chart Column 1 {.tabset}
 --------------------------------------------
@@ -1456,9 +1470,12 @@ Chart Column 1{data-width=150}
 ### Tour Mode Choice
 ```{r tourMode}
 base_df <- base_data[["tmodeProfile_vis"]]
+base_df$TOURMODE <- factor(base_df$TOURMODE, levels=tourMode)
 base_df$PURPOSE <- as.character(base_df$PURPOSE)
 # base_df$PURPOSE <- purpose_type_df$name[match(base_df$purpose, purpose_type_df$code)]
+
 build_df <- build_data[["tmodeProfile_vis"]]
+build_df$TOURMODE <- factor(build_df$TOURMODE, levels=tourMode)
 build_df$PURPOSE <- as.character(build_df$PURPOSE)
 # build_df$PURPOSE <- purpose_type_df$name[match(build_df$purpose, purpose_type_df$code)]
 
@@ -1467,6 +1484,7 @@ sd.pertype <- get_standardDF(data_df1=base_df, data_df2=build_df, x="TOURMODE", 
                              grp = "PURPOSE", shared = T)
 p1 <- plotly_bar_plotter(data = sd.pertype, height = 375, xlabel = "Tour Mode [Zero Auto]", ylabel = "Percent",
                          ynames = c(BASE_SCENARIO_NAME, BUILD_SCENARIO_NAME), percent = T, 
+                         # tickvals = tourMode, 
                          # tickvals = seq(1,13), ticktext = tourMode,
                          bottom_offset = 55, tickangle = 300)
 p2 <- plotly_bar_plotter(data = sd.pertype, height = 375, xlabel = "Tour Mode [Autos < HH Adults]", ylabel = "Percent", 
@@ -1494,6 +1512,8 @@ filter_select("tourMode", "Select Tour Purpose", sd.pertype, ~grp_var,multiple=F
 Results of Tour Mode Choice Models, which selects a primary mode for each tour. 
 
 Distribution of tours by tour mode and the ratio of autos to drivers in the household.
+
+"Advanced mobility" is shorthand for air mobility, loop, or high-speed rail
 
 
 Chart Column 2 {data-width=400}
@@ -1716,7 +1736,7 @@ Description {.sidebar data-width=175}
 
 Results of the Stop Departure Time Choice Model. The departure time of each stop on the tour is currently implemented as a Monte Carlo choice of time period from distributions generated from survey data.
 
-The entire day is divided into 40 half-hour bins (The first bin includes 3:00 AM to 5:00 AM and the last bin includes 12:00 PM to 3:00 AM).
+The entire day is divided into 48 half-hour bins, starting at 3:00AM.
 
 **Trip Departure**
 
@@ -1809,6 +1829,8 @@ The results of the Trip Mode Choice Model, which predicts the mode of each trip 
 
 Distribution of trips by trip mode and tour mode, which constrains the availability of each trip mode and influences the utility of each available trip mode.
 
+"Advanced mobility" is shorthand for air mobility, loop, or high-speed rail
+
 ### Trip Mode Choice
 ```{r tripMode}
 base_df <- base_data[["tripModeProfile_vis"]]
@@ -1816,7 +1838,9 @@ build_df <- build_data[["tripModeProfile_vis"]]
 
 # change purpose names to standard format
 base_df$PURPOSE <- as.character(base_df$PURPOSE)
+base_df$TRIPMODE <- factor(base_df$TRIPMODE, levels=tripMode)
 build_df$PURPOSE <- as.character(build_df$PURPOSE)
+build_df$TRIPMODE <- factor(build_df$TRIPMODE, levels=tripMode)
 # base_df$purpose <- purpose_type_df$name[match(base_df$purpose, purpose_type_df$code)]
 # build_df$purpose <- purpose_type_df$name[match(build_df$purpose, purpose_type_df$code)]
 
@@ -1825,6 +1849,8 @@ sd.purpose <- get_standardDF(data_df1=base_df, data_df2=build_df, x="TRIPMODE", 
 
 p <- plotly_bar_plotter(data = sd.purpose, height = 700, xlabel = "Trip Mode", ylabel = "Percent",
                         ynames = c(BASE_SCENARIO_NAME, BUILD_SCENARIO_NAME), percent = T,
+                        # tickvals = tripMode, 
+                        tickangle = -45,
                         # tickvals = seq(1,13), ticktext = tripMode,
                         bottom_offset = 75)
 
@@ -1844,38 +1870,38 @@ bscols(widths=c(12),
 
 ```
 
-Count vs Volume{data-navmenu="Assignment"}
-============================================
+<!-- Count vs Volume{data-navmenu="Assignment"} -->
+<!-- ============================================ -->
 
-Description {.sidebar data-width=175}
---------------------------------------------
+<!-- Description {.sidebar data-width=175} -->
+<!-- -------------------------------------------- -->
 
-********
+<!-- ******** -->
 
-**Link level count comparison**
+<!-- **Link level count comparison** -->
 
-Results of auto assignment.
+<!-- Results of auto assignment. -->
 
-Comparison of observed counts and assigned volumes on each link with a counted volume, by assignment time period.
-
-
-Chart Column 2{.tabset}
---------------------------------------------
-
-### Count vs Volume by Facility Type{data-height=575}
-```{r count_vol1}
+<!-- Comparison of observed counts and assigned volumes on each link with a counted volume, by assignment time period. -->
 
 
-```
+<!-- Chart Column 2{.tabset} -->
+<!-- -------------------------------------------- -->
 
-### Count vs Volume - All Links{data-height=575}
-```{r count_vol2}
-
-```
-
-### Gap Statistics{data-height=575}
-```{r count_vol3}
+<!-- ### Count vs Volume by Facility Type{data-height=575} -->
+<!-- ```{r count_vol1} -->
 
 
-```
+<!-- ``` -->
+
+<!-- ### Count vs Volume - All Links{data-height=575} -->
+<!-- ```{r count_vol2} -->
+
+<!-- ``` -->
+
+<!-- ### Gap Statistics{data-height=575} -->
+<!-- ```{r count_vol3} -->
+
+
+<!-- ``` -->
 

@@ -5,10 +5,14 @@ rm(list=ls())
 parseJSON = function(json_obj) {
   # isString = is.character(json_obj) & length(json_obj) == 1
   isDF = all(grepl('\\[\\\n', json_obj) & length(json_obj) == 1)
+  
+  isGeojson = grepl('FeatureCollection', json_obj)
 
   # Check if dataframe object
-  if (isDF) {
+  if (isDF & !isGeojson) {
     return( data.table::as.data.table(jsonlite::fromJSON(json_obj)) )
+  } else if (isGeojson){
+    return(sf::st_read(json_obj, quiet=TRUE))
   }
   else {
     return( json_obj )
@@ -52,8 +56,7 @@ installed_packages = SYSTEM_REPORT_PKGS %in% rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
   install.packages(SYSTEM_REPORT_PKGS[!installed_packages])
 }
-lapply(SYSTEM_REPORT_PKGS, library, character.only = TRUE)
-
+for(pkg in SYSTEM_REPORT_PKGS) library(pkg, character.only = TRUE)
 
 ### Generate dashboard
 rmarkdown::render(TEMPLATE_PATH, output_dir = working_dir,

@@ -50,12 +50,10 @@ class Visualizer(base.BaseModule,
             'Missing base and build specifications'
 
         for scenario, data in self.input_tables.items():
-
+            if scenario == 'shared_data':
+                continue
             # This data will get passed to the summaries
             self.scenario_data = data
-
-            # FIXME One off fix for dubai
-            # drop_labourers = True if scenario == 'build' else False
 
             # Generate intermediate data
             self.modify_input_data()
@@ -153,10 +151,10 @@ class Visualizer(base.BaseModule,
         # FIXME this will need to be corrected in future versions
         if self.constants.get('IS_BASE_SURVEY'):
             #   Survey Base
-            BASE_SCENARIO_ALT = "IBI"
-            DISTRICT_FLOW_CENSUS = "IBI"
-            AO_CENSUS_SHORT = "IBI"
-            AO_CENSUS_LONG = "IBI"
+            BASE_SCENARIO_ALT = "Survey"
+            DISTRICT_FLOW_CENSUS = "Survey"
+            AO_CENSUS_SHORT = "Survey"
+            AO_CENSUS_LONG = "Survey"
         else:
             #   Non-Survey Base
             BASE_SCENARIO_ALT = self.constants.get('BASE_SCENARIO_NAME')
@@ -192,6 +190,7 @@ class Visualizer(base.BaseModule,
             'DISTRICT_FLOW_CENSUS': DISTRICT_FLOW_CENSUS,
             'AO_CENSUS_SHORT': AO_CENSUS_SHORT,
             'AO_CENSUS_LONG': AO_CENSUS_LONG,
+            'zone_map': self.input_tables['shared_data']['zones_gis']
         }
 
         # Concatenate the parameters for JSON

@@ -284,7 +284,7 @@ class Trip:
         # if no access leg was found
         if len(_access_mode) == 0:
             # assume access was by walk
-            _access_mode.append(TRIP_MODE["WALK"])  # note: OHAS code for walk mode is 1
+            _access_mode.append(TRIP_MODE["Walk"])  # note: OHAS code for walk mode is 1
 
         # Second, loop through transit legs
         # Need to make sure row pointer does not go past the end of the rows (in the event of missing egress legs)
@@ -355,7 +355,7 @@ class Trip:
         # if no egress leg was found
         if len(_egress_mode) == 0:
             # assume access was by walk
-            _egress_mode.append(TRIP_MODE["WALK"])  # note: OHAS code for walk mode is 1
+            _egress_mode.append(TRIP_MODE["Walk"])  # note: OHAS code for walk mode is 1
 
         return _access_mode, _egress_mode
 
@@ -570,20 +570,15 @@ class Trip:
         TRIP_MODE = self.constants.get("TRIPMODE")
         DRIVER = self.constants.get("DRIVER")
         PURPOSE = self.constants.get("PURPOSE")
-        SURVEY_PU_PURP_CODE = self.constants.get("SURVEY_PU_PURP_CODE")
-        TRANSIT_ACCESS = self.constants.get("TRANSIT_ACCESS")
         JOINT_CAT = self.constants.get("JOINT_CAT")
         TOLL = self.constants.get("TOLL")
         ESCORT_EVENT = self.constants.get("ESCORT_EVENT")
-        ESCORT_TYPE = self.constants.get("ESCORT_TYPE")
-        SURVEY_DO_PURP_CODE = self.constants.get("SURVEY_DO_PURP_CODE")
         COMPUTE_TRIP_DIST = self.constants.get("COMPUTE_TRIP_DIST")
 
         TRIP_MODE_INVERSE = {v: k for k, v in TRIP_MODE.items()}
         TRANSIT_MODE_NAMES = [TRIP_MODE_INVERSE[x] for x in TRANSIT_MODES]
 
         # TRANS_MODES = {k: v for k,v in TRIP_MODE.items() if any([a for a in ['WALK-', 'PNR-', 'KNR-'] if a in k])}
-
         # trip origin: 1st place on trip
         self.fields["ORIG_PLACENO"] = df["PLANO"].iloc[0]
         self.fields["ORIG_X"] = df["XCORD"].iloc[0]
@@ -669,10 +664,10 @@ class Trip:
 
         # _any_transit = list(set(_new_mode).intersection(TRANSIT_MODES))
 
-        if "HOV3+" in _new_mode:
-            _new_mode = ["HOV3+"]
-        if "HOV2" in _new_mode:
-            _new_mode = ["HOV2"]
+        if "Shared 3+" in _new_mode:
+            _new_mode = ["Shared 3+"]
+        if "Shared 2" in _new_mode:
+            _new_mode = ["Shared 2"]
         # If transit
         if _any_transit:
             _new_mode = _any_transit
@@ -857,10 +852,16 @@ class Trip:
         # TODO: in MTC, DO & PU are coded the same
         _PU = 0
         _DO = 0
+
+        pickups = [v for k, v in self.constants.get('ESCORT_EVENT').items() if 'PICK_UP' in k]
+        dropoffs = [v for k, v in self.constants.get('ESCORT_EVENT').items() if 'DROP_OFF' in k]
+
         for row_index in range(1, _last_row + 1):
-            if df["TPURP"].iloc[row_index] == SURVEY_PU_PURP_CODE:
+            if df['ESCORT_EVENT'].iloc[row_index] in pickups:
+            # if df["TPURP"].iloc[row_index] == SURVEY_PU_PURP_CODE:
                 _PU = _PU + 1
-            elif df["TPURP"].iloc[row_index] == SURVEY_DO_PURP_CODE:
+            # elif df["TPURP"].iloc[row_index] == SURVEY_DO_PURP_CODE:
+            elif df['ESCORT_EVENT'].iloc[row_index] in dropoffs:
                 _DO = _DO + 1
         if (_PU > 0) & (_DO > 0):
             self.fields["DEST_ESCORTING"] = ESCORT_EVENT[

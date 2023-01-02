@@ -6,7 +6,8 @@ import pandas_weighting
 import pandas as pd
 import numpy as np
 from collections import defaultdict
-
+import geopandas as gpd
+import fiona
 
 class JSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -16,7 +17,11 @@ class JSONEncoder(json.JSONEncoder):
         """
         # Pandas dataframes have a to_json() method, so we'll check for that and
         # return it if so.
-        if hasattr(obj, 'to_json'):
+
+        if hasattr(obj, 'geometry'):
+            return obj.to_json(indent=2)
+
+        if hasattr(obj, 'to_json') and not hasattr(obj, 'geometry'):
             return obj.to_json(orient='records', indent=2)
 
         # Numpy objects report themselves oddly in error logs, but this generic
@@ -108,10 +113,17 @@ def read_tables_recursively(file_dict):
             )
             table_dir = table_dir[0]
 
-        if not table_dir:
-            print('ddd')
+        filename, file_extension = os.path.splitext(table_dir)
+        if file_extension == '.csv':
+            df = pd.read_csv(table_dir, index_col=index_col)
+        if file_extension == '.kml':
+            gpd.io.file.fiona.drvsupport.supported_drivers['KML'] = 'rw'
+            df = gpd.read_file(table_dir, driver='KML')
+        if file_extension in ['.shp', '.geojson']:
+            df = gpd.read_file(table_dir)
 
-        return pd.read_csv(table_dir, index_col=index_col)
+        return df
+
 
     def scan_tables(file_dict, inner_dict={}):
         if not inner_dict:
@@ -120,7 +132,11 @@ def read_tables_recursively(file_dict):
             if isinstance(table_params, dict) and not table_params.get("read_csv", True):
                 continue
 
-            if isinstance(table_params, str) and '.csv' in table_params:
+            if isinstance(table_params, str):
+                filename, file_extension = os.path.splitext(table_params)
+                assert file_extension in ['.csv', '.shp', '.kml', '.geojson'], \
+                    f'Invalid file type {file_extension} for {table_params}'
+
                 table_dir = table_params
                 index_col = None
                 file_dict[table_name] = read_tables(table_dir, index_col)

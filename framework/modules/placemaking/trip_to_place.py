@@ -72,6 +72,7 @@ class TripsToPlace(base.BaseModule):
                 "PER6",
                 "TOTTR",
                 "TOTTR_NEXT",
+                'ESCORT_EVENT',
                 "HHMEM",
                 "MODE",
                 "TOLL_NO",
@@ -138,7 +139,7 @@ class TripsToPlace(base.BaseModule):
 
         # Set missing traveler vals
         place.loc[place.PLANO == 1, ["TOTTR", "HHMEM"]] = -1
-        place.loc[place.PLANO == 1, ["TPURP", "MODE", "DRIVER"]] = 0
+        place.loc[place.PLANO == 1, ["TPURP", "MODE", "DRIVER", "ESCORT_EVENT"]] = 0
         #
         per_cols = ["PER1", "PER2", "PER3", "PER4", "PER5", "PER6", "TOTTR_NEXT"]
         place[per_cols] = place[per_cols].fillna(0)

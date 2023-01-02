@@ -79,10 +79,13 @@ class SPTFramework:
         steps = self.settings.get("PROCESSING_STEPS")
         skip = True
 
-        assert (
-            self.settings.get("START_FROM")
-            in self.settings.get("PROCESSING_STEPS").keys()
-        ), f"Missing START_FROM step, did you mean one of these?: {self.settings.get('PROCESSING_STEPS').keys()}"
+        if not self.settings.get("START_FROM"):
+            self.settings['START_FROM'] = next(iter(steps))
+
+        # assert (
+        #     self.settings.get("START_FROM")
+        #     in self.settings.get("PROCESSING_STEPS").keys()
+        # ), f"Missing START_FROM step, did you mean one of these?: {self.settings.get('PROCESSING_STEPS').keys()}"
 
         for class_name, params in steps.items():
             print(f"Running {class_name} module...")

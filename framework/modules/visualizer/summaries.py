@@ -172,18 +172,30 @@ class VisualizerSummaries:
         df_perday = deepcopy(self.intermediate_data['person_day'])
 
         # Code MTF
-        df_perday['MTF'] = 0
-        df_perday['MTF'] = df_perday.work_count.clip(0, 2)
-        df_perday['MTF'] = df_perday.schl_count.clip(0, 2) + 3
+        # '1 Work': 1
+        df_perday.loc[(df_perday.schl_count == 0) & (df_perday.work_count == 1), 'MTF'] = 1
+        # '2 Work'
+        df_perday.loc[(df_perday.schl_count == 0) & (df_perday.work_count > 1), 'MTF'] = 2
+        # '1 School'
+        df_perday.loc[(df_perday.schl_count == 1) & (df_perday.work_count == 0), 'MTF'] = 3
+        # '2 School':
+        df_perday.loc[(df_perday.schl_count > 1) & (df_perday.work_count == 0), 'MTF'] = 4
+        # '1 Work & 1 School'
         df_perday.loc[(df_perday.schl_count > 0) & (df_perday.work_count > 0), 'MTF'] = 5
 
-    #     plyr::count(perday[perday$mtf > 0,], c("PERTYPE", "mtf"), "finalweight_1")
         # Get summary counts
         mtf_summary = self.get_weighted_sum(df=df_perday,
                                             grp_cols=['PERSONTYPE', 'MTF'],
                                             wt_col='PER_WEIGHT',
                                             label_cols=['PERSONTYPE', 'MTF'],
-                                            total_along='PERSONTYPE')
+                                            total_along='PERSONTYPE').set_index(['PERSONTYPE', 'MTF'])
+
+        # Fill in NA person types
+        _index = pd.MultiIndex.from_product([
+            self.constants['PERSONTYPE'].keys(),
+            self.constants['MTF'].keys()
+        ], names=['PERSONTYPE', 'MTF'])
+        mtf_summary = mtf_summary.reindex(index=_index).fillna(0)
 
         return mtf_summary.reset_index()
 
@@ -192,7 +204,8 @@ class VisualizerSummaries:
                                              grp_cols=['PERSONTYPE'],
                                              wt_col='PER_WEIGHT',
                                              label_cols='PERSONTYPE',
-                                             total_along='PERSONTYPE')
+                                             # total_along='PERSONTYPE'
+                                             )
         # pertype_dist.loc[-1] = ('Total', pertype_dist.freq.sum())
         return pertype_dist
 
@@ -363,6 +376,17 @@ class VisualizerSummaries:
         df_vmt.loc[df_vmt.TRIPMODE == 3, 'NUM_TRAVEL'] = 3.5
         # distance * trip weight / num_travel
 
+        # Raw stops per person
+        # self.intermediate_data['stops'].index.size / self.scenario_data['spa_person'].PER_ID.size
+        # self.scenario_data['spa_trips'].index.size / self.scenario_data['spa_household'].HH_ID.size
+
+        # import matplotlib.pyplot as plt
+        #
+        # x = self.scenario_data['spa_trips'].groupby(['HH_ID', 'PER_ID']).size()
+        # counts, bins = np.histogram(x)
+        # plt.stairs(counts, bins)
+        # plt.show()
+
         totals = {
             'total_population': self.pertypeDistbn().freq.sum(),
             'total_households': self.scenario_data['spa_household'].HH_WEIGHT.sum(),
@@ -402,8 +426,9 @@ class VisualizerSummaries:
         df_tlfd.columns.name = None
 
         # Reindex to ensure all districts & bin breaks included
-        df_zones = self.scenario_data['zones']
-        district_list = df_zones.DISTRICT.dropna().unique()
+        district_list = self.intermediate_data['xwalk'].DISTRICT.unique()
+        # df_zones = self.scenario_data['zones']
+        # district_list = df_zones.DISTRICT.dropna().unique()
         df_tlfd = df_tlfd.reindex(index=bin_breaks)
         df_tlfd = df_tlfd.T.reindex(index=district_list).T.fillna(0).reset_index()
 
@@ -428,8 +453,9 @@ class VisualizerSummaries:
         df_tlfd.columns.name = None
 
         # Reindex to ensure all districts included
-        df_zones = self.scenario_data['zones']
-        district_list = df_zones.DISTRICT.dropna().unique()
+        district_list = self.intermediate_data['xwalk'].DISTRICT.unique()
+        # df_zones = self.scenario_data['zones']
+        # district_list = df_zones.DISTRICT.dropna().unique()
         df_tlfd = df_tlfd.reindex(index=bin_breaks)
         df_tlfd = df_tlfd.T.reindex(index=district_list).T.fillna(0).reset_index()
 
@@ -454,8 +480,9 @@ class VisualizerSummaries:
         df_tlfd.columns.name = None
 
         # Reindex to ensure all districts included
-        df_zones = self.scenario_data['zones']
-        district_list = df_zones.DISTRICT.dropna().unique()
+        district_list = self.intermediate_data['xwalk'].DISTRICT.unique()
+        # df_zones = self.scenario_data['zones']
+        # district_list = df_zones.DISTRICT.dropna().unique()
         df_tlfd = df_tlfd.reindex(index=bin_breaks)
         df_tlfd = df_tlfd.T.reindex(index=district_list).T.fillna(0).reset_index()
 
@@ -469,9 +496,18 @@ class VisualizerSummaries:
 
         flows = pd.crosstab(index=workers.HDISTRICT, columns=workers.WDISTRICT,
                             values=workers.PER_WEIGHT, aggfunc=sum,
-                            dropna=False, margins=True, margins_name='Total').fillna(0)
+                            dropna=False, margins=True, margins_name='Total').fillna(0).reset_index()
 
-        return flows.reset_index()
+        # Fill in missing
+        districts = np.sort(workers[['HDISTRICT', 'WDISTRICT']].melt().dropna().value.unique())
+        districts = np.append(districts, 'Total')
+        _index = pd.MultiIndex.from_product([districts, districts], names=['HDISTRICT', 'WDISTRICT'])
+
+        flows_all = flows.melt(id_vars='HDISTRICT').set_index(['HDISTRICT', 'WDISTRICT'])
+        flows_all = flows_all.reindex(index=_index).reset_index()
+        flows_all = flows_all.pivot(index='HDISTRICT', columns='WDISTRICT', values='value').fillna(0)
+
+        return flows_all.reset_index()
 
     def tmodeProfile_vis(self):
         df_tours = deepcopy(self.scenario_data['spa_tours'])
@@ -501,19 +537,30 @@ class VisualizerSummaries:
 
     # FIXME Just copying from R output for now
     def esctype_by_childtype(self):
-        path = os.path.join(self.namespace.data,
+        # tours = deepcopy(self.scenario_data['spa_tours'])
+        #
+        # tours[['PERSONTYPE', 'OUT_ESCORT_TYPE', 'INB_ESCORT_TYPE', 'OUT_CHAUFFUER_PTYPE', 'INB_CHAUFFUER_PTYPE']]
+        #
+        #
+        # tmp = self.get_weighted_sum(
+        #     df=tours,
+        #     grp_cols=['PERSONTYPE', 'OUT_ESCORT_TYPE'],
+        #     wt_col='TOUR_WEIGHT'
+        # )
+
+        path = os.path.join(self.namespace.output,
                             'visualizer/summaries',
                             'esctype_by_childtype.csv')
         return pd.read_csv(path)
 
     def esctype_by_chauffeurtype(self):
-        path = os.path.join(self.namespace.data,
+        path = os.path.join(self.namespace.output,
                             'visualizer/summaries',
                             'esctype_by_chauffeurtype.csv')
         return pd.read_csv(path)
 
     def worker_school_escorting(self):
-        path = os.path.join(self.namespace.data,
+        path = os.path.join(self.namespace.output,
                             'visualizer/summaries',
                             'worker_school_escorting.csv')
         return pd.read_csv(path)

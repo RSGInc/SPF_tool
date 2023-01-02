@@ -1,14 +1,14 @@
 # Visualizer settings
 # TODO cleanup redundancies
 
-Key: Value
+# Key: Value
 BASE_SCENARIO_NAME: Survey
 BUILD_SCENARIO_NAME: Model
 BASE_SAMPLE_RATE: 1.0
 BUILD_SAMPLE_RATE: 1.000
-MAX_ITER: 1
+# MAX_ITER: 1
 OUTPUT_HTML_NAME: dubai_visualizer.html
-R_LIBRARY: C:\projects\metc-asim-model\Visualizer\contrib\RPKG
+# R_LIBRARY: C:\projects\metc-asim-model\Visualizer\contrib\RPKG
 # FULL_HTML_NAME: MetCouncil_visualizer
 # CT_ZERO_AUTO_FILE_NAME: ct_zero_auto.shp
 IS_BASE_SURVEY: Yes

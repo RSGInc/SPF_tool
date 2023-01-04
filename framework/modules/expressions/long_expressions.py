@@ -33,12 +33,13 @@ class LongExpressions:
 
         return xy[coord_type].squeeze()
 
-
     def get_WXYCORD(self, coord_type):
         trip = self.input_tables['trip']
 
         # Get fixed work locations
         worktrips = trip[trip.trip_purp.isin([1])]
+
+        # Set fixed locations when purpose always goes to same place
         fixed_work_trips_idx = worktrips[
             worktrips.groupby("person_id").dest_latlon.transform("count") == 1
         ].index
@@ -53,7 +54,6 @@ class LongExpressions:
             .set_index("trip_id")[coord_type]
         )
         return person_trips_xy.squeeze()
-
 
     def get_fixed_XYCORD(self, coord_type, purposes):
         trip = self.input_tables['trip']
@@ -108,7 +108,6 @@ class LongExpressions:
 
         return n_companions
 
-
     def get_buffer_dist(self):
         trip = self.input_tables['trip']
 
@@ -123,7 +122,6 @@ class LongExpressions:
         )
 
         return dist
-
 
     def get_hov(self, hov_type):
         trip = self.input_tables['trip']
@@ -177,7 +175,6 @@ class LongExpressions:
             return (is_driver & one_pax) | (is_pax & ~twomore_pax)
         if hov_type == "HOV3+":
             return (is_driver & twomore_pax) | (is_pax & twomore_pax)
-
 
     def get_transit_type(self, mode):
 
@@ -309,7 +306,6 @@ class LongExpressions:
         trip = deepcopy(self.input_tables['trip'])
         return (trip.trip_num == 1) & (trip.trip_purp == 8)
 
-
     def convert_taz(self, old_taz):
         zones = deepcopy(self.input_tables['zone']).reset_index()[['OLDZONE', 'zone_id']]
         zones = zones[~zones.OLDZONE.isnull()]
@@ -330,9 +326,6 @@ class LongExpressions:
 
         return new_taz.zone_id.astype(int)
 
-
-
-
     def get_fixed_TAZ(self, purpose):
         trip = deepcopy(self.input_tables['trip'])
         person = deepcopy(self.input_tables['person'])
@@ -347,4 +340,3 @@ class LongExpressions:
         taz = self.convert_taz(taz)
 
         return taz
-

@@ -261,9 +261,14 @@ class VisualizerIntermediateData:
         skims = deepcopy(self.intermediate_data['faux_skims'])
 
         # Merge TOUR OD TAZ to trips
-        tours = tours.rename(columns={'ORIG_TAZ': 'TOUROTAZ', 'DEST_TAZ': 'TOURDTAZ'}).reset_index()
+        tours = tours.rename(columns={'ORIG_TAZ': 'TOUROTAZ',
+                                      'DEST_TAZ': 'TOURDTAZ',
+                                      'ORIG_X': 'TOUROX',
+                                      'ORIG_Y': 'TOUROY',
+                                      'DEST_X': 'TOURDX',
+                                      'DEST_Y': 'TOURDY'}).reset_index()
         trips = trips.merge(
-            tours[['HH_ID', 'PER_ID', 'TOUR_ID', 'DAYNO', 'TOUROTAZ', 'TOURDTAZ']],
+            tours[['HH_ID', 'PER_ID', 'TOUR_ID', 'DAYNO', 'TOUROTAZ', 'TOURDTAZ', 'TOURDX', 'TOURDY', 'TOUROX', 'TOUROY']],
             how='left',
             on=['HH_ID', 'PER_ID', 'TOUR_ID', 'DAYNO']
         )
@@ -275,19 +280,46 @@ class VisualizerIntermediateData:
                       (stops.TOURDTAZ != 0) & (stops.TOUROTAZ != 0)]
 
         # Assign final taz
-        stops.loc[stops.IS_INBOUND == 0, 'FINAL_TAZ'] = stops.loc[stops.IS_INBOUND == 0, 'TOURDTAZ']
-        stops.loc[stops.IS_INBOUND == 1, 'FINAL_TAZ'] = stops.loc[stops.IS_INBOUND == 1, 'TOUROTAZ']
+        # stops.loc[stops.IS_INBOUND == 0, 'FINAL_TAZ'] = stops.loc[stops.IS_INBOUND == 0, 'TOURDTAZ']
+        # stops.loc[stops.IS_INBOUND == 1, 'FINAL_TAZ'] = stops.loc[stops.IS_INBOUND == 1, 'TOUROTAZ']
 
-        # Get Origin final Destination dist (OD), origin to stop dist (OS), Stop to final dest dist (SD)
-        od = list(zip(stops.ORIG_TAZ, stops.FINAL_TAZ.astype(int)))
-        os = list(zip(stops.ORIG_TAZ, stops.DEST_TAZ.astype(int)))
-        sd = list(zip(stops.DEST_TAZ, stops.FINAL_TAZ.astype(int)))
+        final_cols = ['FINAL_TAZ', 'FINAL_X', 'FINAL_Y']
+        dtour_cols = ['TOURDTAZ', 'TOURDX', 'TOURDY']
+        otour_cols = ['TOUROTAZ', 'TOUROX', 'TOUROY']
 
-        # Assign distances from skim matrix
-        stops['OD_DIST'] = skims.loc[od].DISTANCE.to_list()
-        stops['OS_DIST'] = skims.loc[os].DISTANCE.to_list()
-        stops['SD_DIST'] = skims.loc[sd].DISTANCE.to_list()
+        stops_loc = pd.concat([
+            stops.loc[stops.IS_INBOUND == 0, dtour_cols].rename(columns=dict(zip(dtour_cols, final_cols))),
+            stops.loc[stops.IS_INBOUND == 1, otour_cols].rename(columns=dict(zip(otour_cols, final_cols)))
+        ], axis=0).sort_index()
+        stops = stops.join(stops_loc)
+
+        # # TAZ
+        # # Get Origin final Destination dist (OD), origin to stop dist (OS), Stop to final dest dist (SD)
+        # od = list(zip(stops.ORIG_TAZ, stops.FINAL_TAZ.astype(int)))
+        # os = list(zip(stops.ORIG_TAZ, stops.DEST_TAZ.astype(int)))
+        # sd = list(zip(stops.DEST_TAZ, stops.FINAL_TAZ.astype(int)))
+        #
+        # # Assign distances from skim matrix
+        # stops['OD_DIST'] = skims.loc[od].DISTANCE.to_list()
+        # stops['OS_DIST'] = skims.loc[os].DISTANCE.to_list()
+        # stops['SD_DIST'] = skims.loc[sd].DISTANCE.to_list()
+        # stops['OUT_DIR_DIST'] = (stops.OS_DIST + stops.SD_DIST) - stops.OD_DIST
+
+        # Assign distances from XY
+        stops['OD_DIST'] = utils.distance_on_unit_sphere(
+            lat1=stops.ORIG_Y, long1=stops.ORIG_X, lat2=stops.FINAL_Y, long2=stops.FINAL_X
+        )
+        stops['OS_DIST'] = utils.distance_on_unit_sphere(
+            lat1=stops.ORIG_Y, long1=stops.ORIG_X, lat2=stops.DEST_Y, long2=stops.DEST_X
+        )
+        stops['SD_DIST'] = utils.distance_on_unit_sphere(
+            lat1=stops.DEST_Y, long1=stops.DEST_X, lat2=stops.FINAL_Y, long2=stops.FINAL_X
+        )
         stops['OUT_DIR_DIST'] = (stops.OS_DIST + stops.SD_DIST) - stops.OD_DIST
+
+        # import matplotlib.pyplot as plt
+        # stops['OUT_DIR_DIST'].hist(bins=100)
+        # plt.show()
 
         self.intermediate_data['stops'] = stops
 

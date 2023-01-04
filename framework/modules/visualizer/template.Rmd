@@ -688,55 +688,55 @@ p <- plotly_bar_plotter(data = std_DF, xlabel = "Number of Vehicles", ylabel = "
 p
 ```
 
-<!-- ### Auto Ownership - Autonomous Vehicles{data-height=150} -->
-<!-- ```{r Chart_AV_Ownership} -->
-<!-- base_pos <- which(base_data_names=="autoOwnership_AV") -->
-<!-- base_df <- base_data[[base_pos]] -->
-<!-- build_pos <- which(build_data_names=="autoOwnership_AV") -->
-<!-- build_df <- build_data[[build_pos]] -->
+### Auto Ownership - Autonomous Vehicles{data-height=150}
+```{r Chart_AV_Ownership}
+# base_pos <- which(base_data_names=="autoOwnership_AV")
+# base_df <- base_data[[base_pos]]
+# build_pos <- which(build_data_names=="autoOwnership_AV")
+# build_df <- build_data[[build_pos]]
+# 
+# colnames(build_df) <- colnames(base_df)
+# 
+# std_DF_AV <- get_standardDF(data_df1 = base_df, data_df2 = build_df, x = "AVs", y = c("freq"))
+# 
+# p <- plotly_bar_plotter(data = std_DF_AV, xlabel = "Number of AVs", ylabel = "Percent", ynames = c(AO_CENSUS_SHORT, BUILD_SCENARIO_NAME), percent = T, height = 175)
+# p
+```
 
-<!-- colnames(build_df) <- colnames(base_df) -->
+### {data-height=140}
+```{r Gauge_WFH1}
+#cat("Working from home: ACS 2015 1 YR", " vs. ", BUILD_SCENARIO_NAME)
 
-<!-- std_DF_AV <- get_standardDF(data_df1 = base_df, data_df2 = build_df, x = "AVs", y = c("freq")) -->
+# base_df <- base_data[[which(base_data_names=="wfh_summary_region")]]
+# rate <- base_df$WFH/base_df$Workers
+# gauge1 <- gauge(round(rate*100, 1), min = 0, max = 100, symbol = '%', gaugeSectors(danger =  c(0,1), colors = c("Green", "Green", "Green")))
+# 
+# build_df <- build_data[[which(build_data_names=="wfh_summary_region")]]
+# rate <- build_df$WFH/build_df$Workers
+# gauge2 <- gauge(round(rate*100, 1), min = 0, max = 100, symbol = '%', gaugeSectors(danger =  c(0,1), colors = c("Green", "Green", "Green")))
+# 
+# bscols(widths = c(6,6),
+#   gauge1,
+#   gauge2
+# )
 
-<!-- p <- plotly_bar_plotter(data = std_DF_AV, xlabel = "Number of AVs", ylabel = "Percent", ynames = c(AO_CENSUS_SHORT, BUILD_SCENARIO_NAME), percent = T, height = 175) -->
-<!-- p -->
-<!-- ``` -->
+```
 
-<!-- ### {data-height=140} -->
-<!-- ```{r Gauge_WFH1} -->
-<!-- #cat("Working from home: ACS 2015 1 YR", " vs. ", BUILD_SCENARIO_NAME) -->
+### Percentage Working From Home{data-height=175}
+```{r Chart_WFH}
+# base_df <- base_data[[which(base_data_names=="wfh_summary")]]
+# base_df$share <- base_df$WFH/base_df$Workers
+# 
+# build_df <- build_data[[which(build_data_names=="wfh_summary")]]
+# build_df$share <- build_df$WFH/build_df$Workers
+# 
+# std_DF <- cbind(base_df[,c("District", "share")], build_df[,c("share")])
+# colnames(std_DF) <- c("xvar", "prop1", "prop2")
+# 
+# p <- plotly_bar_plotter(data = std_DF, xlabel = "District", ylabel = "Percent WFH", ynames = c(BASE_SCENARIO_NAME, BUILD_SCENARIO_NAME), percent = T, height = 200)
+# p
 
-<!-- base_df <- base_data[[which(base_data_names=="wfh_summary_region")]] -->
-<!-- rate <- base_df$WFH/base_df$Workers -->
-<!-- gauge1 <- gauge(round(rate*100, 1), min = 0, max = 100, symbol = '%', gaugeSectors(danger =  c(0,1), colors = c("Green", "Green", "Green"))) -->
-
-<!-- build_df <- build_data[[which(build_data_names=="wfh_summary_region")]] -->
-<!-- rate <- build_df$WFH/build_df$Workers -->
-<!-- gauge2 <- gauge(round(rate*100, 1), min = 0, max = 100, symbol = '%', gaugeSectors(danger =  c(0,1), colors = c("Green", "Green", "Green"))) -->
-
-<!-- bscols(widths = c(6,6), -->
-<!--   gauge1, -->
-<!--   gauge2 -->
-<!-- ) -->
-
-<!-- ``` -->
-
-<!-- ### Percentage Working From Home{data-height=175} -->
-<!-- ```{r Chart_WFH} -->
-<!-- base_df <- base_data[[which(base_data_names=="wfh_summary")]] -->
-<!-- base_df$share <- base_df$WFH/base_df$Workers -->
-
-<!-- build_df <- build_data[[which(build_data_names=="wfh_summary")]] -->
-<!-- build_df$share <- build_df$WFH/build_df$Workers -->
-
-<!-- std_DF <- cbind(base_df[,c("District", "share")], build_df[,c("share")]) -->
-<!-- colnames(std_DF) <- c("xvar", "prop1", "prop2") -->
-
-<!-- p <- plotly_bar_plotter(data = std_DF, xlabel = "District", ylabel = "Percent WFH", ynames = c(BASE_SCENARIO_NAME, BUILD_SCENARIO_NAME), percent = T, height = 200) -->
-<!-- p -->
-
-<!-- ``` -->
+```
 
 
 
@@ -746,59 +746,59 @@ Chart Column 2 {data-width=350}
 
 ### Mandatory TLFD{data-height=475}
 ```{r mandatoryTLFD}
-base_df1 <- base_data[["workTLFD"]]
-base_df1 <- melt(base_df1, id = c("distbin"))
-
-base_df2 <- base_data[["univTLFD"]]
-base_df2 <- melt(base_df2, id = c("distbin"))
-
-base_df3 <- base_data[["schlTLFD"]]
-base_df3 <- melt(base_df3, id = c("distbin"))
-
-# base_df <- merge(base_df1, base_df2, by=c('distbin','variable'))
-# base_df <- merge(base_df, base_df3, by=c('distbin','variable'))
-
-base_df <- cbind(base_df1, base_df2$value, base_df3$value)
-colnames(base_df) <- c("distbin","variable","value1","value2","value3")
-
-build_df1 <- build_data[["workTLFD"]]
-build_df1 <- melt(build_df1, id = c("distbin"))
-
-build_df2 <- build_data[["univTLFD"]]
-build_df2 <- melt(build_df2, id = c("distbin"))
-
-build_df3 <- build_data[["schlTLFD"]]
-build_df3 <- melt(build_df3, id = c("distbin"))
-
-build_df <- cbind(build_df1, build_df2$value, build_df3$value)
-colnames(build_df) <- c("distbin","variable","value1","value2","value3")
-
-sd.purpose <- get_sharedData(data_df1 = build_df, 
-                             data_df2 = base_df,
-                             run1_name = BUILD_SCENARIO_NAME,
-                             run2_name = BASE_SCENARIO_NAME,
-                             x = "distbin", 
-                             y = c("value1", "value2", "value3"),
-                             grp = "variable")
-
-p1 <- plotly_density_plotter(sd.purpose, index = "one", xlabel = "Kilometers to Work", percent = T,
-                             tickvals = seq(1,40,5), ticktext = seq(0,40,5),
-                             height = 240)
-
-
-p2 <- plotly_density_plotter(sd.purpose, index = "two", xlabel = "Kilometers to University", percent = T,
-                             tickvals = seq(1,40,5), ticktext = seq(0,40,5),
-                             height = 240)
-p3 <- plotly_density_plotter(sd.purpose, index = "three", xlabel = "Kilometers to School", percent = T, 
-                             tickvals = seq(1,40,5), ticktext = seq(0,40,5),
-                             height = 240)
-
-bscols(widths=c(12),
-  list(filter_select("Purpose_County", "Select District", sd.purpose, ~grp_var,multiple=F),
-  p1,
-  p2,
-  p3)
-  )
+# base_df1 <- base_data[["workTLFD"]]
+# base_df1 <- melt(base_df1, id = c("distbin"))
+# 
+# base_df2 <- base_data[["univTLFD"]]
+# base_df2 <- melt(base_df2, id = c("distbin"))
+# 
+# base_df3 <- base_data[["schlTLFD"]]
+# base_df3 <- melt(base_df3, id = c("distbin"))
+# 
+# # base_df <- merge(base_df1, base_df2, by=c('distbin','variable'))
+# # base_df <- merge(base_df, base_df3, by=c('distbin','variable'))
+# 
+# base_df <- cbind(base_df1, base_df2$value, base_df3$value)
+# colnames(base_df) <- c("distbin","variable","value1","value2","value3")
+# 
+# build_df1 <- build_data[["workTLFD"]]
+# build_df1 <- melt(build_df1, id = c("distbin"))
+# 
+# build_df2 <- build_data[["univTLFD"]]
+# build_df2 <- melt(build_df2, id = c("distbin"))
+# 
+# build_df3 <- build_data[["schlTLFD"]]
+# build_df3 <- melt(build_df3, id = c("distbin"))
+# 
+# build_df <- cbind(build_df1, build_df2$value, build_df3$value)
+# colnames(build_df) <- c("distbin","variable","value1","value2","value3")
+# 
+# sd.purpose <- get_sharedData(data_df1 = build_df, 
+#                              data_df2 = base_df,
+#                              run1_name = BUILD_SCENARIO_NAME,
+#                              run2_name = BASE_SCENARIO_NAME,
+#                              x = "distbin", 
+#                              y = c("value1", "value2", "value3"),
+#                              grp = "variable")
+# 
+# p1 <- plotly_density_plotter(sd.purpose, index = "one", xlabel = "Kilometers to Work", percent = T,
+#                              tickvals = seq(1,40,5), ticktext = seq(0,40,5),
+#                              height = 240)
+# 
+# 
+# p2 <- plotly_density_plotter(sd.purpose, index = "two", xlabel = "Kilometers to University", percent = T,
+#                              tickvals = seq(1,40,5), ticktext = seq(0,40,5),
+#                              height = 240)
+# p3 <- plotly_density_plotter(sd.purpose, index = "three", xlabel = "Kilometers to School", percent = T, 
+#                              tickvals = seq(1,40,5), ticktext = seq(0,40,5),
+#                              height = 240)
+# 
+# bscols(widths=c(12),
+#   list(filter_select("Purpose_County", "Select District", sd.purpose, ~grp_var,multiple=F),
+#   p1,
+#   p2,
+#   p3)
+#   )
 
 ```
 
@@ -1346,26 +1346,26 @@ Chart Column 1 {data-width=100}
 --------------------------------------------
 ### Non-Mandatory Tour Length Distribution{data-height=350}
 ```{r nm_tlfd}
-base_df <- base_data[["tourDistProfile_vis"]]
-build_df <- build_data[["tourDistProfile_vis"]]
-
-
-# change purpose names to standard format
-base_df$PURPOSE <- as.character(base_df$PURPOSE)
-build_df$PURPOSE <- as.character(build_df$PURPOSE)
-
-# base_df$PURPOSE <- purpose_type_df$name[match(base_df$PURPOSE, purpose_type_df$code)]
-# build_df$PURPOSE <- purpose_type_df$name[match(build_df$PURPOSE, purpose_type_df$code)]
-
-sd.purpose <- get_sharedData(data_df1 = base_df, data_df2 = build_df, run1_name = BASE_SCENARIO_NAME, 
-                             run2_name = BUILD_SCENARIO_NAME, x = "distbin", y = c("freq"), grp = "PURPOSE")
-
-p1 <- plotly_density_plotter(sd.purpose, index = "one", xlabel = "Kilometers", percent = T, 
-                             tickvals = seq(2,41), ticktext = c(seq(1,40), "40pl"))
-bscols(widths=c(2,10),
-  filter_select("tourdist", "Select Tour Purpose", sd.purpose, ~grp_var,multiple=F),
-  p1
-  )
+# base_df <- base_data[["tourDistProfile_vis"]]
+# build_df <- build_data[["tourDistProfile_vis"]]
+# 
+# 
+# # change purpose names to standard format
+# base_df$PURPOSE <- as.character(base_df$PURPOSE)
+# build_df$PURPOSE <- as.character(build_df$PURPOSE)
+# 
+# # base_df$PURPOSE <- purpose_type_df$name[match(base_df$PURPOSE, purpose_type_df$code)]
+# # build_df$PURPOSE <- purpose_type_df$name[match(build_df$PURPOSE, purpose_type_df$code)]
+# 
+# sd.purpose <- get_sharedData(data_df1 = base_df, data_df2 = build_df, run1_name = BASE_SCENARIO_NAME, 
+#                              run2_name = BUILD_SCENARIO_NAME, x = "distbin", y = c("freq"), grp = "PURPOSE")
+# 
+# p1 <- plotly_density_plotter(sd.purpose, index = "one", xlabel = "Kilometers", percent = T, 
+#                              tickvals = seq(2,41), ticktext = c(seq(1,40), "40pl"))
+# bscols(widths=c(2,10),
+#   filter_select("tourdist", "Select Tour Purpose", sd.purpose, ~grp_var,multiple=F),
+#   p1
+#   )
 ```
 
 ### Average Non-Mandatory Tour Lengths (Kilometers){data-height=250}
@@ -1707,27 +1707,27 @@ Chart Column 1 {data-width=800}
 
 ### Stop Location - Out of Direction Distance{data-height=350}
 ```{r stopDC}
-base_df <- base_data[["stopDC_vis"]]
-build_df <- build_data[["stopDC_vis"]]
-# colnames(build_df) <- colnames(base_df)
-
-# change purpose names to standard format
-base_df$PURPOSE <- as.character(base_df$PURPOSE)
-build_df$PURPOSE <- as.character(build_df$PURPOSE)
-# base_df$PURPOSE <- purpose_type_df$name[match(base_df$PURPOSE, purpose_type_df$code)]
-# build_df$PURPOSE <- purpose_type_df$name[match(build_df$PURPOSE, purpose_type_df$code)]
-
-
-sd.purpose <- get_sharedData(data_df1 = base_df, data_df2 = build_df, run1_name = BASE_SCENARIO_NAME, 
-                             run2_name = BUILD_SCENARIO_NAME, x = "distbin", y = c("freq"), grp = "PURPOSE")
-
-p1 <- plotly_density_plotter(sd.purpose, index = "one", xlabel = "Out of Direction Distance (Kilometers)", percent = T, left_offset = 25, 
-                             tickvals = seq(1,42), ticktext = distBin,
-                             height = 600, tickangle = 300, bottom_offset = 50)
-bscols(widths=c(12),
-  list(
-    filter_select("stopDC", "Select Tour Purpose", sd.purpose, ~grp_var,multiple=F), p1)
-  )
+# base_df <- base_data[["stopDC_vis"]]
+# build_df <- build_data[["stopDC_vis"]]
+# # colnames(build_df) <- colnames(base_df)
+# 
+# # change purpose names to standard format
+# base_df$PURPOSE <- as.character(base_df$PURPOSE)
+# build_df$PURPOSE <- as.character(build_df$PURPOSE)
+# # base_df$PURPOSE <- purpose_type_df$name[match(base_df$PURPOSE, purpose_type_df$code)]
+# # build_df$PURPOSE <- purpose_type_df$name[match(build_df$PURPOSE, purpose_type_df$code)]
+# 
+# 
+# sd.purpose <- get_sharedData(data_df1 = base_df, data_df2 = build_df, run1_name = BASE_SCENARIO_NAME, 
+#                              run2_name = BUILD_SCENARIO_NAME, x = "distbin", y = c("freq"), grp = "PURPOSE")
+# 
+# p1 <- plotly_density_plotter(sd.purpose, index = "one", xlabel = "Out of Direction Distance (Kilometers)", percent = T, left_offset = 25, 
+#                              tickvals = seq(1,42), ticktext = distBin,
+#                              height = 600, tickangle = 300, bottom_offset = 50)
+# bscols(widths=c(12),
+#   list(
+#     filter_select("stopDC", "Select Tour Purpose", sd.purpose, ~grp_var,multiple=F), p1)
+#   )
 ```
 
 Chart Column 1 {data-width=300}
@@ -1941,11 +1941,11 @@ bscols(widths=c(12),
 function filter_default(){
   document.getElementById("pertype_mtf").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
   document.getElementById("pertype_inm").getElementsByClassName("selectized")[0].selectize.setValue("Total",false) 
-  document.getElementById("Purpose_County").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
+  <!-- document.getElementById("Purpose_County").getElementsByClassName("selectized")[0].selectize.setValue("Total",false) -->
   document.getElementById("pertype_dap").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
   document.getElementById("jtf_hhsize").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
   document.getElementById("jtf_comp").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
-  document.getElementById("tourdist").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
+  <!-- document.getElementById("tourdist").getElementsByClassName("selectized")[0].selectize.setValue("Total",false) -->
   document.getElementById("todprofile").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
   document.getElementById("todprofile_agg").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
   document.getElementById("stopTripDep").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
@@ -1956,7 +1956,7 @@ function filter_default(){
   document.getElementById("stoppurp_tourpurp").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
   document.getElementById("tripMode_tourMode").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
   document.getElementById("tripMode_tourPurp").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
-  document.getElementById("stopDC").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
+  <!-- document.getElementById("stopDC").getElementsByClassName("selectized")[0].selectize.setValue("Total",false) -->
 }
     
 $(document).ready(filter_default);

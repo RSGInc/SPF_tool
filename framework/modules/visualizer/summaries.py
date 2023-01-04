@@ -627,9 +627,9 @@ class VisualizerSummaries:
         df_tours = self.map_joint_purposes(df_tours)
 
         # Get sum
-        tour_dist = df_tours.groupby('JOINT_TOURPURP').apply(lambda x: (x.DIST * x.TOUR_WEIGHT).mean())
+        tour_dist = df_tours.groupby('JOINT_TOURPURP').apply(lambda x: (x.DIST * x.TOUR_WEIGHT).sum() /  x.TOUR_WEIGHT.sum())
         tour_dist = tour_dist.to_frame('AvgTripLength')
-        tour_dist.loc['Total'] = tour_dist.sum()
+        tour_dist.loc['Average'] = tour_dist.mean()
         tour_dist = tour_dist.reset_index().rename(columns = {'JOINT_TOURPURP': 'PURPOSE'})
 
         return tour_dist

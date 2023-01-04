@@ -58,6 +58,7 @@ if (any(installed_packages == FALSE)) {
 }
 for(pkg in SYSTEM_REPORT_PKGS) library(pkg, character.only = TRUE)
 
+
 ### Generate dashboard
 rmarkdown::render(TEMPLATE_PATH, output_dir = working_dir,
                   intermediates_dir = working_dir, quiet = TRUE)

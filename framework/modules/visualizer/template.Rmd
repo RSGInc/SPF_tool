@@ -169,7 +169,9 @@ get_standardDF <- function(data_df1, data_df2, x, y, grp = "", shared = F){
 # renames x and y variables in standard form - xvar, yvar1, yvar2,...
 # computes proportions for each  y variable variable for each group and run
 # combines two dataframe and adds a run identifier
-get_sharedData <- function(data_df1, data_df2, run1_name = 'base', run2_name = 'build', 
+get_sharedData <- function(data_df1, data_df2, 
+                           run1_name = 'base',
+                           run2_name = 'build', 
                            x, y, grp){
   
   # rename variables to standard names
@@ -263,9 +265,18 @@ plotly_bar_plotter <- function(data, type = 'bar', xlabel = "", ylabel = "", per
 # which y to use is determined by index parameter (one, two or three)
 # and variable differentiating runs as ~run
 # The function currebtly plots only one Y variables for each run
-plotly_density_plotter <- function(data_df, index = "one", colors=c("orange", "steelblue"), fill = 'tozeroy', 
-                                   title = "", xlabel = "", ylabel = "", percent = T, alpha = 0.7, tickvals, ticktext, tickangle = 0,
-                                   height=400, left_offset = 0, bottom_offset = 0, shape = 'spline', legend = T){
+plotly_density_plotter <- function(data_df, index = "one", 
+                                   # colors=c("orange", "steelblue"),
+                                   colors=c('#ff7f0e', '#1f77b4'),
+                                   fill = 'tozeroy', 
+                                   title = "", xlabel = "", ylabel = "", 
+                                   percent = T,
+                                   alpha = 1,
+                                   tickvals, 
+                                   ticktext, tickangle = 0,
+                                   height=400, left_offset = 0,
+                                   bottom_offset = 0, shape = 'spline',
+                                   legend = T){
   ##standardize data frame
   #names(data_df)[names(data_df)==xvar]     <- 'xvar'
   #names(data_df)[names(data_df)==yvar]     <- 'yvar1'
@@ -279,13 +290,22 @@ plotly_density_plotter <- function(data_df, index = "one", colors=c("orange", "s
     p <- switch(index, 
                 "one" = plot_ly(data=data_df,x = ~xvar, y = ~prop1, colors=colors, color = ~run, fill=fill) %>%
                   add_lines(name=~run,alpha=alpha, line = list(shape = shape)) %>%
-                  layout(title = "",xaxis = list(title=xlabel, tickvals = tickvals, ticktext = ticktext, tickangle = tickangle), yaxis = list(title=ylab, tickformat = ".0%"), showlegend = legend),
+                  layout(title = "", 
+                         legend = list(traceorder= 'reversed'),
+                         xaxis = list(title=xlabel, tickvals = tickvals, ticktext = ticktext, tickangle = tickangle),
+                         yaxis = list(title=ylab, tickformat = ".0%"), showlegend = legend),
                 "two" = plot_ly(data=data_df,x = ~xvar, y = ~prop2, colors=colors, color = ~run, fill=fill) %>%
                   add_lines(name=~run,alpha=alpha, line = list(shape = shape)) %>%
-                  layout(title = "",xaxis = list(title=xlabel, tickvals = tickvals, ticktext = ticktext, tickangle = tickangle), yaxis = list(title=ylab, tickformat = ".0%"), showlegend = legend),
+                  layout(title = "",
+                         legend = list(traceorder= 'reversed'),
+                         xaxis = list(title=xlabel, tickvals = tickvals, ticktext = ticktext, tickangle = tickangle),
+                         yaxis = list(title=ylab, tickformat = ".0%"), showlegend = legend),
                 "three" = plot_ly(data=data_df,x = ~xvar, y = ~prop3, colors=colors, color = ~run, fill=fill) %>%
                   add_lines(name=~run,alpha=alpha, line = list(shape = shape)) %>%
-                  layout(title = "",xaxis = list(title=xlabel, tickvals = tickvals, ticktext = ticktext, tickangle = tickangle), yaxis = list(title=ylab, tickformat = ".0%"), showlegend = legend)
+                  layout(title = "",
+                         legend = list(traceorder= 'reversed'),
+                         xaxis = list(title=xlabel, tickvals = tickvals, ticktext = ticktext, tickangle = tickangle),
+                         yaxis = list(title=ylab, tickformat = ".0%"), showlegend = legend)
                 )
     
   }else{
@@ -294,10 +314,16 @@ plotly_density_plotter <- function(data_df, index = "one", colors=c("orange", "s
     p <- switch(index,
                 "one" = plot_ly(data=data_df,x = ~xvar, y = ~yvar1, colors=colors, color = ~run, fill=fill) %>%
                   add_lines(name="",alpha=alpha, line = list(shape = shape)) %>%
-                  layout(title = "",xaxis = list(title=xlabel, tickvals = tickvals, ticktext = ticktext, tickangle = tickangle), yaxis = list(title=ylab), showlegend = legend),
+                  layout(title = "",
+                         sort = sort,
+                         xaxis = list(title=xlabel, tickvals = tickvals, ticktext = ticktext, tickangle = tickangle), 
+                         yaxis = list(title=ylab), showlegend = legend),
                 "two" = plot_ly(data=data_df,x = ~xvar, y = ~yvar2, colors=colors, color = ~run, fill=fill) %>%
                   add_lines(name="",alpha=alpha, line = list(shape = shape)) %>%
-                  layout(title = "",xaxis = list(title=xlabel, tickvals = tickvals, ticktext = ticktext, tickangle = tickangle), yaxis = list(title=ylab), showlegend = legend),
+                  layout(title = "",
+                         sort = sort,
+                         xaxis = list(title=xlabel, tickvals = tickvals, ticktext = ticktext, tickangle = tickangle),
+                         yaxis = list(title=ylab), showlegend = legend),
                 "three" = plot_ly(data=data_df,x = ~xvar, y = ~yvar3, colors=colors, color = ~run, fill=fill) %>%
                   add_lines(name="",alpha=alpha, line = list(shape = shape)) %>%
                   layout(title = "",xaxis = list(title=xlabel, tickvals = tickvals, ticktext = ticktext, tickangle = tickangle), yaxis = list(title=ylab), showlegend = legend)
@@ -458,7 +484,7 @@ valueBox(prettyNum(round(base_df$value[base_df$name=="total_stops"]/BASE_SAMPLE_
 
 ### Base VMT
 ```{r VMT1_ValueBox}
-valueBox(prettyNum(round(base_df$value[base_df$name=="total_vmt"]/BASE_SAMPLE_RATE), big.mark = ","), "Total VMT", icon = "ion-android-car")
+valueBox(prettyNum(round(base_df$value[base_df$name=="total_vmt"]/BASE_SAMPLE_RATE), big.mark = ","), "Total VKT", icon = "ion-android-car")
 ```
 
 
@@ -501,7 +527,7 @@ valueBox(prettyNum(round(build_df$value[build_df$name=="total_stops"]/BUILD_SAMP
 
 ### Build VMT
 ```{r VMT2_ValueBox}
-valueBox(prettyNum(round(build_df$value[build_df$name=="total_vmt"]/BUILD_SAMPLE_RATE), big.mark = ","), "Total VMT", icon = "ion-android-car")
+valueBox(prettyNum(round(build_df$value[build_df$name=="total_vmt"]/BUILD_SAMPLE_RATE), big.mark = ","), "Total VKT", icon = "ion-android-car")
 ```
 
 
@@ -747,12 +773,19 @@ build_df3 <- melt(build_df3, id = c("distbin"))
 build_df <- cbind(build_df1, build_df2$value, build_df3$value)
 colnames(build_df) <- c("distbin","variable","value1","value2","value3")
 
-sd.purpose <- get_sharedData(data_df1 = build_df, data_df2 = base_df, run1_name = BUILD_SCENARIO_NAME,
-                             run2_name = BASE_SCENARIO_NAME, x = "distbin", y = c("value1", "value2", "value3"), grp = "variable")
+sd.purpose <- get_sharedData(data_df1 = build_df, 
+                             data_df2 = base_df,
+                             run1_name = BUILD_SCENARIO_NAME,
+                             run2_name = BASE_SCENARIO_NAME,
+                             x = "distbin", 
+                             y = c("value1", "value2", "value3"),
+                             grp = "variable")
 
 p1 <- plotly_density_plotter(sd.purpose, index = "one", xlabel = "Kilometers to Work", percent = T,
                              tickvals = seq(1,40,5), ticktext = seq(0,40,5),
                              height = 240)
+
+
 p2 <- plotly_density_plotter(sd.purpose, index = "two", xlabel = "Kilometers to University", percent = T,
                              tickvals = seq(1,40,5), ticktext = seq(0,40,5),
                              height = 240)
@@ -916,6 +949,7 @@ bscols(widths=c(3,9),
 
 ```
 
+
 ### Percentage of Households with a Joint Tour{data-height=300}
 ```{r Hist_Presence_Joint}
 base_df <- base_data[["hhsizeJoint"]]
@@ -1015,13 +1049,11 @@ p <- plotly_bar_plotter(data = sd.pertype, height = 340, xlabel = "Number of Tou
 
 bscols(widths=c(3,9),
   list(
-    filter_select("pertype_mtf", "Select Person Type", sd.pertype, ~grp_var,multiple=F)),
+    filter_select("pertype_inm", "Select Person Type", sd.pertype, ~grp_var,multiple=F)),
     p
   )
 
-
 ```
-
 
 <!-- School Escorting {data-navmenu="Tour Level"} -->
 <!-- ============================================ -->
@@ -1331,7 +1363,7 @@ sd.purpose <- get_sharedData(data_df1 = base_df, data_df2 = build_df, run1_name 
 p1 <- plotly_density_plotter(sd.purpose, index = "one", xlabel = "Kilometers", percent = T, 
                              tickvals = seq(2,41), ticktext = c(seq(1,40), "40pl"))
 bscols(widths=c(2,10),
-  filter_select("Tour Purpose", "Select Tour Purpose", sd.purpose, ~grp_var,multiple=F),
+  filter_select("tourdist", "Select Tour Purpose", sd.purpose, ~grp_var,multiple=F),
   p1
   )
 ```
@@ -1415,7 +1447,7 @@ p3 <- plotly_density_plotter(sd.purpose, index = "three", xlabel = "Tour Duracti
                              tickvals = seq(1,48), ticktext = durBins, bottom_offset = 50, tickangle = 315, height = 225)
 	
 bscols(widths=c(2,10),
-  filter_select("Tour Purpose", "Select Tour Purpose", sd.purpose, ~grp_var,multiple=F),
+  filter_select("todprofile", "Select Tour Purpose", sd.purpose, ~grp_var,multiple=F),
   list(p1, p2, p3)
   )
 
@@ -1450,7 +1482,7 @@ p1 <- plotly_bar_plotter(data = sd.purpose, height = 350, xlabel = "Tour Departu
 p2 <- plotly_bar_plotter(data = sd.purpose, height = 350, xlabel = "Tour Arrival", ylabel = "Percent", ynames = c(BASE_SCENARIO_NAME, BUILD_SCENARIO_NAME), percent = T, index = 2)
 
 bscols(widths=c(2,10),
-  filter_select("Tour Purpose", "Select Tour Purpose", sd.purpose, ~grp_var,multiple=F),
+  filter_select("todprofile_agg", "Select Tour Purpose", sd.purpose, ~grp_var,multiple=F),
   list(p1, p2)
   )
 
@@ -1768,7 +1800,7 @@ p2 <- plotly_density_plotter(sd.purpose, index = "two", xlabel = "Trip Departure
                              tickvals = seq(1,48), ticktext = todBins, bottom_offset = 150, tickangle = 315, height = 400)
 #p3 <- datatable(sd.purpose$data())
 bscols(widths=c(2,10),
-  filter_select("Tour Purpose", "Select Tour Purpose", sd.purpose, ~grp_var,multiple=F),
+  filter_select("stopTripDep", "Select Tour Purpose", sd.purpose, ~grp_var,multiple=F),
   list(p1, p2)
   )
 ```
@@ -1804,7 +1836,7 @@ p1 <- plotly_bar_plotter(data = sd.purpose, height = 350, xlabel = "Stop Departu
 p2 <- plotly_bar_plotter(data = sd.purpose, height = 350, xlabel = "Trip Departure", ylabel = "Percent", ynames = c(BASE_SCENARIO_NAME, BUILD_SCENARIO_NAME), percent = T, index = 2)
 
 bscols(widths=c(2,10),
-  filter_select("Tour Purpose", "Select Tour Purpose", sd.purpose, ~grp_var,multiple=F),
+  filter_select("stopTripDep_agg", "Select Tour Purpose", sd.purpose, ~grp_var,multiple=F),
   list(p1, p2)
   )
 
@@ -1855,8 +1887,8 @@ p <- plotly_bar_plotter(data = sd.purpose, height = 700, xlabel = "Trip Mode", y
                         bottom_offset = 75)
 
 bscols(widths=c(12),
-  list(filter_select("tripMode1", "Select Tour Purpose", sd.purpose, ~PURPOSE,multiple=F), 
-       filter_select("tripMode1", "Select Tour Mode", sd.purpose, ~TOURMODE,multiple=F))
+  list(filter_select("tripMode_tourPurp", "Select Tour Purpose", sd.purpose, ~PURPOSE,multiple=F), 
+       filter_select("tripMode_tourMode", "Select Tour Mode", sd.purpose, ~TOURMODE,multiple=F))
   )
 ```
 
@@ -1905,3 +1937,27 @@ bscols(widths=c(12),
 
 <!-- ``` -->
 
+```{js}
+function filter_default(){
+  document.getElementById("pertype_mtf").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
+  document.getElementById("pertype_inm").getElementsByClassName("selectized")[0].selectize.setValue("Total",false) 
+  document.getElementById("Purpose_County").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
+  document.getElementById("pertype_dap").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
+  document.getElementById("jtf_hhsize").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
+  document.getElementById("jtf_comp").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
+  document.getElementById("tourdist").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
+  document.getElementById("todprofile").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
+  document.getElementById("todprofile_agg").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
+  document.getElementById("stopTripDep").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
+  document.getElementById("stopTripDep_agg").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
+  document.getElementById("tourMode").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
+  document.getElementById("stopfreq_dir").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
+  document.getElementById("stopfreq_total").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
+  document.getElementById("stoppurp_tourpurp").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
+  document.getElementById("tripMode_tourMode").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
+  document.getElementById("tripMode_tourPurp").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
+  document.getElementById("stopDC").getElementsByClassName("selectized")[0].selectize.setValue("Total",false)
+}
+    
+$(document).ready(filter_default);
+```

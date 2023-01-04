@@ -131,10 +131,13 @@ class VisualizerSummaries:
 
         # Pre-filter by joint purps
         df_jtours = df_jtours[df_jtours.JOINT_PURP.isin(joint_purp_list)]
+        comp_party_size = self.get_weighted_sum(
+            df=df_jtours,
+            grp_cols=['COMPOSITION', 'NUMBER_HH'],
+            wt_col='TOUR_WEIGHT',
+            total_along='COMPOSITION')
 
-        return self.get_weighted_sum(df=df_jtours,
-                                     grp_cols=['COMPOSITION', 'NUMBER_HH'],
-                                     wt_col='TOUR_WEIGHT')
+        return comp_party_size
 
     def jointPartySize(self):
         joint_purp_list = self.get_joint_purp_list()
@@ -192,7 +195,7 @@ class VisualizerSummaries:
 
         # Fill in NA person types
         _index = pd.MultiIndex.from_product([
-            self.constants['PERSONTYPE'].keys(),
+            list(self.constants['PERSONTYPE'].keys()) + ['Total'],
             self.constants['MTF'].keys()
         ], names=['PERSONTYPE', 'MTF'])
         mtf_summary = mtf_summary.reindex(index=_index).fillna(0)
@@ -602,13 +605,13 @@ class VisualizerSummaries:
 
         # Weighted mean
         mand_trip_lengths = {
-            'Work': workers.groupby('HDISTRICT').apply(lambda x: (x.WDIST * x.PER_WEIGHT).mean()),
-            'Schl': students.groupby('HDISTRICT').apply(lambda x: (x.SDIST * x.PER_WEIGHT).mean()),
-            'Univ': univ.groupby('HDISTRICT').apply(lambda x: (x.SDIST * x.PER_WEIGHT).mean())
+            'Work': workers.groupby('HDISTRICT').apply(lambda x: (x.WDIST * x.PER_WEIGHT).sum() / x.PER_WEIGHT.sum()),
+            'Schl': students.groupby('HDISTRICT').apply(lambda x: (x.SDIST * x.PER_WEIGHT).sum() / x.PER_WEIGHT.sum()),
+            'Univ': univ.groupby('HDISTRICT').apply(lambda x: (x.SDIST * x.PER_WEIGHT).sum() / x.PER_WEIGHT.sum())
         }
         mand_trip_lengths = pd.concat(mand_trip_lengths, axis=1).fillna(0)
 
-        mand_trip_lengths.loc['Total'] = mand_trip_lengths.sum()
+        mand_trip_lengths.loc['Average'] = mand_trip_lengths.mean()
 
         return mand_trip_lengths.reset_index()
 

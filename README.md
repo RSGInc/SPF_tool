@@ -1,4 +1,3 @@
-# Survey Processing Framework
 
 ## Modules list:
 - ReadPOPS - Fetches data from POPS database (not yet implemented).
@@ -7,6 +6,8 @@
 - TripsToPlace - Converts trips file to place file for SPA tool.
 - SPAToolModule - Analyzes trips data and converts to activity-based model form with tours, joint tours, and tours trips.
 - Visualizer - Generates summaries and creates interactive HTML or PowerBI visualizer from results (PowerBI not yet implemented).
+
+# Survey Processing Framework
 
 The Survey Processing Framework (SPF) is intended provide a basic framework structure and workflow "pipeline" for processing and analyzing survey data. The objective is to move away from bespoke one-off data processing scripts and towards a generalizable and programmatic processing tool. The goal is to reduce the amount of time rewriting code, debugging sloppy methods, and the changing countless hardcoded values. 
 

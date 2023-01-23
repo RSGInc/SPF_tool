@@ -1,5 +1,14 @@
 # Survey Processing Framework
 
+## Modules list:
+- ReadPOPS - Fetches data from POPS database (not yet implemented).
+- ReadMSAccessDB - Reads from MS access database.
+- ExpressionPreProcess - Preprocesses raw survey fields to standardized format (i.e., for SPA tool) using on parameterized expressions. Similar to ActivitySim's preprocessing expressions mechanism.
+- TripsToPlace - Converts trips file to place file for SPA tool.
+- SPAToolModule - Analyzes trips data and converts to activity-based model form with tours, joint tours, and tours trips.
+- HtmlVisualizer - The html visualizer generates summaries and creates interactive HTML file from results
+- PbixVisualizer - PowerBI-based alternative visualizer.
+
 The Survey Processing Framework (SPF) is intended provide a basic framework structure and workflow "pipeline" for processing and analyzing survey data. The objective is to move away from bespoke one-off data processing scripts and towards a generalizable and programmatic processing tool. The goal is to reduce the amount of time rewriting code, debugging sloppy methods, and the changing countless hardcoded values. 
 
 

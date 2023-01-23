@@ -60,7 +60,7 @@ SPATool_Project
 │
 ├───data    (Your input data and intermediate processed data goes here)
 │   
-├───output  (Final output goes here)
+├───output  (Optional, send final output to separate folder)
 │   
 └───spa_tool (SPA Tool 2.0 codebase)
 ```
@@ -219,4 +219,5 @@ This will initialize the SPA Tool 2.0 and load in the input tables, then pauses 
 
 ### Visualizer
 
-Not yet working...
+...TODO add some documentation here...
+

@@ -1,20 +1,19 @@
 Table,Field,Data,Type,Description,Values,Labels,Expression
 household,household_id,INT,continuous,dataframe index,,,"pd.Series(household.index, index=household.index)"
 household,SAMPN,INT,continuous,sample number / household ID,,,"pd.Series(household.index, index=household.index)"
-household,HH_ZONE_ID,INT,continuous,TAZ of household,,,"self.convert_taz(household.home_zone_id)"
-household,HH_WEIGHT,REAL,continuous,weight to expand data at household level,,,
+household,HH_ZONE_ID,INT,continuous,TAZ of household,,,self.convert_taz(household.home_zone_id)
 household,HH_SIZE,INT,continuous,Number of people in the household,,,"person.merge(household, on='household_id', how='right').groupby('household_id').size()"
 household,HH_VEH,INT ,continuous,Number of vehicles in the household,,,household.hh_veh
 household,HH_WORKERS,INT,continuous,Number of workers in the household,,,"person[person.occ.isin([1, 2])].merge(household, on='household_id', how='right').groupby('household_id').size()"
 household,HXCORD,INT,continuous,Home X Coordinate (longitude),,,"self.get_XYCORD('LON', household.latlon)"
 household,HYCORD,INT,continuous,Home Y Coordinate (latitude),,,"self.get_XYCORD('LAT', household.latlon)"
-household,HH_WEIGHT,REAL,continuous,Weight to expand data at person level,,,"household.household_weight"
+household,HH_WEIGHT,REAL,continuous,Weight to expand data at person level,,,household.household_weight
 person,person_id,INT,continuous,dataframe index,,,"pd.Series(person.index, index=person.index)"
 person,SAMPN,INT,continuous,Household ID,,,person.household_id
 person,PERNO,INT,continuous,Person ID,,,person.person_num
-person,STAZ,INT,continuous,School TAZ (-9 if not a student),,,"self.get_fixed_TAZ(purpose=3)"
-person,WTAZ,INT,continuous,Work TAZ (-9 if not a worker),,,"self.get_fixed_TAZ(purpose=1)"
-person,PER_WEIGHT,REAL,continuous,Weight to expand data at person level,,,"person.person_weight"
+person,STAZ,INT,continuous,School TAZ (-9 if not a student),,,self.get_fixed_TAZ(purpose=3)
+person,WTAZ,INT,continuous,Work TAZ (-9 if not a worker),,,self.get_fixed_TAZ(purpose=1)
+person,PER_WEIGHT,REAL,continuous,Weight to expand data at person level,,,person.person_weight
 person,STUDE,INT,categorical,Student Category,1,School,person.occ.isin([5])
 person,STUDE,INT,categorical,Student Category,2,University,"person.occ.isin([3,4])"
 person,STUDE,INT,categorical,Student Category,3,Non-student,"~person.occ.isin([3,4,5])"
@@ -42,18 +41,18 @@ person,EMPLY_LOC_TYPE,INT,categorical,Employment location type,3,varies,"person.
 person,EMPLY_LOC_TYPE,INT,categorical,Employment location type,0,Not a worker,"~person.occ.isin([1,2])"
 # person,PERTYPE,INT,continuous,Person type,,,"person.reset_index().merge(trip[['household_id','person_num','person_group']].drop_duplicates(), on=['household_id','person_num'], how='left').set_index('person_id').person_group.fillna(0).astype(int)"
 person,PERSONTYPE_SURVEY,INT,continuous,Person type,,,"person.reset_index().merge(trip[['household_id','person_num','person_group']].drop_duplicates(), on=['household_id','person_num'], how='left').set_index('person_id').person_group.fillna(0).astype(int)"
-person,PERSONTYPE,INT,categorical,Person type,1,'Full-time Emirati worker',"(person.is_labourer==0) & person.nationality.isin([1]) & (person.age >= 16) & person.occ.isin([1])"
-person,PERSONTYPE,INT,categorical,Person type,2,'Full-time non-Emirati worker',"(person.is_labourer==0) & ~person.nationality.isin([1]) & (person.age >= 16) & person.occ.isin([1])"
+person,PERSONTYPE,INT,categorical,Person type,1,'Full-time Emirati worker',(person.is_labourer==0) & person.nationality.isin([1]) & (person.age >= 16) & person.occ.isin([1])
+person,PERSONTYPE,INT,categorical,Person type,2,'Full-time non-Emirati worker',(person.is_labourer==0) & ~person.nationality.isin([1]) & (person.age >= 16) & person.occ.isin([1])
 person,PERSONTYPE,INT,categorical,Person type,3,'Labourer',"(person.is_labourer==1) & (person.age >= 16) & person.occ.isin([1,2,3])"
-person,PERSONTYPE,INT,categorical,Person type,4,'Part-time Emirati worker',"(person.is_labourer==0) & person.nationality.isin([1]) & (person.age >= 16) & person.occ.isin([2])"
-person,PERSONTYPE,INT,categorical,Person type,5,'Part-time non-Emirati worker',"(person.is_labourer==0) & ~person.nationality.isin([1]) & (person.age >= 16) & person.occ.isin([2])"
+person,PERSONTYPE,INT,categorical,Person type,4,'Part-time Emirati worker',(person.is_labourer==0) & person.nationality.isin([1]) & (person.age >= 16) & person.occ.isin([2])
+person,PERSONTYPE,INT,categorical,Person type,5,'Part-time non-Emirati worker',(person.is_labourer==0) & ~person.nationality.isin([1]) & (person.age >= 16) & person.occ.isin([2])
 person,PERSONTYPE,INT,categorical,Person type,6,'University student',"(person.is_labourer==0) & (person.age > 16) & person.occ.isin([3,4,5])"
 person,PERSONTYPE,INT,categorical,Person type,7,'Non-working and non-student',"person.age.isin(range(16,65)) & person.occ.isin([7,8,9])"
 person,PERSONTYPE,INT,categorical,Person type,8,'Non-working senior',"(person.age >= 65) & person.occ.isin([6,7,8,9]) | person.occ.isin([6])"
 person,PERSONTYPE,INT,categorical,Person type,9,'K-12 Emirati student',"(person.nationality.isin([1]) & person.age.isin(range(6,17)) & person.occ.isin([3,4,5,7,8]))"
 person,PERSONTYPE,INT,categorical,Person type,10,'K-12 non-Emirati student',"~person.nationality.isin([1]) & person.age.isin(range(6,17)) & person.occ.isin([3,4,5,7,8])"
 person,PERSONTYPE,INT,categorical,Person type,11,'Pre-school',"person.age.isin(range(0,6)) & person.occ.isin([3,4,5,7])"
-person,IS_EMIRATI,INT,continuous,Person type,,,"person.nationality.isin([1]).astype(int)"
+person,IS_EMIRATI,INT,continuous,Person type,,,person.nationality.isin([1]).astype(int)
 trip,trip_id,INT,continuous,dataframe index,,,"pd.Series(trip.index, index=trip.index)"
 trip,SAMPN,INT,continuous,Household ID,,,trip.household_id
 trip,PERNO,INT,continuous,Person ID,,,trip.person_num
@@ -61,45 +60,45 @@ trip,TRPNO,INT,continuous,Place Number per person,,,trip.trip_num
 trip,DAYNO,INT,continuous,Day Number per person,,,"trip.reset_index().merge(day.set_index('person_id').sort_values('day_date').groupby(level=0).day_date.rank().astype(int), on='person_id', how='left').set_index('trip_id').day_date"
 trip,PNAME,INT,continuous,Place name,,,"trip.reset_index().merge(zone[['OLDZONE', 'NAME']], left_on='dest_zone_id', right_on='OLDZONE', how='left').set_index('trip_id').NAME"
 trip,TRIP_WEIGHT,REAL,continuous,Weight to expand data at trip level,,,trip.trip_weight
-trip,TAZ,INT,continuous,Destination TAZ,,,"self.convert_taz(trip.dest_zone_id)"
-trip,ESCORT_EVENT,INT,categorical,Escort Event,0,NEITHER,"self.get_escort_type('NEITHER')"
-trip,ESCORT_EVENT,INT,categorical,Escort Event,1,PICK_UP,"self.get_escort_type('PICK_UP')"
-trip,ESCORT_EVENT,INT,categorical,Escort Event,2,DROP_OFF,"self.get_escort_type('DROP_OFF')"
-trip,ESCORT_EVENT,INT,categorical,Escort Event,3,PICK_UP_NON_HH,"self.get_escort_type('PICK_UP_NON_HH')"
-trip,ESCORT_EVENT,INT,categorical,Escort Event,4,DROP_OFF_NON_HH,"self.get_escort_type('DROP_OFF_NON_HH')"
-trip,ESCORT_EVENT,INT,categorical,Escort Event,5,BOTH_PUDO,"self.get_escort_type('BOTH_PUDO')"
-trip,TPURP,INT,categorical,Trip Purpose,0,Home,"trip.trip_purp.isin([8]) & ~self.get_loop_trips() & ~self.get_escort_trips()"
-trip,TPURP,INT,categorical,Trip Purpose,1,Work,"trip.trip_purp.isin([1]) & ~self.get_escort_trips()"
+trip,TAZ,INT,continuous,Destination TAZ,,,self.convert_taz(trip.dest_zone_id)
+trip,ESCORT_EVENT,INT,categorical,Escort Event,0,NEITHER,self.get_escort_type('NEITHER')
+trip,ESCORT_EVENT,INT,categorical,Escort Event,1,PICK_UP,self.get_escort_type('PICK_UP')
+trip,ESCORT_EVENT,INT,categorical,Escort Event,2,DROP_OFF,self.get_escort_type('DROP_OFF')
+trip,ESCORT_EVENT,INT,categorical,Escort Event,3,PICK_UP_NON_HH,self.get_escort_type('PICK_UP_NON_HH')
+trip,ESCORT_EVENT,INT,categorical,Escort Event,4,DROP_OFF_NON_HH,self.get_escort_type('DROP_OFF_NON_HH')
+trip,ESCORT_EVENT,INT,categorical,Escort Event,5,BOTH_PUDO,self.get_escort_type('BOTH_PUDO')
+trip,TPURP,INT,categorical,Trip Purpose,0,Home,trip.trip_purp.isin([8]) & ~self.get_loop_trips() & ~self.get_escort_trips()
+trip,TPURP,INT,categorical,Trip Purpose,1,Work,trip.trip_purp.isin([1]) & ~self.get_escort_trips()
 trip,TPURP,INT,categorical,Trip Purpose,2,University,"(trip.reset_index().merge(person.reset_index()[['person_id','age']], how='left').set_index('trip_id').age>18) & trip.trip_purp.isin([3]) & ~self.get_escort_trips()"
 trip,TPURP,INT,categorical,Trip Purpose,3,School,"(trip.reset_index().merge(person.reset_index()[['person_id','age']], how='left').set_index('trip_id').age<=18) & trip.trip_purp.isin([3]) & ~self.get_escort_trips()"
 # trip,TPURP,INT,categorical,Trip Purpose,4,Escorting,trip.trip_purp.isin([999])
-trip,TPURP,INT,categorical,Trip Purpose,4,Escorting,"self.get_escort_trips()"
+trip,TPURP,INT,categorical,Trip Purpose,4,Escorting,self.get_escort_trips()
 trip,TPURP,INT,categorical,Trip Purpose,5,Shopping,"trip.trip_purp.isin([51,52,53,54,55,61]) & ~self.get_escort_trips()"
 trip,TPURP,INT,categorical,Trip Purpose,6,Maintenance,"trip.trip_purp.isin([4,7]) & ~self.get_escort_trips()"
-trip,TPURP,INT,categorical,Trip Purpose,7,Eat Out,"trip.trip_purp.isin([64]) & ~self.get_escort_trips()"
+trip,TPURP,INT,categorical,Trip Purpose,7,Eat Out,trip.trip_purp.isin([64]) & ~self.get_escort_trips()
 trip,TPURP,INT,categorical,Trip Purpose,8,Social / Visit,"trip.trip_purp.isin([62,63]) & ~self.get_escort_trips()"
 trip,TPURP,INT,categorical,Trip Purpose,9,Discretionary,"trip.trip_purp.isin([65,66,67,68,69]) & ~self.get_escort_trips()"
-trip,TPURP,INT,categorical,Trip Purpose,10,Work Related,"trip.trip_purp.isin([2]) & ~self.get_escort_trips()"
-trip,TPURP,INT,categorical,Trip Purpose,11,Loop (Home -> Home),"self.get_loop_trips() & ~self.get_escort_trips()"
+trip,TPURP,INT,categorical,Trip Purpose,10,Work Related,trip.trip_purp.isin([2]) & ~self.get_escort_trips()
+trip,TPURP,INT,categorical,Trip Purpose,11,Loop (Home -> Home),self.get_loop_trips() & ~self.get_escort_trips()
 #trip,TPURP,INT,categorical,Trip Purpose,12,Change Mode,trip.trip_purp.isin([999])
-trip,TPURP,INT,categorical,Trip Purpose,13,Other,"trip.trip_purp.isin([9]) & ~self.get_escort_trips()"
+trip,TPURP,INT,categorical,Trip Purpose,13,Other,trip.trip_purp.isin([9]) & ~self.get_escort_trips()
 # trip,MODE,INT,categorical,Surveyed Trip Mode,1,SOV,"(trip.mode_mainline.isin([2,11,12,13]) & (pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)==0))"
 # trip,MODE,INT,categorical,Surveyed Trip Mode,2,HOV2,"(trip.mode_mainline.isin([2,3,11,12,13]) & (pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)==1)) | (trip.mode_mainline.isin([3]) & (pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)==0))"
 # trip,MODE,INT,categorical,Surveyed Trip Mode,3,HOV3+,"(trip.mode_mainline.isin([2,3,11,12,13]) & (pd.concat([trip.trip_companions, trip_hhcompanions_pnum.groupby('trip_id').size()], axis=1).fillna(0).sum(axis=1).astype(int)>1))"
-trip,MODE,INT,categorical,Surveyed Trip Mode,1,SOV,"self.get_hov('SOV')"
-trip,MODE,INT,categorical,Surveyed Trip Mode,2,HOV2,"self.get_hov('HOV2')"
-trip,MODE,INT,categorical,Surveyed Trip Mode,3,HOV3+,"self.get_hov('HOV3+')"
-trip,MODE,INT,categorical,Surveyed Trip Mode,4,Walk,"trip.mode_mainline.isin([1])"
-trip,MODE,INT,categorical,Surveyed Trip Mode,5,Bike,"trip.mode_mainline.isin([14])"
-trip,MODE,INT,categorical,Surveyed Trip Mode,8,WALK-BUS,"self.get_transit_type('WALK-BUS')"
-trip,MODE,INT,categorical,Surveyed Trip Mode,9,WALK-METRO,"self.get_transit_type('WALK-METRO')"
-trip,MODE,INT,categorical,Surveyed Trip Mode,11,PNR-BUS,"self.get_transit_type('PNR-BUS')"
-trip,MODE,INT,categorical,Surveyed Trip Mode,12,PNR-METRO,"self.get_transit_type('PNR-METRO')"
-trip,MODE,INT,categorical,Surveyed Trip Mode,14,KNR-BUS,"self.get_transit_type('KNR-BUS')"
-trip,MODE,INT,categorical,Surveyed Trip Mode,15,KNR-METRO,"self.get_transit_type('KNR-METRO')"
+trip,MODE,INT,categorical,Surveyed Trip Mode,1,SOV,self.get_hov('SOV')
+trip,MODE,INT,categorical,Surveyed Trip Mode,2,HOV2,self.get_hov('HOV2')
+trip,MODE,INT,categorical,Surveyed Trip Mode,3,HOV3+,self.get_hov('HOV3+')
+trip,MODE,INT,categorical,Surveyed Trip Mode,4,Walk,trip.mode_mainline.isin([1])
+trip,MODE,INT,categorical,Surveyed Trip Mode,5,Bike,trip.mode_mainline.isin([14])
+trip,MODE,INT,categorical,Surveyed Trip Mode,8,WALK-BUS,self.get_transit_type('WALK-BUS')
+trip,MODE,INT,categorical,Surveyed Trip Mode,9,WALK-METRO,self.get_transit_type('WALK-METRO')
+trip,MODE,INT,categorical,Surveyed Trip Mode,11,PNR-BUS,self.get_transit_type('PNR-BUS')
+trip,MODE,INT,categorical,Surveyed Trip Mode,12,PNR-METRO,self.get_transit_type('PNR-METRO')
+trip,MODE,INT,categorical,Surveyed Trip Mode,14,KNR-BUS,self.get_transit_type('KNR-BUS')
+trip,MODE,INT,categorical,Surveyed Trip Mode,15,KNR-METRO,self.get_transit_type('KNR-METRO')
 trip,MODE,INT,categorical,Surveyed Trip Mode,17,Taxi,"trip.mode_mainline.isin([8,9])"
-trip,MODE,INT,categorical,Surveyed Trip Mode,19,Schoolbus," trip.mode_mainline.isin([7])"
-trip,MODE,INT,categorical,Surveyed Trip Mode,20,Labour-Bus,"trip.mode_mainline.isin([6])"
+trip,MODE,INT,categorical,Surveyed Trip Mode,19,Schoolbus, trip.mode_mainline.isin([7])
+trip,MODE,INT,categorical,Surveyed Trip Mode,20,Labour-Bus,trip.mode_mainline.isin([6])
 trip,MODE,INT,categorical,Surveyed Trip Mode,21,Other,"trip.mode_mainline.isin([10,15])"
 trip,DEP_HR,INT,continuous,Trip Departure Hour (0- 23),,,trip.start_h
 trip,DEP_MIN,INT,continuous,Trip Departure Minute of Hour (0-59),,,trip.start_min
@@ -109,8 +108,8 @@ trip,DRIVER,INT,categorical,Flag to indicate whether the person was driving,1,Dr
 trip,DRIVER,INT,categorical,Flag to indicate whether the person was driving,2,Passenger / NA,~trip.mode_mainline.isin([2])
 trip,TOLL_NO,INT,categorical,Toll Payed on Trip,1,Yes,~trip.car_salikgates.isnull()
 trip,TOLL_NO,INT,categorical,Toll Payed on Trip,2,No,trip.car_salikgates.isnull()
-trip,TOTTR,INT,continuous,Total Travellers on Trip,,,"self.get_TOTTR()"
-trip,TOTTR_NEXT,INT,continuous,Total Travellers on subsequent trip (0 if last trip),,,"self.get_TOTTR_NEXT()"
+trip,TOTTR,INT,continuous,Total Travellers on Trip,,,self.get_TOTTR()
+trip,TOTTR_NEXT,INT,continuous,Total Travellers on subsequent trip (0 if last trip),,,self.get_TOTTR_NEXT()
 trip,HHMEM,INT,continuous,Number of household members on the trip,,,"trip.trip_hhcompanions_pnum.str.split(',').explode().groupby('trip_id').size()-1"
 trip,PER1,INT,continuous,Person ID of first additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(0).astype(str).reindex(trip.index)
 trip,PER2,INT,continuous,Person ID of second additional household member on trip,,,trip_hhcompanions_pnum.groupby('trip_id').trip_hhcompanions_pnum.nth(1).astype(str).reindex(trip.index)
@@ -124,8 +123,8 @@ trip,WXCORD,INT,continuous,Work X Coordinate (longitude),,,"self.get_fixed_XYCOR
 trip,WYCORD,INT,continuous,Work Y Coordinate (latitude),,,"self.get_fixed_XYCORD('LAT', [1])"
 trip,SXCORD,INT,continuous,Work X Coordinate (longitude),,,"self.get_fixed_XYCORD('LON', [3])"
 trip,SYCORD,INT,continuous,Work Y Coordinate (latitude),,,"self.get_fixed_XYCORD('LAT', [3])"
-trip,DISTANCE,REAL,continuous,Trip distance in km,,,"trip.trip_dist_km + trip.trip_dist_m/1000"
-# trip,BUFFER_DIST,REAL,continuous,Trip distance in km,,,"self.get_buffer_dist(trip)"
+trip,DISTANCE,REAL,continuous,Trip distance in km,,,trip.trip_dist_km + trip.trip_dist_m/1000
+# trip,BUFFER_DIST,REAL,continuous,Trip distance in km,,,self.get_buffer_dist(trip)
 # place,place_id,INT,continuous,dataframe index,,,"pd.Series(trip.index, index=trip.index)"
 # place,SAMPN,INT,continuous,Household ID,,,trip.household_id
 # place,PERNO,INT,continuous,Person ID,,,trip.person_num
@@ -135,8 +134,8 @@ trip,DISTANCE,REAL,continuous,Trip distance in km,,,"trip.trip_dist_km + trip.tr
 # place,YCORD,INT,continuous,Y Coordinate (latitude),,,"trip.dest_latlon.str.split(',', expand=True)[0]"
 # place,WXCORD,INT,continuous,Work X Coordinate (longitude),,,"self.get_WXYCORD('X', trip)"
 # place,WYCORD,INT,continuous,Work Y Coordinate (latitude),,,"self.get_WXYCORD('Y', trip)"
-# day,household_id
-# day,person_id
-# day,PERNO
-# day,DAY_NUM
-# day,DAY_WEIGHT
+# day,household_id,,,,,,
+# day,person_id,,,,,,
+# day,PERNO,,,,,,
+# day,DAY_NUM,,,,,,
+# day,DAY_WEIGHT,,,,,,

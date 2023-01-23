@@ -1,11 +1,11 @@
 
 ## Modules list:
-- ReadPOPS - Fetches data from POPS database (not yet implemented).
-- ReadMSAccessDB - Reads from MS access database.
-- ExpressionPreProcess - Preprocesses raw survey fields to standardized format (i.e., for SPA tool) using on parameterized expressions. Similar to ActivitySim's preprocessing expressions mechanism.
-- TripsToPlace - Converts trips file to place file for SPA tool.
-- SPAToolModule - Analyzes trips data and converts to activity-based model form with tours, joint tours, and tours trips.
-- Visualizer - Generates summaries and creates interactive HTML or PowerBI visualizer from results (PowerBI not yet implemented).
+- **ReadPOPS** - Fetches data from POPS database (not yet implemented).
+- **ReadMSAccessDB** - Reads from MS access database.
+- **ExpressionPreProcess** - Preprocesses raw survey fields to standardized format (i.e., for SPA tool) using on parameterized expressions. Similar to ActivitySim's preprocessing expressions mechanism.
+- **TripsToPlace** - Converts trips file to place file for SPA tool.
+- **SPAToolModule** - Analyzes trips data and converts to activity-based model form with tours, joint tours, and tours trips.
+- **Visualizer** - Generates summaries and creates interactive HTML or PowerBI visualizer from results (PowerBI not yet implemented).
 
 # Survey Processing Framework
 

@@ -84,9 +84,9 @@ PROCESSING_STEPS:
              
     Visualizer:
 #        skip: True
-        module: visualizer.visualizer_module
+        module: html_visualizer.visualizer_module
         from_pipeline: False
-        output_dir: visualizer
+        output_dir: html_visualizer
         data:
             # Shared data
             shared_data:
@@ -128,4 +128,4 @@ PROCESSING_STEPS:
                 xwalk: raw/geo_crosswalks.csv
                     
         configs:
-            parameters:  visualizer_specs/parameters.yaml
+            parameters:  html_visualizer_specs/parameters.yaml

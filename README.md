@@ -16,14 +16,14 @@ The framework is organized around pipeline "modules" that can be used as needed 
 
 
 ### Installation
-The easiest installation is to clone this repo and create your spa_tool conda environment with this command: 
+The easiest installation is to clone this repo and create your spf_tool conda environment with this command: 
 `conda env create -f environment.yml`
 
 ### Usage
 
-The SPF is now a command line program with flagged arguments specifying necessary directory locations, following a usage structure similar to ActivitySim and PopulationSim. The command line provides a single point of entry to the SPA Tool "pipeline":
+The SPF is now a command line program with flagged arguments specifying necessary directory locations, following a usage structure similar to ActivitySim and PopulationSim. The command line provides a single point of entry to the SPf Tool "pipeline":
 
-`python spa_tool -c configs -d data`
+`python spf_tool -c configs -d data`
 
 It has two mandatory arguments:
 - --configs, -c "path/to/config"
@@ -36,7 +36,7 @@ And one optional output flag. The reason is that you may want to treat your data
 These arguments point to the directories of all required files. Typically, these might be housed in an SPA Tool 2.0 project folder. For example:
 
 ```
-SPATool_Project
+SPFTool_Project
 │
 ├───configs (Your configuration files go here)
 │   │   settings.yaml
@@ -49,7 +49,7 @@ SPATool_Project
 │   
 ├───output  (Optional, send final output to separate folder)
 │   
-└───spa_tool (SPA Tool 2.0 codebase)
+└───spf_tool (SPf Tool 2.0 codebase)
 ```
 
 

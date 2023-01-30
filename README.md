@@ -49,7 +49,7 @@ SPFTool_Project
 │   
 ├───output  (Optional, send final output to separate folder)
 │   
-└───spf_tool (SPf Tool 2.0 codebase)
+└───spf_tool (SPF Tool 2.0 codebase)
 ```
 
 

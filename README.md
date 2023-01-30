@@ -1,10 +1,9 @@
 
 # Survey Processing Framework
 
-The Survey Processing Framework (SPF) is intended provide a basic framework structure and workflow "pipeline" for processing and analyzing survey data. The objective is to move away from bespoke one-off data processing scripts and towards a generalizable and programmatic processing tool. The goal is to reduce the amount of time rewriting code, debugging sloppy methods, and the changing countless hardcoded values. 
+The Survey Processing Framework (SPF) is intended provide a basic framework structure and workflow "pipeline" for processing and analyzing survey data. The objective is to move away from bespoke one-off data processing scripts and towards a generalizable and programmatic processing tool. The goal is to reduce the amount of time rewriting code, debugging sloppy methods, and the changing countless hardcoded values. While the SPF is a work in progress, and still heavily relies on the original SPA Tool code, the codebase is gradually being cleaned up and organized. Remember, to keep it DRY (Don't repeat yourself)!
 
-
-While the SPF is a work in progress, and still heavily relies on the original SPA Tool code, the codebase is gradually being cleaned up and organized. Remember, to keep it DRY (Don't repeat yourself)!
+The framework is organized around pipeline "modules" that can be used as needed like building blocks. This encourages reusability and helps contain code scope to avoid messy project conflicts. It is the intent that useful modules can be created and added to this repository for future project. So far, the following modules have been developed:
 
 ## Modules list:
 - **ReadPOPS** - Fetches data from POPS database (not yet implemented).
